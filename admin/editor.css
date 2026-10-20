@@ -598,3 +598,12 @@ a.tb-btn:hover { color: #ddd; border-color: #555; }
 .page-btn.error-tab { margin-left: 14px; border-style: dashed; }
 .page-btn.error-tab::before { content: '\26A0  '; white-space: pre; }
 
+
+/* Keep every page tab visible; the tool buttons scroll instead */
+.top-bar { gap: 8px; }
+.top-bar-left { flex: 0 0 auto; }
+.page-tabs { max-width: none; overflow: visible; }
+.top-bar-right { min-width: 0; gap: 6px; }
+.top-bar-right .tb-btn { padding-left: 9px; padding-right: 9px; }
+.page-btn.error-tab { margin-left: 6px; }
+
