@@ -1,9 +1,18 @@
 # Netlify configuration
-# Plain static site: no build step.
-# Note: the /admin editor saves via the local server (server.js); edit locally, then push.
+# Plain static site (no build step) + one function so the /admin editor can publish.
 
 [build]
   publish = "."
+
+[functions]
+  directory = "netlify/functions"
+
+# /api/* -> the publish function (the editor calls /api/save-page etc.)
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+  force = true
 
 # Never serve stale saved designs
 [[headers]]

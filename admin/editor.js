@@ -2,6 +2,28 @@
    INTEERNEETS — GrapesJS Editor Logic
    ============================================================ */
 
+// ─── API helper: sends the admin password when publishing to the live site ───
+const IS_LIVE = !['localhost', '127.0.0.1'].includes(location.hostname);
+
+async function apiFetch(url, opts = {}, retried = false) {
+  const headers = Object.assign({}, opts.headers);
+  const pw = sessionStorage.getItem('adminPassword');
+  if (pw) headers['x-admin-password'] = pw;
+  const res = await fetch(url, Object.assign({}, opts, { headers }));
+  if (res.status === 401 && !retried) {
+    const entered = prompt('Enter your admin password to publish to the live site:');
+    if (!entered) return res;
+    sessionStorage.setItem('adminPassword', entered);
+    return apiFetch(url, opts, true);
+  }
+  if (res.status === 401) sessionStorage.removeItem('adminPassword');
+  if (!res.ok && res.status !== 401) {
+    // Surface the server's reason (e.g. missing GITHUB_TOKEN) after the generic toast
+    res.clone().json().then((j) => j && j.error && setTimeout(() => showToast('Error: ' + j.error), 50)).catch(() => {});
+  }
+  return res;
+}
+
 // ─── Current page state ───
 let currentPage = 'home';
 
@@ -530,7 +552,7 @@ async function savePage() {
   const css = fontFaceCss() + editor.getCss();
 
   try {
-    const res = await fetch('/api/save-page', {
+    const res = await apiFetch('/api/save-page', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -539,7 +561,7 @@ async function savePage() {
       }),
     });
     if (res.ok) {
-      showToast('Page saved!');
+      showToast(IS_LIVE ? 'Published! Live in about 1 minute' : 'Page saved!');
     } else {
       showToast('Save failed');
     }
@@ -625,7 +647,7 @@ async function saveSettings() {
   };
 
   try {
-    const res = await fetch('/api/save-settings', {
+    const res = await apiFetch('/api/save-settings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -698,7 +720,7 @@ async function uploadFiles(files) {
         r.onerror = reject;
         r.readAsDataURL(file);
       });
-      const res = await fetch('/api/upload', {
+      const res = await apiFetch('/api/upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ filename: file.name, type: file.type, data }),

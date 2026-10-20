@@ -58,17 +58,24 @@ The pages ship as empty shells behind a loading cover and only reveal once your 
 
 ---
 
-## Putting it live (Netlify, free)
+## Putting it live (Netlify, free) — and editing the live site
 
 1. Push this folder to your GitHub repo.
 2. Netlify → Add new site → Import from GitHub → build command empty, publish directory `.`.
-3. To edit: run the editor locally (`RUN WEBSITE.bat`), Save, then commit & push the changed files. (The editor's save/upload API only exists in the local server; the live site is static.)
+3. **One-time setup so the editor can update the live site** (Netlify → Site configuration → Environment variables):
+   - `GITHUB_TOKEN` — create at GitHub → Settings → Developer settings → Fine-grained tokens. Repository: `INTEERNEETS` only. Permission: **Contents → Read and write**.
+   - `ADMIN_PASSWORD` — any password you choose (the editor asks for it the first time you Save).
+   - Then **Deploys → Trigger deploy** once.
+4. Open `https://YOUR-SITE.netlify.app/admin/`, edit, press **Save**. Enter the password when asked. The editor commits your changes to GitHub and Netlify republishes automatically — **live in about 1 minute**. Uploads (images, fonts), Colors and Settings publish the same way.
+
+Locally (`RUN WEBSITE.bat`) Save writes straight to your files with no password; commit & push them if you want them online.
 
 ## File map
 
 ```
 index.html / shop.html   page shells (load saved design from /content)
 admin/                   visual editor (GrapesJS, dark theme)
+netlify/functions/api.js publishes editor saves/uploads to GitHub (live site)
 server.js                local server + save/upload API (port 8000)
 content/                 page-home.json, page-shop.json, settings.json
 images/uploads/, fonts/  uploaded media
