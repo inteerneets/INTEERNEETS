@@ -95,7 +95,18 @@
           "letter-spacing": "3px",
           "text-transform": "uppercase",
           "--btn-text": "#ffffff",
-          "--btn-shadow": "drop-shadow(0px 0px 18px rgba(255,255,255,0.71))"
+          "--btn-shadow": "drop-shadow(0px 0px 18px rgba(255,255,255,0.71))",
+          "left": "50%",
+          "top": "455px",
+          "position": "absolute",
+          "width": "max-content",
+          "height": "48px",
+          "right": "auto",
+          "transform": "translateX(-50%)",
+          "margin-left": "0",
+          "margin-right": "0",
+          "max-width": "100%",
+          "text-align": "center"
         }
       },
       {
@@ -105,7 +116,14 @@
         "style": {
           "color": "black",
           "width": "383px",
-          "height": "383px"
+          "height": "383px",
+          "left": "50%",
+          "top": "17px",
+          "position": "absolute",
+          "right": "auto",
+          "transform": "translateX(-50%)",
+          "margin-left": "0",
+          "margin-right": "0"
         }
       }
     ],
@@ -199,7 +217,7 @@
     "symbols": []
   },
   "html": "<body><section id=\"i39i\"><img id=\"icfaj\" src=\"/images/uploads/inteerneets_logo.png\"/><p id=\"ihan\">We are preparing something special. Stay tuned for the launch of INTEERNEETS RECORDS — where art meets the internet.</p><a href=\"#shop\" id=\"i3b4t\">GO TO SHOP</a></section></body>",
-  "css": "@font-face{font-family:'Inter 18pt Bold';src:url('/fonts/Inter_18pt-Bold.ttf') format('truetype');font-display:swap;}\n@font-face{font-family:'Inter 18pt Regular';src:url('/fonts/Inter_18pt-Regular.ttf') format('truetype');font-display:swap;}\n* { box-sizing: border-box; } body {margin: 0;}body{margin-top:0px;margin-right:0px;margin-bottom:0px;margin-left:0px;padding-top:0px;padding-right:0px;padding-bottom:0px;padding-left:0px;}*{box-sizing:border-box;}#i39i{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;color:rgba(0,0,0,0);text-align:center;padding:40px 20px;border:solid;}#ihan{font-family:'Inter',sans-serif;font-size:18px;max-width:100%;line-height:1.7;color:#999;margin:0 0 40px 0;left:50%;top:365px;position:absolute;width:100;height:70px;right:auto;transform:translateX(-50%);margin-left:0;margin-right:0;text-align:center;text-decoration:none;}#i3b4t{display:inline-block;padding:14px 36px;background:var(--btn-fill,transparent);border:1.6px solid #ffffff;color:#ffffff;text-decoration:none;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:600;letter-spacing:3px;text-transform:uppercase;--btn-text:#ffffff;--btn-shadow:drop-shadow(0px 0px 18px rgba(255,255,255,0.71));}#icfaj{color:black;width:383px;height:383px;}",
+  "css": "@font-face{font-family:'Inter 18pt Bold';src:url('/fonts/Inter_18pt-Bold.ttf') format('truetype');font-display:swap;}\n@font-face{font-family:'Inter 18pt Regular';src:url('/fonts/Inter_18pt-Regular.ttf') format('truetype');font-display:swap;}\n* { box-sizing: border-box; } body {margin: 0;}body{margin-top:0px;margin-right:0px;margin-bottom:0px;margin-left:0px;padding-top:0px;padding-right:0px;padding-bottom:0px;padding-left:0px;}*{box-sizing:border-box;}#i39i{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;color:rgba(0,0,0,0);text-align:center;padding:40px 20px;border:solid;}#ihan{font-family:'Inter',sans-serif;font-size:18px;max-width:100%;line-height:1.7;color:#999;margin:0 0 40px 0;left:50%;top:365px;position:absolute;width:100;height:70px;right:auto;transform:translateX(-50%);margin-left:0;margin-right:0;text-align:center;text-decoration:none;}#i3b4t{display:inline-block;padding:14px 36px;background:var(--btn-fill,transparent);border:1.6px solid #ffffff;color:#ffffff;text-decoration:none;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:600;letter-spacing:3px;text-transform:uppercase;--btn-text:#ffffff;--btn-shadow:drop-shadow(0px 0px 18px rgba(255,255,255,0.71));left:50%;top:455px;position:absolute;width:max-content;height:48px;right:auto;transform:translateX(-50%);margin-left:0;margin-right:0;max-width:100%;text-align:center;}#icfaj{color:black;width:383px;height:383px;left:50%;top:17px;position:absolute;right:auto;transform:translateX(-50%);margin-left:0;margin-right:0;}",
   "bg": {
     "color": "#000000",
     "image": "",
