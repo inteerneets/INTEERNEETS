@@ -803,10 +803,11 @@ function defaultPageHtml(title) {
 // after setComponents() would wipe the rules GrapesJS derives from inline styles.
 function applyDefaultTemplate(page) {
   if (page === LOADING_PAGE.id) {
-    editor.setStyle('');
+    // A ring of 12 red dots that spin and fade (CSS only). Edit/delete/add anything around it.
+    editor.setStyle('@keyframes ldfade{0%{opacity:1}100%{opacity:.12}}');
     editor.setComponents(`
 <section style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:40px 20px;">
-  <h1 style="font-family:'Playfair Display',serif;font-size:2rem;letter-spacing:.12em;margin:0;color:var(--c-highlight,#e53935);">Loading...</h1>
+  <div style="position:relative;width:64px;height:64px;"><span style="position:absolute;left:50%;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:var(--c-highlight,#e53935);opacity:.12;transform:rotate(0deg) translateY(-28px);animation:ldfade 1.2s linear infinite;animation-delay:-1.2s;"></span><span style="position:absolute;left:50%;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:var(--c-highlight,#e53935);opacity:.12;transform:rotate(30deg) translateY(-28px);animation:ldfade 1.2s linear infinite;animation-delay:-1.1s;"></span><span style="position:absolute;left:50%;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:var(--c-highlight,#e53935);opacity:.12;transform:rotate(60deg) translateY(-28px);animation:ldfade 1.2s linear infinite;animation-delay:-1.0s;"></span><span style="position:absolute;left:50%;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:var(--c-highlight,#e53935);opacity:.12;transform:rotate(90deg) translateY(-28px);animation:ldfade 1.2s linear infinite;animation-delay:-0.9s;"></span><span style="position:absolute;left:50%;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:var(--c-highlight,#e53935);opacity:.12;transform:rotate(120deg) translateY(-28px);animation:ldfade 1.2s linear infinite;animation-delay:-0.8s;"></span><span style="position:absolute;left:50%;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:var(--c-highlight,#e53935);opacity:.12;transform:rotate(150deg) translateY(-28px);animation:ldfade 1.2s linear infinite;animation-delay:-0.7s;"></span><span style="position:absolute;left:50%;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:var(--c-highlight,#e53935);opacity:.12;transform:rotate(180deg) translateY(-28px);animation:ldfade 1.2s linear infinite;animation-delay:-0.6s;"></span><span style="position:absolute;left:50%;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:var(--c-highlight,#e53935);opacity:.12;transform:rotate(210deg) translateY(-28px);animation:ldfade 1.2s linear infinite;animation-delay:-0.5s;"></span><span style="position:absolute;left:50%;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:var(--c-highlight,#e53935);opacity:.12;transform:rotate(240deg) translateY(-28px);animation:ldfade 1.2s linear infinite;animation-delay:-0.4s;"></span><span style="position:absolute;left:50%;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:var(--c-highlight,#e53935);opacity:.12;transform:rotate(270deg) translateY(-28px);animation:ldfade 1.2s linear infinite;animation-delay:-0.3s;"></span><span style="position:absolute;left:50%;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:var(--c-highlight,#e53935);opacity:.12;transform:rotate(300deg) translateY(-28px);animation:ldfade 1.2s linear infinite;animation-delay:-0.2s;"></span><span style="position:absolute;left:50%;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:var(--c-highlight,#e53935);opacity:.12;transform:rotate(330deg) translateY(-28px);animation:ldfade 1.2s linear infinite;animation-delay:-0.1s;"></span></div>
 </section>`);
     return;
   }
@@ -2153,7 +2154,9 @@ function shrinkIfBig(file, dataUrl) {
 // PICTURE RESIZE ? big drag handles + a panel with exact size, proportions, fit, corners, opacity
 // ???????????????????????????????????????????????????????????????
 const isImageComp = (c) => !!c && (c.is('image') || (c.get('tagName') || '').toLowerCase() === 'img');
-const imgSel = () => { const c = editor.getSelected(); return isImageComp(c) ? c : null; };
+// the panel works for pictures and for text/buttons
+const imgSel = () => { const c = editor.getSelected(); return (isImageComp(c) || isTextLikeSafe(c)) ? c : null; };
+const isTextLikeSafe = (c) => typeof isTextLike === 'function' && isTextLike(c);
 function openImagePanel() {
   ['colors-panel', 'pagebg-panel', 'button-panel'].forEach((id) => byId(id).classList.add('hidden'));
   byId('image-panel').classList.remove('hidden');
@@ -2167,6 +2170,11 @@ function syncImagePanel() {
   const el = c.getEl();
   const cs = el.ownerDocument.defaultView.getComputedStyle(el);
   const st = c.getStyle();
+  const isText = !isImageComp(c);
+  document.querySelectorAll('#image-panel .bi-img-only').forEach((n) => { n.style.display = isText ? 'none' : ''; });
+  document.querySelectorAll('#image-panel .bi-text-only').forEach((n) => { n.style.display = isText ? '' : 'none'; });
+  byId('image-panel').querySelector('.colors-head strong').textContent = isText ? 'Text size' : 'Picture size';
+  if (isText) { byId('bi-fontsize').value = Math.round(parseFloat(cs.fontSize) || 16); byId('bi-fsslider').value = byId('bi-fontsize').value; }
   const w = String(st.width || '');
   const unit = /%$/.test(w) ? '%' : 'px';
   byId('bi-unit').value = unit;
@@ -2189,7 +2197,7 @@ function setImageWidth(val, unit) {
   const c = imgSel();
   if (!c) return;
   const patch = { width: val + unit, 'max-width': '100%' };
-  if (byId('bi-lock').checked) patch.height = 'auto';
+  if (isImageComp(c) && byId('bi-lock').checked) patch.height = 'auto';
   c.addStyle(patch);
 }
 byId('btn-imgsize').addEventListener('click', () => {
@@ -2265,5 +2273,56 @@ byId('bi-replace').addEventListener('click', () => {
   };
 })();
 
+editor.on('component:add', ensureExtraTools);
+editor.on('component:selected', ensureExtraTools);
+
+
+// ???????????????????????????????????????????????????????????????
+// TEXT RESIZE ? drag the corner handles to make the text bigger/smaller (font size scales),
+// drag the side handles to change the width of the text box.
+// ???????????????????????????????????????????????????????????????
+const isTextLike = (c) => !!c && (c.is('text') || c.is('link') || ['h1','h2','h3','h4','h5','h6','p','a','button','span'].includes((c.get('tagName') || '').toLowerCase()));
+function makeTextResizable(c) {
+  if (!isTextLike(c) || c === editor.getWrapper()) return;
+  let start = null; // set again on every load/select: functions are not saved with the page
+  c.set('resizable', {
+    tl: 1, tr: 1, bl: 1, br: 1, cl: 1, cr: 1, tc: 0, bc: 0,
+    updateTarget(el, rect, opts) {
+      const handle = (opts && (opts.selectedHandler || opts.handler)) || '';
+      const corner = /^(tl|tr|bl|br)$/.test(String(handle));
+      if (!start) {
+        const cs = el.ownerDocument.defaultView.getComputedStyle(el);
+        start = { w: el.getBoundingClientRect().width, fs: parseFloat(cs.fontSize) || 16, ls: parseFloat(cs.letterSpacing) || 0, hasW: !!c.getStyle().width };
+      }
+      if (corner) {
+        const k = Math.max(0.1, rect.w / start.w);
+        const patch = { 'font-size': Math.max(6, Math.round(start.fs * k * 10) / 10) + 'px' };
+        if (start.ls) patch['letter-spacing'] = Math.round(start.ls * k * 10) / 10 + 'px';
+        if (start.hasW) patch.width = Math.round(rect.w) + 'px';
+        c.addStyle(patch);
+      } else {
+        c.addStyle({ width: Math.round(rect.w) + 'px', 'max-width': '100%' });
+      }
+      if (opts && opts.store) start = null;
+    },
+  });
+}
+editor.on('component:add', makeTextResizable);
+editor.on('component:selected', makeTextResizable);
+
+const setFontSize = (v) => { const c = imgSel(); if (c && !isImageComp(c)) c.addStyle({ 'font-size': Math.max(6, Number(v) || 16) + 'px' }); };
+byId('bi-fontsize').addEventListener('input', (ev) => { byId('bi-fsslider').value = ev.target.value; setFontSize(ev.target.value); });
+byId('bi-fsslider').addEventListener('input', (ev) => { byId('bi-fontsize').value = ev.target.value; setFontSize(ev.target.value); });
+// "Size" shortcut for text too
+(function addTextSizeTool() {
+  const prev = ensureExtraTools;
+  ensureExtraTools = function (c) {
+    prev(c);
+    if (!isTextLike(c) || isButtonLike(c)) return;
+    const tb = c.get('toolbar') || [];
+    if (tb.some((t) => t.id === 'q-img')) return;
+    c.set('toolbar', [{ id: 'q-img', label: '<span class="tb-fmt" style="font-size:11px">Size\u270E</span>', attributes: { title: 'Text size and width' }, command: () => openImagePanel() }, ...tb]);
+  };
+})();
 editor.on('component:add', ensureExtraTools);
 editor.on('component:selected', ensureExtraTools);

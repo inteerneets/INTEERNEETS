@@ -19,7 +19,7 @@
   <script src="https://unpkg.com/grapesjs-blocks-basic@1.0.2/dist/index.js"></script>
 
   <!-- Editor theme -->
-  <link rel="stylesheet" href="editor.css?v=20261020p" />
+  <link rel="stylesheet" href="editor.css?v=20261020q" />
 </head>
 <body>
 
@@ -176,18 +176,20 @@
   <!-- Picture resize panel -->
   <div id="image-panel" class="colors-panel btn-panel hidden">
     <div class="colors-head"><strong>Picture size</strong><button id="bi-close" class="settings-close-btn">&times;</button></div>
-    <p id="bi-hint" class="colors-hint">Click a picture on the page first. You can also drag the square handles on its corners and sides (corners keep the proportions).</p>
+    <p id="bi-hint" class="colors-hint">Click a picture or text first. You can also drag the square handles: corners scale it (text gets bigger/smaller, pictures keep their shape), sides change the width.</p>
     <div id="bi-body">
-      <div class="sh-title">Quick size</div>
-      <div id="bi-quick" class="shadow-presets"><button type="button" data-w="25%">25%</button><button type="button" data-w="50%">50%</button><button type="button" data-w="75%">75%</button><button type="button" data-w="100%">Full width</button><button type="button" data-w="orig">Original</button></div>
+      <div class="sh-title bi-img-only">Quick size</div>
+      <div id="bi-quick" class="shadow-presets bi-img-only"><button type="button" data-w="25%">25%</button><button type="button" data-w="50%">50%</button><button type="button" data-w="75%">75%</button><button type="button" data-w="100%">Full width</button><button type="button" data-w="orig">Original</button></div>
       <div class="swatch-row"><label for="bi-width">Width</label><input type="number" id="bi-width" class="pbg-num" min="1" max="4000" /><select id="bi-unit" class="pbg-select" style="max-width:62px"><option value="px">px</option><option value="%">%</option></select></div>
       <div class="swatch-row"><label for="bi-wslider">&nbsp;</label><input type="range" id="bi-wslider" min="1" max="100" /></div>
-      <div class="swatch-row"><label for="bi-lock">Keep proportions</label><input type="checkbox" id="bi-lock" checked /></div>
-      <div class="swatch-row"><label for="bi-height">Height (px)</label><input type="number" id="bi-height" class="pbg-num" min="1" max="4000" /></div>
-      <div class="swatch-row"><label for="bi-fit">Picture fit</label><select id="bi-fit" class="pbg-select"><option value="fill">Stretch to the box</option><option value="cover">Fill and crop</option><option value="contain">Fit inside</option><option value="none">Original size</option></select></div>
-      <div class="swatch-row"><label for="bi-radius">Corner radius (px)</label><input type="number" id="bi-radius" class="pbg-num" min="0" max="999" /></div>
+      <div class="swatch-row bi-text-only"><label for="bi-fontsize">Text size (px)</label><input type="number" id="bi-fontsize" class="pbg-num" min="6" max="400" /></div>
+      <div class="swatch-row bi-text-only"><label for="bi-fsslider">&nbsp;</label><input type="range" id="bi-fsslider" min="6" max="240" /></div>
+      <div class="swatch-row bi-img-only"><label for="bi-lock">Keep proportions</label><input type="checkbox" id="bi-lock" checked /></div>
+      <div class="swatch-row bi-img-only"><label for="bi-height">Height (px)</label><input type="number" id="bi-height" class="pbg-num" min="1" max="4000" /></div>
+      <div class="swatch-row bi-img-only"><label for="bi-fit">Picture fit</label><select id="bi-fit" class="pbg-select"><option value="fill">Stretch to the box</option><option value="cover">Fill and crop</option><option value="contain">Fit inside</option><option value="none">Original size</option></select></div>
+      <div class="swatch-row bi-img-only"><label for="bi-radius">Corner radius (px)</label><input type="number" id="bi-radius" class="pbg-num" min="0" max="999" /></div>
       <div class="swatch-row"><label for="bi-opacity">Opacity %</label><input type="range" id="bi-opacity" min="0" max="100" value="100" /></div>
-      <div class="colors-actions"><button id="bi-replace" class="tb-btn">Replace picture</button><button id="bi-center" class="tb-btn">Center</button></div>
+      <div class="colors-actions"><button id="bi-replace" class="tb-btn bi-img-only">Replace picture</button><button id="bi-center" class="tb-btn">Center</button></div>
     </div>
   </div>
 
@@ -234,6 +236,6 @@
   <div id="toast" class="toast hidden"></div>
 
   <!-- ─── Editor logic ─── -->
-  <script src="editor.js?v=20261020p"></script>
+  <script src="editor.js?v=20261020q"></script>
 </body>
 </html>

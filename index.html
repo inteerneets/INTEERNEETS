@@ -28,7 +28,22 @@
     #loading-screen.fade { opacity: 0; pointer-events: none; }
     #ld-root { position: relative; width: 100%; height: 100%; overflow: auto; display: flex; align-items: center; justify-content: center; }
     #ld-root:not(.ready) { visibility: hidden; }
-    #ld-default { font-family: 'Playfair Display', serif; color: #e53935; font-size: 1.5rem; letter-spacing: 0.1em; }
+    #ld-default { position: relative; width: 64px; height: 64px; }
+    #ld-default i { position: absolute; left: 50%; top: 50%; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border-radius: 50%; background: var(--c-highlight, #e53935);
+      opacity: .12; animation: ldfade 1.2s linear infinite; }
+    @keyframes ldfade { 0% { opacity: 1; } 100% { opacity: .12; } }
+    #ld-default i:nth-child(1) { transform: rotate(0deg) translateY(-28px); animation-delay: -1.2s; }
+    #ld-default i:nth-child(2) { transform: rotate(30deg) translateY(-28px); animation-delay: -1.1s; }
+    #ld-default i:nth-child(3) { transform: rotate(60deg) translateY(-28px); animation-delay: -1.0s; }
+    #ld-default i:nth-child(4) { transform: rotate(90deg) translateY(-28px); animation-delay: -0.9s; }
+    #ld-default i:nth-child(5) { transform: rotate(120deg) translateY(-28px); animation-delay: -0.8s; }
+    #ld-default i:nth-child(6) { transform: rotate(150deg) translateY(-28px); animation-delay: -0.7s; }
+    #ld-default i:nth-child(7) { transform: rotate(180deg) translateY(-28px); animation-delay: -0.6s; }
+    #ld-default i:nth-child(8) { transform: rotate(210deg) translateY(-28px); animation-delay: -0.5s; }
+    #ld-default i:nth-child(9) { transform: rotate(240deg) translateY(-28px); animation-delay: -0.4s; }
+    #ld-default i:nth-child(10) { transform: rotate(270deg) translateY(-28px); animation-delay: -0.3s; }
+    #ld-default i:nth-child(11) { transform: rotate(300deg) translateY(-28px); animation-delay: -0.2s; }
+    #ld-default i:nth-child(12) { transform: rotate(330deg) translateY(-28px); animation-delay: -0.1s; }
 
     /* Page backgrounds: stacked full-screen layers that cross-fade as you scroll */
     #bg-stack { position: fixed; inset: 0; z-index: 0; overflow: hidden; }
@@ -89,7 +104,7 @@
   <style id="page-fonts"></style>
 </head>
 <body>
-  <div id="loading-screen"><div id="ld-root"><span id="ld-default">Loading...</span></div></div>
+  <div id="loading-screen"><div id="ld-root"><div id="ld-default"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div></div>
   <div id="bg-stack"></div>
   <div id="shade"></div>
   <nav id="nav"></nav>
