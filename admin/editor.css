@@ -616,3 +616,17 @@ a.tb-btn:hover { color: #ddd; border-color: #555; }
 .gjs-rte-action:has(input.rte-color) { width: 40px !important; }
 .gjs-rte-toolbar select.rte-font { width: 112px; }
 .gjs-rte-toolbar select.rte-size { width: 66px; }
+
+/* Buttons section in the Colors panel */
+.mini-check { font-size: 11px; color: #aaa; display: inline-flex; align-items: center; gap: 4px; margin-left: 6px; white-space: nowrap; }
+.mini-check input { width: auto; }
+#btn-shadow { max-width: 150px; }
+
+/* Narrow screens: tool buttons scroll instead of spilling under the page tabs */
+.top-bar-right { justify-content: flex-start !important; }
+.top-bar-right > :first-child { margin-left: auto; }
+
+
+/* Panels taller than the window scroll so Save is always reachable */
+.colors-panel { max-height: calc(100vh - 70px); overflow-y: auto; }
+

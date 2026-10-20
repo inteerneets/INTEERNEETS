@@ -39,7 +39,7 @@ const DEFAULT_HOME_HTML = `
 <section style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;color:var(--c-text,#ffffff);text-align:center;padding:40px 20px;">
   <h1 style="font-family:'Playfair Display',serif;font-size:4.5rem;margin:0 0 20px 0;color:var(--c-text,#ffffff);letter-spacing:2px;">Coming Soon</h1>
   <p style="font-family:'Inter',sans-serif;font-size:1.1rem;max-width:500px;line-height:1.7;color:#999;margin:0 0 40px 0;">We are preparing something special. Stay tuned for the launch of INTEERNEETS — where art meets the internet.</p>
-  <a href="mailto:inteerneets@gmail.com" style="display:inline-block;padding:14px 36px;background:var(--c-button,#e53935);border:2px solid var(--c-button,#e53935);color:var(--c-button-text,#ffffff);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:600;letter-spacing:3px;text-transform:uppercase;transition:all 0.3s;">EMAIL US</a>
+  <a href="mailto:inteerneets@gmail.com" style="display:inline-block;padding:14px 36px;background:var(--btn-fill,transparent);border:var(--btn-border-width,2px) solid var(--btn-border,#000000);color:var(--btn-text,#000000);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:600;letter-spacing:3px;text-transform:uppercase;transition:all 0.3s;">EMAIL US</a>
 </section>
 `;
 
@@ -64,7 +64,7 @@ const DEFAULT_SHOP_HTML = `
 </section>
 
 <section style="padding:60px 20px;text-align:center;">
-  <a href="mailto:inteerneets@gmail.com" style="display:inline-block;padding:14px 36px;background:var(--c-button,#e53935);border:2px solid var(--c-button,#e53935);color:var(--c-button-text,#ffffff);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:600;letter-spacing:3px;text-transform:uppercase;">EMAIL US</a>
+  <a href="mailto:inteerneets@gmail.com" style="display:inline-block;padding:14px 36px;background:var(--btn-fill,transparent);border:var(--btn-border-width,2px) solid var(--btn-border,#000000);color:var(--btn-text,#000000);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:600;letter-spacing:3px;text-transform:uppercase;">EMAIL US</a>
 </section>
 `;
 
@@ -469,7 +469,7 @@ bm.add('paragraph', {
 bm.add('email-us-button', {
   label: 'Email Us Button',
   category: 'Studio',
-  content: `<a href="mailto:inteerneets@gmail.com" style="display:inline-block;padding:14px 36px;background:var(--c-button,#e53935);border:2px solid var(--c-button,#e53935);color:var(--c-button-text,#ffffff);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:600;letter-spacing:3px;text-transform:uppercase;">EMAIL US</a>`,
+  content: `<a href="mailto:inteerneets@gmail.com" style="display:inline-block;padding:14px 36px;background:var(--btn-fill,transparent);border:var(--btn-border-width,2px) solid var(--btn-border,#000000);color:var(--btn-text,#000000);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:600;letter-spacing:3px;text-transform:uppercase;">EMAIL US</a>`,
 });
 
 bm.add('divider', {
@@ -796,7 +796,7 @@ function applyDefaultTemplate(page) {
 <section style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;color:var(--c-text,#ffffff);text-align:center;padding:40px 20px;">
   <h1 style="font-family:'Playfair Display',serif;font-size:8rem;line-height:1;margin:0;color:var(--c-highlight,#e53935);">404</h1>
   <p style="font-family:'Inter',sans-serif;font-size:1.2rem;margin:16px 0 32px 0;color:var(--c-text,#ffffff);opacity:.75;">This page does not exist.</p>
-  <a href="/" style="background:var(--c-button,#e53935);color:var(--c-button-text,#ffffff);text-decoration:none;padding:14px 36px;font-family:'Inter',sans-serif;font-size:.85rem;font-weight:600;letter-spacing:.15em;">BACK HOME</a>
+  <a href="/" style="background:var(--btn-fill,transparent);color:var(--btn-text,#000000);text-decoration:none;padding:14px 36px;font-family:'Inter',sans-serif;font-size:.85rem;font-weight:600;letter-spacing:.15em;">BACK HOME</a>
 </section>`);
     return;
   }
@@ -825,6 +825,7 @@ async function loadPage(id) {
     showToast(`New ${pageTitle(id)} page — design it, then Save`);
   }
   stripThemeBg();
+  normalizeEditorBtn();
   pageBg[id] = (data && data.bg) || null;
   applyPageBg();
   applyColorsToCanvas();
@@ -1265,10 +1266,15 @@ editor.on('load', async () => {
 // ═══════════════════════════════════════════════════════════════
 // GLOBAL COLOR SWATCHES (theme variables)
 // Elements use var(--c-bg), var(--c-text), var(--c-highlight),
-// var(--c-button), var(--c-button-text). Change once, updates everywhere.
+// var(--c-button), var(--btn-text,#000000). Change once, updates everywhere.
 // ═══════════════════════════════════════════════════════════════
 
-const DEFAULT_COLORS = { bg: '#0a0a0a', text: '#ffffff', highlight: '#e53935', button: '#e53935', button_text: '#ffffff' };
+const DEFAULT_COLORS = {
+  bg: '#0a0a0a', text: '#ffffff', highlight: '#e53935', button: '#e53935', button_text: '#ffffff',
+  // Buttons: outline only, black, soft shadow on hover (all customizable in the Colors panel)
+  btn_fill: 'transparent', btn_text: '#000000', btn_border: '#000000', btn_border_width: '2px', btn_radius: '0px',
+  btn_hover_fill: '', btn_shadow: '0 6px 16px rgba(0,0,0,0.28)',
+};
 const COLOR_PRESETS = [
   { name: 'Dark + Red',    c: { bg: '#0a0a0a', text: '#ffffff', highlight: '#e53935', button: '#e53935', button_text: '#ffffff' } },
   { name: 'Pure White',    c: { bg: '#ffffff', text: '#111111', highlight: '#e53935', button: '#111111', button_text: '#ffffff' } },
@@ -1280,7 +1286,10 @@ const COLOR_PRESETS = [
 let siteColors = Object.assign({}, DEFAULT_COLORS);
 
 function colorVarsCss(c) {
-  return `:root{--c-bg:${c.bg};--c-text:${c.text};--c-highlight:${c.highlight};--c-button:${c.button};--c-button-text:${c.button_text};}`;
+  return `:root{--c-bg:${c.bg};--c-text:${c.text};--c-highlight:${c.highlight};--c-button:${c.button};--c-button-text:${c.button_text};` +
+    `--btn-fill:${c.btn_fill || 'transparent'};--btn-text:${c.btn_text || '#000000'};--btn-border:${c.btn_border || '#000000'};` +
+    `--btn-border-width:${c.btn_border_width || '0px'};--btn-radius:${c.btn_radius || '0px'};` +
+    `--btn-hover-fill:${c.btn_hover_fill || 'var(--btn-fill)'};--btn-shadow:${c.btn_shadow || 'none'};}`;
 }
 function applyColorsToCanvas() {
   const doc = editor.Canvas.getDocument();
@@ -1291,10 +1300,18 @@ function applyColorsToCanvas() {
 }
 function syncColorInputs() {
   document.querySelectorAll('#colors-panel input[type=color]').forEach((inp) => {
-    inp.value = siteColors[inp.dataset.key];
+    const v = siteColors[inp.dataset.key];
+    inp.value = /^#[0-9a-fA-F]{6}$/.test(v) ? v : '#000000';
     const hex = document.querySelector(`.hex[data-for="${inp.id}"]`);
-    if (hex) hex.value = siteColors[inp.dataset.key];
+    if (hex) hex.value = v || '';
   });
+  if (byId('btn-nofill')) {
+    byId('btn-nofill').checked = siteColors.btn_fill === 'transparent';
+    byId('btn-samehover').checked = !siteColors.btn_hover_fill;
+    byId('btn-width').value = parseFloat(siteColors.btn_border_width) || 0;
+    byId('btn-radius').value = parseFloat(siteColors.btn_radius) || 0;
+    byId('btn-shadow').value = siteColors.btn_shadow || '';
+  }
 }
 function setSiteColors(c) {
   siteColors = Object.assign({}, DEFAULT_COLORS, c || {});
@@ -1710,4 +1727,74 @@ function fitTextToWidth(root) {
   editor.on('component:update', run);
   editor.on('component:add', run);
   editor.on('load', run);
+})();
+
+
+// ???????????????????????????????????????????????????????????????
+// BUTTONS ? outline only (no fill), black outline + text, soft shadow on hover.
+// Everything is a variable (Colors panel -> Buttons) and each button can still be
+// styled individually in the Style panel.
+// ???????????????????????????????????????????????????????????????
+function normBtn(css) {
+  return String(css)
+    .replace(/border(-color)?\s*:\s*([\d.]+px\s+solid\s+)?var\(--c-button(?:,[^)]*)?\)/gi, function (m, c) {
+      return c ? 'border-color:var(--btn-border,#000000)' : 'border:var(--btn-border-width,2px) solid var(--btn-border,#000000)';
+    })
+    .replace(/background(?:-color)?\s*:\s*var\(--c-button(?:,[^)]*)?\)/gi, 'background:var(--btn-fill,transparent)')
+    .replace(/var\(--c-button-text(?:,[^)]*)?\)/gi, 'var(--btn-text,#000000)');
+}
+
+// Move older designs (buttons that used --c-button) onto the new button variables
+function normalizeEditorBtn() {
+  try {
+    editor.Css.getRules().forEach((rule) => {
+      const st = rule.getStyle();
+      let changed = false;
+      const next = {};
+      Object.keys(st).forEach((k) => {
+        const out = normBtn(k + ':' + st[k]);
+        if (out !== k + ':' + st[k]) {
+          const m = out.match(/^([\w-]+)\s*:\s*([\s\S]*)$/);
+          if (m) { next[m[1]] = m[2]; changed = true; return; }
+        }
+        next[k] = st[k];
+      });
+      if (changed) rule.setStyle(next);
+    });
+  } catch (e) { console.warn('normalizeEditorBtn', e); }
+  refreshBtnCss();
+}
+
+// Hover look for every element that uses the button variables (shown in the editor canvas too)
+function refreshBtnCss() {
+  const doc = editor.Canvas.getDocument();
+  if (!doc) return;
+  let tag = doc.getElementById('btn-extra');
+  if (!tag) { tag = doc.createElement('style'); tag.id = 'btn-extra'; doc.head.appendChild(tag); }
+  let css = '';
+  editor.Css.getRules().forEach((rule) => {
+    if (!JSON.stringify(rule.getStyle()).includes('--btn-fill')) return;
+    const sel = rule.selectorsToString();
+    if (!sel || /:hover/.test(sel)) return;
+    css += sel + '{border-radius:var(--btn-radius,0);transition:box-shadow .25s ease,background .25s ease,color .25s ease;}' +
+           sel + ':hover{box-shadow:var(--btn-shadow,none);background:var(--btn-hover-fill,var(--btn-fill,transparent));}';
+  });
+  tag.textContent = css;
+}
+let btnCssTimer;
+const refreshBtnCssSoon = () => { clearTimeout(btnCssTimer); btnCssTimer = setTimeout(refreshBtnCss, 200); };
+editor.on('canvas:frame:load', refreshBtnCssSoon);
+editor.on('update', refreshBtnCssSoon);
+editor.on('component:add', refreshBtnCssSoon);
+
+// Colors panel: Buttons section
+(function setupButtonPanel() {
+  const set = (patch) => { Object.assign(siteColors, patch); applyColorsToCanvas(); };
+  byId('btn-nofill').addEventListener('change', (e) => set({ btn_fill: e.target.checked ? 'transparent' : byId('sw-btn-fill').value }));
+  byId('sw-btn-fill').addEventListener('input', () => { byId('btn-nofill').checked = false; });
+  byId('btn-samehover').addEventListener('change', (e) => set({ btn_hover_fill: e.target.checked ? '' : byId('sw-btn-hover').value }));
+  byId('sw-btn-hover').addEventListener('input', () => { byId('btn-samehover').checked = false; });
+  byId('btn-width').addEventListener('input', (e) => set({ btn_border_width: (Number(e.target.value) || 0) + 'px' }));
+  byId('btn-radius').addEventListener('input', (e) => set({ btn_radius: (Number(e.target.value) || 0) + 'px' }));
+  byId('btn-shadow').addEventListener('input', (e) => set({ btn_shadow: e.target.value.trim() }));
 })();

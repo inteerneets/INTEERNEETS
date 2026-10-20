@@ -19,7 +19,7 @@
   <script src="https://unpkg.com/grapesjs-blocks-basic@1.0.2/dist/index.js"></script>
 
   <!-- Editor theme -->
-  <link rel="stylesheet" href="editor.css?v=20261020e" />
+  <link rel="stylesheet" href="editor.css?v=20261020f" />
 </head>
 <body>
 
@@ -153,21 +153,28 @@
     <div class="swatch-row"><label for="sw-bg">Background</label><input type="color" id="sw-bg" data-key="bg" /><input type="text" class="hex" data-for="sw-bg" maxlength="7" /></div>
     <div class="swatch-row"><label for="sw-text">Text</label><input type="color" id="sw-text" data-key="text" /><input type="text" class="hex" data-for="sw-text" maxlength="7" /></div>
     <div class="swatch-row"><label for="sw-highlight">Highlight</label><input type="color" id="sw-highlight" data-key="highlight" /><input type="text" class="hex" data-for="sw-highlight" maxlength="7" /></div>
-    <div class="swatch-row"><label for="sw-button">Button</label><input type="color" id="sw-button" data-key="button" /><input type="text" class="hex" data-for="sw-button" maxlength="7" /></div>
-    <div class="swatch-row"><label for="sw-button-text">Button text</label><input type="color" id="sw-button-text" data-key="button_text" /><input type="text" class="hex" data-for="sw-button-text" maxlength="7" /></div>
+    <div class="colors-presets-title">Buttons</div>
+    <div class="swatch-row"><label for="sw-btn-fill">Fill</label><input type="color" id="sw-btn-fill" data-key="btn_fill" /><input type="text" class="hex" data-for="sw-btn-fill" maxlength="11" /><label class="mini-check"><input type="checkbox" id="btn-nofill" /> none</label></div>
+    <div class="swatch-row"><label for="sw-btn-text">Text</label><input type="color" id="sw-btn-text" data-key="btn_text" /><input type="text" class="hex" data-for="sw-btn-text" maxlength="7" /></div>
+    <div class="swatch-row"><label for="sw-btn-border">Outline color</label><input type="color" id="sw-btn-border" data-key="btn_border" /><input type="text" class="hex" data-for="sw-btn-border" maxlength="7" /></div>
+    <div class="swatch-row"><label for="btn-width">Outline width (px)</label><input type="number" id="btn-width" class="pbg-num" min="0" max="12" value="2" /></div>
+    <div class="swatch-row"><label for="btn-radius">Corner radius (px)</label><input type="number" id="btn-radius" class="pbg-num" min="0" max="60" value="0" /></div>
+    <div class="swatch-row"><label for="sw-btn-hover">Hover fill</label><input type="color" id="sw-btn-hover" data-key="btn_hover_fill" /><input type="text" class="hex" data-for="sw-btn-hover" maxlength="7" /><label class="mini-check"><input type="checkbox" id="btn-samehover" checked /> same</label></div>
+    <div class="swatch-row"><label for="btn-shadow">Hover shadow</label><input type="text" id="btn-shadow" class="hex" style="width:150px" placeholder="0 6px 16px rgba(0,0,0,.28)" /></div>
+    <p class="colors-hint small">Shadow = <code>x y blur color</code>. Type <code>none</code> for no shadow. Each button can also be styled on its own in the Style panel.</p>
     <div class="colors-presets-title">Quick schemes</div>
     <div id="color-presets" class="color-presets"></div>
     <div class="colors-actions">
       <button id="colors-reset" class="tb-btn">Reset</button>
       <button id="colors-save" class="tb-btn save-btn">Save Colors</button>
     </div>
-    <p class="colors-hint small">Use these in the Style panel too: type <code>var(--c-highlight)</code>, <code>var(--c-text)</code>, <code>var(--c-bg)</code>, <code>var(--c-button)</code>.</p>
+    <p class="colors-hint small">Use these in the Style panel too: type <code>var(--c-highlight)</code>, <code>var(--c-text)</code>, <code>var(--c-bg)</code>, <code>var(--btn-fill)</code>.</p>
   </div>
 
   <!-- ─── Toast ─── -->
   <div id="toast" class="toast hidden"></div>
 
   <!-- ─── Editor logic ─── -->
-  <script src="editor.js?v=20261020e"></script>
+  <script src="editor.js?v=20261020f"></script>
 </body>
 </html>
