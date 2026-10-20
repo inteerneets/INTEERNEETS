@@ -27,7 +27,7 @@
     }
     #loading-screen span {
       font-family: 'Playfair Display', serif;
-      color: #c9a96e;
+      color: #e53935;
       font-size: 1.5rem;
       letter-spacing: 0.1em;
     }
@@ -101,16 +101,16 @@
               product: {
                 styles: {
                   product: { '@media (min-width: 601px)': { 'max-width': '100%' } },
-                  title: { 'font-family': '"Playfair Display", serif', 'color': '#ffffff' },
-                  price: { 'font-family': '"Inter", sans-serif', 'color': '#c9a96e' },
+                  title: { 'font-family': '"Playfair Display", serif', 'color': (settings.site_colors && settings.site_colors.text) || '#ffffff' },
+                  price: { 'font-family': '"Inter", sans-serif', 'color': (settings.site_colors && settings.site_colors.highlight) || '#e53935' },
                   button: {
-                    'background-color': '#c9a96e',
-                    'color': '#0a0a0a',
+                    'background-color': (settings.site_colors && settings.site_colors.button) || '#e53935',
+                    'color': (settings.site_colors && settings.site_colors.button_text) || '#ffffff',
                     'font-family': '"Inter", sans-serif',
                     'font-weight': '600',
                     'letter-spacing': '0.1em',
-                    ':hover': { 'background-color': '#b8944f' },
-                    ':focus': { 'background-color': '#b8944f' }
+                    ':hover': { 'background-color': '#b71c1c' },
+                    ':focus': { 'background-color': '#b71c1c' }
                   }
                 }
               }
@@ -123,10 +123,15 @@
 
     function applySettings(s) {
       s = s || {};
-      if (s.site_bg_color) {
-        document.documentElement.style.background = s.site_bg_color;
-        document.body.style.background = s.site_bg_color;
-        document.getElementById('loading-screen').style.background = s.site_bg_color;
+      var c = s.site_colors || (s.site_bg_color ? { bg: s.site_bg_color } : null);
+      if (c) {
+        var map = { bg: '--c-bg', text: '--c-text', highlight: '--c-highlight', button: '--c-button', button_text: '--c-button-text' };
+        Object.keys(map).forEach(function(k) { if (c[k]) document.documentElement.style.setProperty(map[k], c[k]); });
+        if (c.bg) {
+          document.documentElement.style.background = c.bg;
+          document.body.style.background = c.bg;
+          document.getElementById('loading-screen').style.background = c.bg;
+        }
       }
       if (s.site_bg_shading) {
         var o = document.createElement('div');
@@ -157,9 +162,9 @@
       .catch(function() {
         document.getElementById('page-content').innerHTML =
           '<section style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0a0a0a;color:#fff;font-family:\'Playfair Display\',serif;text-align:center;padding:2rem;">' +
-            '<h1 style="font-size:3rem;color:#c9a96e;margin-bottom:1rem;">Shop</h1>' +
+            '<h1 style="font-size:3rem;color:#e53935;margin-bottom:1rem;">Shop</h1>' +
             '<p style="color:#888;font-family:\'Inter\',sans-serif;margin-bottom:2rem;">Coming soon</p>' +
-            '<a href="mailto:inteerneets@gmail.com" style="color:#c9a96e;font-family:\'Inter\',sans-serif;text-decoration:none;border:1px solid #c9a96e;padding:0.75rem 2rem;letter-spacing:0.15em;font-size:0.85rem;">EMAIL US</a>' +
+            '<a href="mailto:inteerneets@gmail.com" style="color:#e53935;font-family:\'Inter\',sans-serif;text-decoration:none;border:1px solid #e53935;padding:0.75rem 2rem;letter-spacing:0.15em;font-size:0.85rem;">EMAIL US</a>' +
           '</section>';
         hideLoader();
       });

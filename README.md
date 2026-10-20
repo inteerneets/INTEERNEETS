@@ -27,6 +27,7 @@ Studio website: a "Coming Soon" home page, a Shopify-powered shop, and a built-i
 | Layering | Select an element → **Position & Layers** → set `Z-Index` (higher = on top). Use the **Layers** panel to reorder/select. Example: background `z-index 0`, text `10`, image `20`. |
 | Change font / color / style per element | Select it → **Typography**: font, size, weight, italic, color, align, spacing, decoration, case |
 | Upload images or fonts | **Upload** (top bar): images (png/jpg/webp/svg/gif) and fonts (`.woff .woff2 .ttf .otf`). Uploaded fonts appear in the Font dropdown as `Name (uploaded)`. |
+| Change site-wide colors (bg, text, highlight, button) | **Colors** (top bar): pick swatches or a quick scheme, then **Save Colors**. Elements created by the editor use these colors, so changing one updates everything. In the Style panel you can also type `var(--c-highlight)`, `var(--c-text)`, `var(--c-bg)`, `var(--c-button)`. |
 | Background color / image | **Background** section of any element (e.g. the full-page section) |
 | Save | **Save** or `Ctrl+S` |
 | Undo / Redo / Reset | Top bar buttons |

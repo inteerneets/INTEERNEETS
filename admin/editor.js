@@ -14,40 +14,40 @@ const GOOGLE_FONTS_URL =
 // ═══════════════════════════════════════════════════════════════
 
 const DEFAULT_HOME_HTML = `
-<section style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;background:#111;color:#ddd;text-align:center;padding:40px 20px;">
-  <h1 style="font-family:'Playfair Display',serif;font-size:4.5rem;margin:0 0 20px 0;color:#fff;letter-spacing:2px;">Coming Soon</h1>
+<section style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;background:var(--c-bg,#0a0a0a);color:var(--c-text,#ffffff);text-align:center;padding:40px 20px;">
+  <h1 style="font-family:'Playfair Display',serif;font-size:4.5rem;margin:0 0 20px 0;color:var(--c-text,#ffffff);letter-spacing:2px;">Coming Soon</h1>
   <p style="font-family:'Inter',sans-serif;font-size:1.1rem;max-width:500px;line-height:1.7;color:#999;margin:0 0 40px 0;">We are preparing something special. Stay tuned for the launch of INTEERNEETS — where art meets the internet.</p>
-  <a href="mailto:inteerneets@gmail.com" style="display:inline-block;padding:14px 36px;border:2px solid #c9a96e;color:#c9a96e;text-decoration:none;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:600;letter-spacing:3px;text-transform:uppercase;transition:all 0.3s;">EMAIL US</a>
+  <a href="mailto:inteerneets@gmail.com" style="display:inline-block;padding:14px 36px;background:var(--c-button,#e53935);border:2px solid var(--c-button,#e53935);color:var(--c-button-text,#ffffff);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:600;letter-spacing:3px;text-transform:uppercase;transition:all 0.3s;">EMAIL US</a>
 </section>
 `;
 
 const DEFAULT_SHOP_HTML = `
-<section style="padding:80px 20px;background:#111;color:#ddd;text-align:center;">
-  <h1 style="font-family:'Playfair Display',serif;font-size:3rem;margin:0 0 10px 0;color:#fff;">Shop</h1>
+<section style="padding:80px 20px;background:var(--c-bg,#0a0a0a);color:var(--c-text,#ffffff);text-align:center;">
+  <h1 style="font-family:'Playfair Display',serif;font-size:3rem;margin:0 0 10px 0;color:var(--c-text,#ffffff);">Shop</h1>
   <p style="font-family:'Inter',sans-serif;font-size:1rem;color:#999;">Browse our collections below.</p>
 </section>
 
-<section style="padding:60px 20px;background:#0d0d0d;color:#ddd;">
-  <h2 style="font-family:'Playfair Display',serif;font-size:2rem;text-align:center;margin:0 0 40px 0;color:#fff;">Original Works</h2>
+<section style="padding:60px 20px;background:var(--c-bg,#0a0a0a);color:var(--c-text,#ffffff);">
+  <h2 style="font-family:'Playfair Display',serif;font-size:2rem;text-align:center;margin:0 0 40px 0;color:var(--c-text,#ffffff);">Original Works</h2>
   <div data-shopify-section="originals" style="min-height:200px;border:2px dashed #333;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#555;font-family:'Inter',sans-serif;">
     Shopify products will load here
   </div>
 </section>
 
-<section style="padding:60px 20px;background:#111;color:#ddd;">
-  <h2 style="font-family:'Playfair Display',serif;font-size:2rem;text-align:center;margin:0 0 40px 0;color:#fff;">Merchandise</h2>
+<section style="padding:60px 20px;background:var(--c-bg,#0a0a0a);color:var(--c-text,#ffffff);">
+  <h2 style="font-family:'Playfair Display',serif;font-size:2rem;text-align:center;margin:0 0 40px 0;color:var(--c-text,#ffffff);">Merchandise</h2>
   <div data-shopify-section="merch" style="min-height:200px;border:2px dashed #333;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#555;font-family:'Inter',sans-serif;">
     Shopify products will load here
   </div>
 </section>
 
-<section style="padding:60px 20px;background:#0d0d0d;text-align:center;">
-  <a href="mailto:inteerneets@gmail.com" style="display:inline-block;padding:14px 36px;border:2px solid #c9a96e;color:#c9a96e;text-decoration:none;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:600;letter-spacing:3px;text-transform:uppercase;">EMAIL US</a>
+<section style="padding:60px 20px;background:var(--c-bg,#0a0a0a);text-align:center;">
+  <a href="mailto:inteerneets@gmail.com" style="display:inline-block;padding:14px 36px;background:var(--c-button,#e53935);border:2px solid var(--c-button,#e53935);color:var(--c-button-text,#ffffff);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:600;letter-spacing:3px;text-transform:uppercase;">EMAIL US</a>
 </section>
 `;
 
 const DEFAULT_HOME_CSS = `
-  body { margin:0; padding:0; background:#111; }
+  body { margin:0; padding:0; background:var(--c-bg,#0a0a0a); }
   * { box-sizing:border-box; }
 `;
 const DEFAULT_SHOP_CSS = DEFAULT_HOME_CSS;
@@ -413,7 +413,7 @@ bm.add('hero-section', {
   label: 'Hero Section',
   category: 'Studio',
   content: `
-    <section style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;background:#111;color:#fff;text-align:center;padding:60px 20px;">
+    <section style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;background:var(--c-bg,#0a0a0a);color:var(--c-text,#ffffff);text-align:center;padding:60px 20px;">
       <h1 style="font-family:'Playfair Display',serif;font-size:4rem;margin:0 0 20px 0;">Your Headline</h1>
       <p style="font-family:'Inter',sans-serif;font-size:1.1rem;color:#999;max-width:500px;line-height:1.7;">Subtitle text goes here. Tell your story.</p>
     </section>`,
@@ -422,7 +422,7 @@ bm.add('hero-section', {
 bm.add('heading', {
   label: 'Heading',
   category: 'Studio',
-  content: `<h2 style="font-family:'Playfair Display',serif;font-size:2.5rem;color:#fff;text-align:center;margin:20px 0;">Heading</h2>`,
+  content: `<h2 style="font-family:'Playfair Display',serif;font-size:2.5rem;color:var(--c-text,#ffffff);text-align:center;margin:20px 0;">Heading</h2>`,
 });
 
 bm.add('paragraph', {
@@ -434,7 +434,7 @@ bm.add('paragraph', {
 bm.add('email-us-button', {
   label: 'Email Us Button',
   category: 'Studio',
-  content: `<a href="mailto:inteerneets@gmail.com" style="display:inline-block;padding:14px 36px;border:2px solid #c9a96e;color:#c9a96e;text-decoration:none;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:600;letter-spacing:3px;text-transform:uppercase;">EMAIL US</a>`,
+  content: `<a href="mailto:inteerneets@gmail.com" style="display:inline-block;padding:14px 36px;background:var(--c-button,#e53935);border:2px solid var(--c-button,#e53935);color:var(--c-button-text,#ffffff);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:600;letter-spacing:3px;text-transform:uppercase;">EMAIL US</a>`,
 });
 
 bm.add('divider', {
@@ -452,7 +452,7 @@ bm.add('spacer', {
 bm.add('floating-text', {
   label: 'Floating Text',
   category: 'Studio',
-  content: `<div style="position:absolute;top:50px;left:50px;font-family:'Playfair Display',serif;font-size:2rem;color:#fff;cursor:move;z-index:10;">Floating Text</div>`,
+  content: `<div style="position:absolute;top:50px;left:50px;font-family:'Playfair Display',serif;font-size:2rem;color:var(--c-text,#ffffff);cursor:move;z-index:10;">Floating Text</div>`,
 });
 
 bm.add('floating-image', {
@@ -478,7 +478,7 @@ bm.add('card', {
     <div style="background:#1a1a1a;border-radius:8px;overflow:hidden;max-width:340px;margin:20px auto;border:1px solid #333;">
       <img src="https://placehold.co/340x220/222/666?text=Image" alt="Card image" style="width:100%;display:block;" />
       <div style="padding:20px;">
-        <h3 style="font-family:'Playfair Display',serif;font-size:1.3rem;color:#fff;margin:0 0 8px 0;">Card Title</h3>
+        <h3 style="font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--c-text,#ffffff);margin:0 0 8px 0;">Card Title</h3>
         <p style="font-family:'Inter',sans-serif;font-size:0.9rem;color:#999;margin:0;line-height:1.6;">Card description goes here.</p>
       </div>
     </div>`,
@@ -489,9 +489,9 @@ bm.add('social-links', {
   category: 'Studio',
   content: `
     <div style="display:flex;gap:20px;justify-content:center;padding:20px;">
-      <a href="#" style="color:#c9a96e;text-decoration:none;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:500;letter-spacing:1px;text-transform:uppercase;">Instagram</a>
-      <a href="#" style="color:#c9a96e;text-decoration:none;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:500;letter-spacing:1px;text-transform:uppercase;">TikTok</a>
-      <a href="#" style="color:#c9a96e;text-decoration:none;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:500;letter-spacing:1px;text-transform:uppercase;">Twitter</a>
+      <a href="#" style="color:var(--c-highlight,#e53935);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:500;letter-spacing:1px;text-transform:uppercase;">Instagram</a>
+      <a href="#" style="color:var(--c-highlight,#e53935);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:500;letter-spacing:1px;text-transform:uppercase;">TikTok</a>
+      <a href="#" style="color:var(--c-highlight,#e53935);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:500;letter-spacing:1px;text-transform:uppercase;">Twitter</a>
     </div>`,
 });
 
@@ -600,7 +600,8 @@ async function loadSettings() {
     set('set-instagram', s.social_instagram);
     set('set-tiktok', s.social_tiktok);
     set('set-twitter', s.social_twitter);
-    set('set-bg-color', s.site_bg_color);
+    if (s.site_colors) setSiteColors(s.site_colors);
+    else if (s.site_bg_color) setSiteColors({ bg: s.site_bg_color });
     document.getElementById('set-bg-shading').checked = !!s.site_bg_shading;
   } catch (_) {
     // Settings not found — that's fine
@@ -617,8 +618,9 @@ async function saveSettings() {
     social_instagram:         val('set-instagram'),
     social_tiktok:            val('set-tiktok'),
     social_twitter:           val('set-twitter'),
-    // Flat colour exactly as chosen; shading only when explicitly enabled
-    site_bg_color:            val('set-bg-color'),
+    // Global swatches: flat exact colors; shading only when explicitly enabled
+    site_colors:              siteColors,
+    site_bg_color:            siteColors.bg,
     site_bg_shading:          document.getElementById('set-bg-shading').checked,
   };
 
@@ -838,3 +840,89 @@ editor.on('load', () => {
   loadSettings();
   loadAssets();
 });
+
+
+// ═══════════════════════════════════════════════════════════════
+// GLOBAL COLOR SWATCHES (theme variables)
+// Elements use var(--c-bg), var(--c-text), var(--c-highlight),
+// var(--c-button), var(--c-button-text). Change once, updates everywhere.
+// ═══════════════════════════════════════════════════════════════
+
+const DEFAULT_COLORS = { bg: '#0a0a0a', text: '#ffffff', highlight: '#e53935', button: '#e53935', button_text: '#ffffff' };
+const COLOR_PRESETS = [
+  { name: 'Dark + Red',    c: { bg: '#0a0a0a', text: '#ffffff', highlight: '#e53935', button: '#e53935', button_text: '#ffffff' } },
+  { name: 'Pure White',    c: { bg: '#ffffff', text: '#111111', highlight: '#e53935', button: '#111111', button_text: '#ffffff' } },
+  { name: 'Cream',         c: { bg: '#f5f0e8', text: '#2a2a2a', highlight: '#b3261e', button: '#2a2a2a', button_text: '#f5f0e8' } },
+  { name: 'Midnight Blue', c: { bg: '#0b1426', text: '#e8eefc', highlight: '#4d8dff', button: '#4d8dff', button_text: '#ffffff' } },
+  { name: 'Forest',        c: { bg: '#0f1d16', text: '#e6f2ea', highlight: '#3ddc84', button: '#3ddc84', button_text: '#0f1d16' } },
+  { name: 'Mono',          c: { bg: '#000000', text: '#ffffff', highlight: '#ffffff', button: '#ffffff', button_text: '#000000' } },
+];
+let siteColors = Object.assign({}, DEFAULT_COLORS);
+
+function colorVarsCss(c) {
+  return `:root{--c-bg:${c.bg};--c-text:${c.text};--c-highlight:${c.highlight};--c-button:${c.button};--c-button-text:${c.button_text};}`;
+}
+function applyColorsToCanvas() {
+  const doc = editor.Canvas.getDocument();
+  if (!doc) return;
+  let tag = doc.getElementById('theme-vars');
+  if (!tag) { tag = doc.createElement('style'); tag.id = 'theme-vars'; doc.head.appendChild(tag); }
+  tag.textContent = colorVarsCss(siteColors);
+}
+function syncColorInputs() {
+  document.querySelectorAll('#colors-panel input[type=color]').forEach((inp) => {
+    inp.value = siteColors[inp.dataset.key];
+    const hex = document.querySelector(`.hex[data-for="${inp.id}"]`);
+    if (hex) hex.value = siteColors[inp.dataset.key];
+  });
+}
+function setSiteColors(c) {
+  siteColors = Object.assign({}, DEFAULT_COLORS, c || {});
+  syncColorInputs();
+  applyColorsToCanvas();
+}
+editor.on('canvas:frame:load', applyColorsToCanvas);
+editor.on('load', applyColorsToCanvas);
+
+document.querySelectorAll('#colors-panel input[type=color]').forEach((inp) => {
+  inp.addEventListener('input', () => {
+    siteColors[inp.dataset.key] = inp.value;
+    const hex = document.querySelector(`.hex[data-for="${inp.id}"]`);
+    if (hex) hex.value = inp.value;
+    applyColorsToCanvas();
+  });
+});
+document.querySelectorAll('#colors-panel .hex').forEach((hex) => {
+  hex.addEventListener('input', () => {
+    let v = hex.value.trim();
+    if (!v.startsWith('#')) v = '#' + v;
+    if (/^#[0-9a-fA-F]{6}$/.test(v)) {
+      const inp = document.getElementById(hex.dataset.for);
+      inp.value = v;
+      siteColors[inp.dataset.key] = v;
+      applyColorsToCanvas();
+    }
+  });
+});
+const presetBox = document.getElementById('color-presets');
+COLOR_PRESETS.forEach((p) => {
+  const b = document.createElement('button');
+  b.className = 'preset';
+  b.title = p.name;
+  b.style.background = p.c.bg;
+  b.innerHTML = `<span style="background:${p.c.highlight}"></span>`;
+  b.addEventListener('click', () => setSiteColors(p.c));
+  presetBox.appendChild(b);
+});
+document.getElementById('btn-colors').addEventListener('click', () => {
+  document.getElementById('colors-panel').classList.toggle('hidden');
+});
+document.getElementById('colors-close').addEventListener('click', () => {
+  document.getElementById('colors-panel').classList.add('hidden');
+});
+document.getElementById('colors-reset').addEventListener('click', () => setSiteColors(DEFAULT_COLORS));
+document.getElementById('colors-save').addEventListener('click', async () => {
+  await saveSettings();
+  document.getElementById('colors-panel').classList.add('hidden');
+});
+syncColorInputs();

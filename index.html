@@ -27,7 +27,7 @@
     }
     #loading-screen span {
       font-family: 'Playfair Display', serif;
-      color: #c9a96e;
+      color: #e53935;
       font-size: 1.5rem;
       letter-spacing: 0.1em;
     }
@@ -50,10 +50,15 @@
     function applySettings(s) {
       s = s || {};
       // Flat color exactly as chosen. Shading overlay only if explicitly enabled.
-      if (s.site_bg_color) {
-        document.documentElement.style.background = s.site_bg_color;
-        document.body.style.background = s.site_bg_color;
-        document.getElementById('loading-screen').style.background = s.site_bg_color;
+      var c = s.site_colors || (s.site_bg_color ? { bg: s.site_bg_color } : null);
+      if (c) {
+        var map = { bg: '--c-bg', text: '--c-text', highlight: '--c-highlight', button: '--c-button', button_text: '--c-button-text' };
+        Object.keys(map).forEach(function(k) { if (c[k]) document.documentElement.style.setProperty(map[k], c[k]); });
+        if (c.bg) {
+          document.documentElement.style.background = c.bg;
+          document.body.style.background = c.bg;
+          document.getElementById('loading-screen').style.background = c.bg;
+        }
       }
       if (s.site_bg_shading) {
         var o = document.createElement('div');
@@ -83,8 +88,8 @@
       .catch(function() {
         document.getElementById('page-content').innerHTML =
           '<section style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0a0a0a;color:#fff;font-family:\'Playfair Display\',serif;text-align:center;padding:2rem;">' +
-            '<h1 style="font-size:3rem;color:#c9a96e;margin-bottom:1rem;">Coming Soon</h1>' +
-            '<a href="mailto:inteerneets@gmail.com" style="color:#c9a96e;font-family:\'Inter\',sans-serif;text-decoration:none;border:1px solid #c9a96e;padding:0.75rem 2rem;letter-spacing:0.15em;font-size:0.85rem;transition:all 0.3s;">EMAIL US</a>' +
+            '<h1 style="font-size:3rem;color:#e53935;margin-bottom:1rem;">Coming Soon</h1>' +
+            '<a href="mailto:inteerneets@gmail.com" style="color:#e53935;font-family:\'Inter\',sans-serif;text-decoration:none;border:1px solid #e53935;padding:0.75rem 2rem;letter-spacing:0.15em;font-size:0.85rem;transition:all 0.3s;">EMAIL US</a>' +
           '</section>';
         hideLoader();
       });

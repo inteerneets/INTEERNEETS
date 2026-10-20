@@ -34,6 +34,7 @@
     </div>
 
     <div class="top-bar-right">
+      <button id="btn-colors" class="tb-btn" title="Global site colors">&#127912; Colors</button>
       <button id="btn-add-text" class="tb-btn" title="Add a new draggable text box">+ Text</button>
       <button id="btn-add-image" class="tb-btn" title="Add a new draggable image">+ Image</button>
       <button id="btn-freedrag" class="tb-btn" title="Drag elements anywhere on the page">&#10021; Free Drag</button>
@@ -81,9 +82,6 @@
         <label>Twitter URL</label>
         <input type="url" id="set-twitter" placeholder="https://twitter.com/..." />
 
-        <label>Site Background Color <small>(exact color, no tint)</small></label>
-        <input type="color" id="set-bg-color" value="#0a0a0a" />
-
         <label class="check-row"><input type="checkbox" id="set-bg-shading" /> Add dark shading overlay (off = pure flat color)</label>
       </div>
 
@@ -91,6 +89,27 @@
         <button id="settings-save" class="settings-save-btn">Save Settings</button>
       </div>
     </div>
+  </div>
+
+  <!-- ─── Global Colors Panel ─── -->
+  <div id="colors-panel" class="colors-panel hidden">
+    <div class="colors-head">
+      <strong>Site Colors</strong>
+      <button id="colors-close" class="settings-close-btn">&times;</button>
+    </div>
+    <p class="colors-hint">Change a color here and it updates everywhere it is used. Exact color, no tint.</p>
+    <div class="swatch-row"><label for="sw-bg">Background</label><input type="color" id="sw-bg" data-key="bg" /><input type="text" class="hex" data-for="sw-bg" maxlength="7" /></div>
+    <div class="swatch-row"><label for="sw-text">Text</label><input type="color" id="sw-text" data-key="text" /><input type="text" class="hex" data-for="sw-text" maxlength="7" /></div>
+    <div class="swatch-row"><label for="sw-highlight">Highlight</label><input type="color" id="sw-highlight" data-key="highlight" /><input type="text" class="hex" data-for="sw-highlight" maxlength="7" /></div>
+    <div class="swatch-row"><label for="sw-button">Button</label><input type="color" id="sw-button" data-key="button" /><input type="text" class="hex" data-for="sw-button" maxlength="7" /></div>
+    <div class="swatch-row"><label for="sw-button-text">Button text</label><input type="color" id="sw-button-text" data-key="button_text" /><input type="text" class="hex" data-for="sw-button-text" maxlength="7" /></div>
+    <div class="colors-presets-title">Quick schemes</div>
+    <div id="color-presets" class="color-presets"></div>
+    <div class="colors-actions">
+      <button id="colors-reset" class="tb-btn">Reset</button>
+      <button id="colors-save" class="tb-btn save-btn">Save Colors</button>
+    </div>
+    <p class="colors-hint small">Use these in the Style panel too: type <code>var(--c-highlight)</code>, <code>var(--c-text)</code>, <code>var(--c-bg)</code>, <code>var(--c-button)</code>.</p>
   </div>
 
   <!-- ─── Toast ─── -->

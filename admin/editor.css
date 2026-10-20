@@ -19,7 +19,7 @@ body {
 .gjs-two-color { color: #ddd !important; }
 .gjs-three-bg  { background-color: #222 !important; }
 .gjs-four-color,
-.gjs-four-color-h:hover { color: #c9a96e !important; }
+.gjs-four-color-h:hover { color: #e53935 !important; }
 
 .gjs-one-color   { color: #ddd !important; }
 .gjs-two-bg      { background-color: #1e1e1e !important; }
@@ -39,10 +39,10 @@ body {
   border-radius: 4px;
 }
 .gjs-pn-btn:hover {
-  color: #c9a96e !important;
+  color: #e53935 !important;
 }
 .gjs-pn-btn.gjs-pn-active {
-  color: #c9a96e !important;
+  color: #e53935 !important;
   box-shadow: none !important;
 }
 
@@ -59,14 +59,14 @@ body {
   transition: border-color 0.2s;
 }
 .gjs-block:hover {
-  border-color: #c9a96e !important;
+  border-color: #e53935 !important;
   color: #fff !important;
 }
 .gjs-block svg {
   fill: #aaa !important;
 }
 .gjs-block:hover svg {
-  fill: #c9a96e !important;
+  fill: #e53935 !important;
 }
 .gjs-block-label {
   color: #bbb !important;
@@ -105,7 +105,7 @@ body {
   border-radius: 4px !important;
 }
 .gjs-field:focus-within {
-  border-color: #c9a96e !important;
+  border-color: #e53935 !important;
 }
 .gjs-field input,
 .gjs-field select,
@@ -123,7 +123,7 @@ body {
   border-color: #333 !important;
 }
 .gjs-sm-stack #gjs-sm-add {
-  color: #c9a96e !important;
+  color: #e53935 !important;
 }
 .gjs-sm-layer {
   background: #252525 !important;
@@ -181,21 +181,21 @@ body {
   color: #ddd !important;
 }
 .gjs-toolbar-item:hover {
-  color: #c9a96e !important;
+  color: #e53935 !important;
 }
 
 /* ─── Resizer ─── */
 .gjs-resizer-h {
-  border-color: #c9a96e !important;
+  border-color: #e53935 !important;
 }
 .gjs-highlighter {
-  outline-color: #c9a96e !important;
+  outline-color: #e53935 !important;
 }
 
 /* ─── Badge ─── */
 .gjs-badge {
-  background: #c9a96e !important;
-  color: #111 !important;
+  background: #e53935 !important;
+  color: #fff !important;
   font-weight: 600;
 }
 
@@ -210,7 +210,7 @@ body {
   border-color: #444 !important;
 }
 .gjs-rte-actionbar .gjs-rte-action:hover {
-  color: #c9a96e !important;
+  color: #e53935 !important;
 }
 
 /* ─── Modals (GrapesJS built-in) ─── */
@@ -253,10 +253,10 @@ body {
 
 /* ─── Selection / Placeholder ─── */
 .gjs-selected {
-  outline: 2px solid #c9a96e !important;
+  outline: 2px solid #e53935 !important;
 }
 .gjs-placeholder {
-  border-color: #c9a96e !important;
+  border-color: #e53935 !important;
 }
 
 /* ═══════════════════════════════════
@@ -283,7 +283,7 @@ body {
   font-weight: 700;
   font-size: 14px;
   letter-spacing: 2px;
-  color: #c9a96e;
+  color: #e53935;
   margin-right: 16px;
   user-select: none;
 }
@@ -310,9 +310,9 @@ body {
   border-color: #555;
 }
 .page-btn.active {
-  background: #c9a96e;
-  color: #111;
-  border-color: #c9a96e;
+  background: #e53935;
+  color: #fff;
+  border-color: #e53935;
   font-weight: 600;
 }
 
@@ -333,9 +333,9 @@ body {
   border-color: #555;
 }
 .save-btn {
-  background: #c9a96e !important;
-  color: #111 !important;
-  border-color: #c9a96e !important;
+  background: #e53935 !important;
+  color: #fff !important;
+  border-color: #e53935 !important;
   font-weight: 600;
 }
 .save-btn:hover {
@@ -426,7 +426,7 @@ body {
 }
 .settings-body input:focus,
 .settings-body textarea:focus {
-  border-color: #c9a96e;
+  border-color: #e53935;
 }
 .settings-body textarea {
   resize: vertical;
@@ -438,8 +438,8 @@ body {
   justify-content: flex-end;
 }
 .settings-save-btn {
-  background: #c9a96e;
-  color: #111;
+  background: #e53935;
+  color: #fff;
   border: none;
   padding: 8px 24px;
   border-radius: 4px;
@@ -460,8 +460,8 @@ body {
   position: fixed;
   bottom: 24px;
   right: 24px;
-  background: #c9a96e;
-  color: #111;
+  background: #e53935;
+  color: #fff;
   padding: 12px 24px;
   border-radius: 6px;
   font-family: 'Inter', sans-serif;
@@ -505,8 +505,26 @@ body {
 }
 
 /* Active toolbar toggle (Free Drag) */
-.tb-btn.active { background:#c9a96e; color:#111; border-color:#c9a96e; }
+.tb-btn.active { background:#e53935; color:#fff; border-color:#e53935; }
 .settings-body .check-row { display:flex; align-items:center; gap:8px; margin-top:14px; }
 .settings-body .check-row input { width:auto; }
 .settings-body input[type=color] { height:40px; padding:2px; cursor:pointer; }
 .tb-btn[hidden], input[hidden] { display:none; }
+
+/* --- Global Colors panel --- */
+.colors-panel { position:fixed; top:56px; right:12px; width:300px; background:#1a1a1a; border:1px solid #333; border-radius:10px; padding:16px; z-index:10000; box-shadow:0 12px 40px rgba(0,0,0,.6); color:#ddd; }
+.colors-panel.hidden { display:none; }
+.colors-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-size:15px; }
+.colors-hint { font-size:12px; color:#888; margin:0 0 12px; line-height:1.5; }
+.colors-hint.small { margin:12px 0 0; }
+.colors-hint code { background:#252525; padding:1px 4px; border-radius:3px; color:#e53935; }
+.swatch-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.swatch-row label { flex:1; font-size:13px; }
+.swatch-row input[type=color] { width:44px; height:32px; padding:0; border:1px solid #444; border-radius:6px; background:#111; cursor:pointer; }
+.swatch-row .hex { width:84px; background:#111; border:1px solid #333; border-radius:6px; color:#ddd; padding:6px 8px; font-family:monospace; font-size:12px; }
+.colors-presets-title { font-size:12px; color:#888; margin:14px 0 8px; text-transform:uppercase; letter-spacing:1px; }
+.color-presets { display:flex; flex-wrap:wrap; gap:8px; }
+.preset { width:44px; height:44px; border-radius:8px; border:2px solid #333; cursor:pointer; padding:0; position:relative; overflow:hidden; }
+.preset:hover { border-color:#e53935; }
+.preset span { position:absolute; left:0; right:0; bottom:0; height:35%; }
+.colors-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:14px; }
