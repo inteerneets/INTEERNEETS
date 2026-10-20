@@ -1,0 +1,144 @@
+{
+  "projectData": {
+    "assets": [
+      {
+        "type": "image",
+        "src": "/images/uploads/1444658-hi-res-wallpaper-2560-x-1440-2560x1440-720p.jpg",
+        "unitDim": "px",
+        "height": 0,
+        "width": 0
+      }
+    ],
+    "styles": [
+      {
+        "selectors": [],
+        "selectorsAdd": "body",
+        "style": {
+          "margin-top": "0px",
+          "margin-right": "0px",
+          "margin-bottom": "0px",
+          "margin-left": "0px",
+          "padding-top": "0px",
+          "padding-right": "0px",
+          "padding-bottom": "0px",
+          "padding-left": "0px",
+          "color": "var(--c-text,#ffffff)"
+        }
+      },
+      {
+        "selectors": [],
+        "selectorsAdd": "*",
+        "style": {
+          "box-sizing": "border-box"
+        }
+      },
+      {
+        "selectors": [
+          "#iyq8q"
+        ],
+        "style": {
+          "display": "flex",
+          "flex-direction": "column",
+          "align-items": "center",
+          "justify-content": "center",
+          "min-height": "100vh",
+          "color": "var(--c-text,#ffffff)",
+          "text-align": "center",
+          "padding": "80px 20px 40px"
+        }
+      },
+      {
+        "selectors": [
+          "#i0jm5"
+        ],
+        "style": {
+          "font-family": "'Playfair Display',serif",
+          "font-size": "3.5rem",
+          "margin": "0 0 16px 0",
+          "color": "var(--c-text,#ffffff)"
+        }
+      },
+      {
+        "selectors": [
+          "#ieljz"
+        ],
+        "style": {
+          "font-family": "'Inter',sans-serif",
+          "font-size": "1.1rem",
+          "max-width": "520px",
+          "line-height": "1.7",
+          "color": "#999",
+          "margin": "0"
+        }
+      }
+    ],
+    "pages": [
+      {
+        "frames": [
+          {
+            "component": {
+              "type": "wrapper",
+              "stylable": true,
+              "components": [
+                {
+                  "tagName": "section",
+                  "attributes": {
+                    "id": "iyq8q"
+                  },
+                  "components": [
+                    {
+                      "tagName": "h1",
+                      "type": "text",
+                      "attributes": {
+                        "id": "i0jm5"
+                      },
+                      "components": [
+                        {
+                          "type": "textnode",
+                          "content": "marta lol"
+                        }
+                      ]
+                    },
+                    {
+                      "tagName": "p",
+                      "type": "text",
+                      "attributes": {
+                        "id": "ieljz"
+                      },
+                      "components": [
+                        {
+                          "type": "textnode",
+                          "content": "Add text, images and videos to this page."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "head": {
+                "type": "head"
+              },
+              "docEl": {
+                "tagName": "html"
+              }
+            },
+            "id": "RaP4JNlkdSHZGOr6"
+          }
+        ],
+        "type": "main",
+        "id": "4iDdu4rXqOb4iTco"
+      }
+    ],
+    "symbols": []
+  },
+  "html": "<body><section id=\"iyq8q\"><h1 id=\"i0jm5\">marta lol</h1><p id=\"ieljz\">Add text, images and videos to this page.</p></section></body>",
+  "css": "* { box-sizing: border-box; } body {margin: 0;}body{margin-top:0px;margin-right:0px;margin-bottom:0px;margin-left:0px;padding-top:0px;padding-right:0px;padding-bottom:0px;padding-left:0px;color:var(--c-text,#ffffff);}*{box-sizing:border-box;}#iyq8q{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;color:var(--c-text,#ffffff);text-align:center;padding:80px 20px 40px;}#i0jm5{font-family:'Playfair Display',serif;font-size:3.5rem;margin:0 0 16px 0;color:var(--c-text,#ffffff);}#ieljz{font-family:'Inter',sans-serif;font-size:1.1rem;max-width:520px;line-height:1.7;color:#999;margin:0;}",
+  "bg": {
+    "color": "",
+    "image": "/images/uploads/1444658-hi-res-wallpaper-2560-x-1440-2560x1440-720p.jpg",
+    "mode": "cover",
+    "tile_size": 256,
+    "position": "center center",
+    "overlay": 0
+  }
+}
