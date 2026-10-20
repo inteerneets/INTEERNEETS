@@ -1,6 +1,14 @@
 {
   "projectData": {
-    "assets": [],
+    "assets": [
+      {
+        "type": "image",
+        "src": "/images/uploads/1444658-hi-res-wallpaper-2560-x-1440-2560x1440-720p.jpg",
+        "unitDim": "px",
+        "height": 0,
+        "width": 0
+      }
+    ],
     "styles": [
       {
         "selectors": [],
@@ -13,16 +21,7 @@
           "padding-top": "0px",
           "padding-right": "0px",
           "padding-bottom": "0px",
-          "padding-left": "0px",
-          "background-image": "",
-          "background-position-x": "",
-          "background-position-y": "",
-          "background-size": "",
-          "background-repeat": "",
-          "background-attachment": "",
-          "background-origin": "",
-          "background-clip": "",
-          "background-color": ""
+          "padding-left": "0px"
         }
       },
       {
@@ -34,80 +33,10 @@
       },
       {
         "selectors": [
-          "#i0tx"
-        ],
-        "style": {
-          "padding": "80px 20px",
-          "background": "var(--c-bg,#0a0a0a)",
-          "color": "var(--c-text,#ffffff)",
-          "text-align": "center"
-        }
-      },
-      {
-        "selectors": [
-          "#iwyt"
-        ],
-        "style": {
-          "font-family": "'Playfair Display',serif",
-          "font-size": "3rem",
-          "margin": "0 0 10px 0",
-          "color": "var(--c-text,#ffffff)"
-        }
-      },
-      {
-        "selectors": [
-          "#i368k"
-        ],
-        "style": {
-          "font-family": "'Inter',sans-serif",
-          "font-size": "1rem",
-          "color": "#999"
-        }
-      },
-      {
-        "selectors": [
-          "#ij7hc"
-        ],
-        "style": {
-          "padding": "60px 20px",
-          "background": "var(--c-bg,#0a0a0a)",
-          "color": "var(--c-text,#ffffff)"
-        }
-      },
-      {
-        "selectors": [
-          "#id3dj"
-        ],
-        "style": {
-          "font-family": "'Playfair Display',serif",
-          "font-size": "2rem",
-          "text-align": "center",
-          "margin": "0 0 40px 0",
-          "color": "var(--c-text,#ffffff)"
-        }
-      },
-      {
-        "selectors": [
-          "#iwezf"
-        ],
-        "style": {
-          "min-height": "200px",
-          "border": "2px dashed #333",
-          "border-radius": "8px",
-          "display": "flex",
-          "align-items": "center",
-          "justify-content": "center",
-          "color": "#555",
-          "font-family": "'Inter',sans-serif"
-        }
-      },
-      {
-        "selectors": [
           "#i236j"
         ],
         "style": {
           "padding": "60px 20px",
-          "background": "var(--c-bg,#0a0a0a)",
           "color": "var(--c-text,#ffffff)"
         }
       },
@@ -144,7 +73,6 @@
         ],
         "style": {
           "padding": "60px 20px",
-          "background": "var(--c-bg,#0a0a0a)",
           "text-align": "center"
         }
       },
@@ -178,74 +106,6 @@
                 {
                   "tagName": "section",
                   "attributes": {
-                    "id": "i0tx"
-                  },
-                  "components": [
-                    {
-                      "tagName": "h1",
-                      "type": "text",
-                      "attributes": {
-                        "id": "iwyt"
-                      },
-                      "components": [
-                        {
-                          "type": "textnode",
-                          "content": "Shop"
-                        }
-                      ]
-                    },
-                    {
-                      "tagName": "p",
-                      "type": "text",
-                      "attributes": {
-                        "id": "i368k"
-                      },
-                      "components": [
-                        {
-                          "type": "textnode",
-                          "content": "Browse our collections below."
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "tagName": "section",
-                  "attributes": {
-                    "id": "ij7hc"
-                  },
-                  "components": [
-                    {
-                      "tagName": "h2",
-                      "type": "text",
-                      "attributes": {
-                        "id": "id3dj"
-                      },
-                      "components": [
-                        {
-                          "type": "textnode",
-                          "content": "Original Works"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "text",
-                      "attributes": {
-                        "data-shopify-section": "originals",
-                        "id": "iwezf"
-                      },
-                      "components": [
-                        {
-                          "type": "textnode",
-                          "content": "\n    Shopify products will load here\n  "
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "tagName": "section",
-                  "attributes": {
                     "id": "i236j"
                   },
                   "components": [
@@ -258,7 +118,11 @@
                       "components": [
                         {
                           "type": "textnode",
-                          "content": "Merchandise"
+                          "content": "Shop"
+                        },
+                        {
+                          "tagName": "br",
+                          "void": true
                         }
                       ]
                     },
@@ -315,6 +179,14 @@
     ],
     "symbols": []
   },
-  "html": "<body><section id=\"i0tx\"><h1 id=\"iwyt\">Shop</h1><p id=\"i368k\">Browse our collections below.</p></section><section id=\"ij7hc\"><h2 id=\"id3dj\">Original Works</h2><div data-shopify-section=\"originals\" id=\"iwezf\">\n    Shopify products will load here\n  </div></section><section id=\"i236j\"><h2 id=\"i2np8\">Merchandise</h2><div data-shopify-section=\"merch\" id=\"ikfav\">\n    Shopify products will load here\n  </div></section><section id=\"issvf\"><a href=\"mailto:inteerneets@gmail.com\" id=\"iib02\">EMAIL US</a></section></body>",
-  "css": "* { box-sizing: border-box; } body {margin: 0;}body{margin-top:0px;margin-right:0px;margin-bottom:0px;margin-left:0px;padding-top:0px;padding-right:0px;padding-bottom:0px;padding-left:0px;}*{box-sizing:border-box;}#i0tx{padding:80px 20px;background:var(--c-bg,#0a0a0a);color:var(--c-text,#ffffff);text-align:center;}#iwyt{font-family:'Playfair Display',serif;font-size:3rem;margin:0 0 10px 0;color:var(--c-text,#ffffff);}#i368k{font-family:'Inter',sans-serif;font-size:1rem;color:#999;}#ij7hc{padding:60px 20px;background:var(--c-bg,#0a0a0a);color:var(--c-text,#ffffff);}#id3dj{font-family:'Playfair Display',serif;font-size:2rem;text-align:center;margin:0 0 40px 0;color:var(--c-text,#ffffff);}#iwezf{min-height:200px;border:2px dashed #333;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#555;font-family:'Inter',sans-serif;}#i236j{padding:60px 20px;background:var(--c-bg,#0a0a0a);color:var(--c-text,#ffffff);}#i2np8{font-family:'Playfair Display',serif;font-size:2rem;text-align:center;margin:0 0 40px 0;color:var(--c-text,#ffffff);}#ikfav{min-height:200px;border:2px dashed #333;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#555;font-family:'Inter',sans-serif;}#issvf{padding:60px 20px;background:var(--c-bg,#0a0a0a);text-align:center;}#iib02{display:inline-block;padding:14px 36px;background:var(--c-button,#e53935);border:2px solid var(--c-button,#e53935);color:var(--c-button-text,#ffffff);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:600;letter-spacing:3px;text-transform:uppercase;}"
+  "html": "<body><section id=\"i236j\"><h2 id=\"i2np8\">Shop<br/></h2><div data-shopify-section=\"merch\" id=\"ikfav\">\n    Shopify products will load here\n  </div></section><section id=\"issvf\"><a href=\"mailto:inteerneets@gmail.com\" id=\"iib02\">EMAIL US</a></section></body>",
+  "css": "* { box-sizing: border-box; } body {margin: 0;}body{margin-top:0px;margin-right:0px;margin-bottom:0px;margin-left:0px;padding-top:0px;padding-right:0px;padding-bottom:0px;padding-left:0px;}*{box-sizing:border-box;}#i236j{padding:60px 20px;color:var(--c-text,#ffffff);}#i2np8{font-family:'Playfair Display',serif;font-size:2rem;text-align:center;margin:0 0 40px 0;color:var(--c-text,#ffffff);}#ikfav{min-height:200px;border:2px dashed #333;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#555;font-family:'Inter',sans-serif;}#issvf{padding:60px 20px;text-align:center;}#iib02{display:inline-block;padding:14px 36px;background:var(--c-button,#e53935);border:2px solid var(--c-button,#e53935);color:var(--c-button-text,#ffffff);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:600;letter-spacing:3px;text-transform:uppercase;}",
+  "bg": {
+    "color": "#000000",
+    "image": "/images/uploads/1444658-hi-res-wallpaper-2560-x-1440-2560x1440-720p.jpg",
+    "mode": "cover",
+    "tile_size": 256,
+    "position": "center center",
+    "overlay": 0
+  }
 }
