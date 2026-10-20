@@ -27,25 +27,25 @@
   <div class="top-bar">
     <div class="top-bar-left">
       <span class="logo">INTEERNEETS</span>
-      <div class="page-tabs">
-        <button class="page-btn active" data-page="home">Home Page</button>
-        <button class="page-btn" data-page="shop">Shop Page</button>
-      </div>
+      <div class="page-tabs" id="page-tabs"></div>
+      <button id="btn-add-page" class="page-btn add-page-btn" title="Add a new page (e.g. Video, About)">+ Page</button>
     </div>
 
     <div class="top-bar-right">
-      <button id="btn-colors" class="tb-btn" title="Global site colors">&#127912; Colors</button>
+      <a id="btn-view" class="tb-btn" href="/" target="_blank" rel="noopener" title="Open the live website in a new tab">&#8599; View Site</a>
+      <button id="btn-colors" class="tb-btn" title="Global site colors (background, text, highlight, buttons)">&#127912; Colors</button>
+      <button id="btn-pagebg" class="tb-btn" title="Background color or picture for the current page">&#9638; Page BG</button>
       <button id="btn-add-text" class="tb-btn" title="Add a new draggable text box">+ Text</button>
       <button id="btn-add-image" class="tb-btn" title="Add a new draggable image">+ Image</button>
-      <button id="btn-freedrag" class="tb-btn" title="Drag elements anywhere on the page">&#10021; Free Drag</button>
+      <button id="btn-freedrag" class="tb-btn" title="Drag elements anywhere. Hold Ctrl while dragging to snap to guides and grid">&#10021; Free Drag</button>
       <button id="btn-upload" class="tb-btn" title="Upload images or fonts (.woff .woff2 .ttf .otf)">&#8682; Upload</button>
       <input type="file" id="upload-input" multiple accept="image/*,.woff,.woff2,.ttf,.otf" hidden />
-      <button id="btn-undo" class="tb-btn" title="Undo">&#8630; Undo</button>
-      <button id="btn-redo" class="tb-btn" title="Redo">&#8631; Redo</button>
-      <button id="btn-preview" class="tb-btn" title="Preview">&#9654; Preview</button>
-      <button id="btn-save" class="tb-btn save-btn" title="Save (Ctrl+S)">&#128190; Save</button>
-      <button id="btn-reset" class="tb-btn" title="Reset page to default">&#8634; Reset</button>
-      <button id="btn-settings" class="tb-btn settings-btn" title="Settings">&#9881;</button>
+      <button id="btn-undo" class="tb-btn" title="Undo (Ctrl+Z)">&#8630; Undo</button>
+      <button id="btn-redo" class="tb-btn" title="Redo (Ctrl+Shift+Z)">&#8631; Redo</button>
+      <button id="btn-preview" class="tb-btn" title="Preview without editing outlines">&#9654; Preview</button>
+      <button id="btn-save" class="tb-btn save-btn" title="Save everything and publish (Ctrl+S)">&#128190; Save</button>
+      <button id="btn-reset" class="tb-btn" title="Reset this page to its default template">&#8634; Reset</button>
+      <button id="btn-settings" class="tb-btn settings-btn" title="Site settings (email, Shopify, social links)">&#9881;</button>
     </div>
   </div>
 
@@ -71,7 +71,7 @@
         <input type="text" id="set-shopify-token" placeholder="storefront access token" />
 
         <label>Product IDs <small>(one per line)</small></label>
-        <textarea id="set-product-ids" rows="4" placeholder="gid://shopify/Product/123456&#10;gid://shopify/Product/789012"></textarea>
+        <textarea id="set-product-ids" class="product-ids" rows="8" spellcheck="false" placeholder="gid://shopify/Product/123456&#10;gid://shopify/Product/789012"></textarea>
 
         <label>Instagram URL</label>
         <input type="url" id="set-instagram" placeholder="https://instagram.com/..." />
@@ -82,12 +82,64 @@
         <label>Twitter URL</label>
         <input type="url" id="set-twitter" placeholder="https://twitter.com/..." />
 
+        <label class="check-row"><input type="checkbox" id="set-show-nav" checked /> Show the page menu bar at the top of the site</label>
         <label class="check-row"><input type="checkbox" id="set-bg-shading" /> Add dark shading overlay (off = pure flat color)</label>
       </div>
 
       <div class="settings-footer">
         <button id="settings-save" class="settings-save-btn">Save Settings</button>
       </div>
+    </div>
+  </div>
+
+  <!-- ─── Page Background Panel ─── -->
+  <div id="pagebg-panel" class="colors-panel pagebg-panel hidden">
+    <div class="colors-head">
+      <strong>Page Background <span id="pagebg-pagename"></span></strong>
+      <button id="pagebg-close" class="settings-close-btn">&times;</button>
+    </div>
+    <p class="colors-hint">Background of this page on the live site. When visitors scroll to the next page, it blends smoothly into that page's background.</p>
+
+    <div class="swatch-row"><label for="pbg-color">Color</label><input type="color" id="pbg-color" /><input type="text" class="hex" id="pbg-color-hex" maxlength="7" /></div>
+
+    <div class="pbg-section-title">Picture</div>
+    <div class="pbg-image-row">
+      <div id="pbg-thumb" class="pbg-thumb" title="Current background picture"></div>
+      <div class="pbg-image-btns">
+        <button id="pbg-choose" class="tb-btn">Choose / Upload picture</button>
+        <button id="pbg-remove" class="tb-btn">Remove picture</button>
+      </div>
+    </div>
+    <div class="pbg-size-note">
+      <strong>Recommended picture size</strong><br>
+      Full-screen photo: <b>1920 &times; 1080 px</b> (use <b>2560 &times; 1440 px</b> for sharp results on large / retina screens).<br>
+      JPG or WebP under ~500&nbsp;KB loads fastest.<br>
+      Pattern / tile: seamless <b>256&ndash;512 px</b> PNG or WebP.
+    </div>
+
+    <div class="swatch-row"><label for="pbg-mode">Fit</label>
+      <select id="pbg-mode" class="pbg-select">
+        <option value="cover">Fill screen (cover)</option>
+        <option value="contain">Fit inside (contain)</option>
+        <option value="stretch">Stretch</option>
+        <option value="tile">Pattern (repeat tiles)</option>
+      </select>
+    </div>
+    <div class="swatch-row" id="pbg-tile-row"><label for="pbg-tile">Tile size (px)</label><input type="number" id="pbg-tile" class="pbg-num" min="16" max="2000" value="256" /></div>
+    <div class="swatch-row"><label for="pbg-position">Position</label>
+      <select id="pbg-position" class="pbg-select">
+        <option value="center center">Center</option>
+        <option value="top center">Top</option>
+        <option value="bottom center">Bottom</option>
+        <option value="left center">Left</option>
+        <option value="right center">Right</option>
+      </select>
+    </div>
+    <div class="swatch-row"><label for="pbg-overlay">Darken picture</label><input type="range" id="pbg-overlay" min="0" max="80" value="0" /><span id="pbg-overlay-val" class="pbg-val">0%</span></div>
+
+    <div class="colors-actions">
+      <button id="pbg-reset" class="tb-btn">Reset</button>
+      <button id="pbg-save" class="tb-btn save-btn">Save Page BG</button>
     </div>
   </div>
 

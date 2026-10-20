@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Page not found – INTEERNEETS</title>
+  <!-- Error page. Netlify serves this file automatically for any unknown address.
+       Its design is edited in /admin/ via the "Error Page" tab (saved as content/page-404.json). -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Inter:wght@100..900&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Oswald:wght@200..700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Raleway:ital,wght@0,100..900;1,100..900&family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+  <style>
+    :root { --c-bg: #0a0a0a; --c-text: #ffffff; --c-highlight: #e53935; --c-button: #e53935; --c-button-text: #ffffff; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { background: var(--c-bg); color: var(--c-text); min-height: 100vh; font-family: 'Inter', sans-serif; }
+    #bg { position: fixed; inset: 0; z-index: 0; background-color: var(--c-bg); background-repeat: no-repeat; background-position: center; background-size: cover; }
+    #bg .ov { position: absolute; inset: 0; background: #000; opacity: 0; }
+    #err { position: relative; z-index: 1; min-height: 100vh; }
+  </style>
+  <style id="page-fonts"></style>
+</head>
+<body>
+  <div id="bg"></div>
+  <main id="err"></main>
+  <script>
+    var LOCAL = ['localhost', '127.0.0.1'].indexOf(location.hostname) !== -1;
+
+    function getContent(name) {
+      function stat() {
+        return fetch('/content/' + name, { cache: 'no-store' }).then(function (r) { if (!r.ok) throw 0; return r.json(); });
+      }
+      if (LOCAL) return stat();
+      return fetch('/api/content?name=' + encodeURIComponent(name), { cache: 'no-store' })
+        .then(function (r) { if (!r.ok) throw 0; return r.json(); }).catch(stat);
+    }
+
+    // Scope the saved CSS to #err so it cannot leak (same approach as index.html)
+    function scopeRules(rules, scope, fonts) {
+      var out = '';
+      for (var i = 0; i < rules.length; i++) {
+        var r = rules[i];
+        if (r.type === 1) {
+          var sels = r.selectorText.split(',').map(function (s) {
+            s = s.trim();
+            if (s === '*') return scope + ', ' + scope + ' *';
+            if (/^(html|body)(?![\w-])/.test(s)) return s.replace(/^(html|body)/, scope);
+            return scope + ' ' + s;
+          });
+          out += sels.join(',') + '{' + r.style.cssText + '}';
+        } else if (r.type === 5) { fonts.push(r.cssText); }
+        else if (r.type === 4) { out += '@media ' + r.conditionText + '{' + scopeRules(r.cssRules, scope, fonts) + '}'; }
+        else { out += r.cssText; }
+      }
+      return out;
+    }
+    function scopeCss(css, scope, fonts) {
+      var st = document.createElement('style');
+      st.textContent = css;
+      document.head.appendChild(st);
+      var res = scopeRules(st.sheet.cssRules, scope, fonts);
+      document.head.removeChild(st);
+      return res;
+    }
+
+    function fallback() {
+      return '<section style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2rem;">' +
+        '<h1 style="font-family:\'Playfair Display\',serif;font-size:7rem;color:var(--c-highlight);line-height:1;">404</h1>' +
+        '<p style="margin:1rem 0 2rem;opacity:.7;">This page does not exist.</p>' +
+        '<a href="/" style="background:var(--c-button);color:var(--c-button-text);text-decoration:none;padding:.8rem 2rem;letter-spacing:.15em;font-size:.85rem;font-weight:600;">BACK HOME</a></section>';
+    }
+
+    function render(d) {
+      var main = document.getElementById('err');
+      main.innerHTML = d && d.html ? d.html : fallback();
+      if (d && d.css) {
+        var fonts = [];
+        var st = document.createElement('style');
+        st.textContent = scopeCss(d.css, '#err', fonts);
+        document.head.appendChild(st);
+        document.getElementById('page-fonts').textContent = fonts.join('\n');
+      }
+      var bg = (d && d.bg) || {}, el = document.getElementById('bg');
+      if (bg.color) el.style.backgroundColor = bg.color;
+      if (bg.image) {
+        el.style.backgroundImage = 'url("' + bg.image + '")';
+        var mode = bg.mode || 'cover';
+        if (mode === 'tile') { el.style.backgroundRepeat = 'repeat'; el.style.backgroundSize = (bg.tile_size || 256) + 'px'; }
+        else { el.style.backgroundSize = mode === 'stretch' ? '100% 100%' : mode; }
+        if (bg.position) el.style.backgroundPosition = bg.position;
+      }
+      var ov = document.createElement('div');
+      ov.className = 'ov';
+      ov.style.opacity = Math.max(0, Math.min(0.9, Number(bg.overlay) || 0));
+      el.appendChild(ov);
+    }
+
+    getContent('settings.json').then(function (s) {
+      var c = s.site_colors, map = { bg: '--c-bg', text: '--c-text', highlight: '--c-highlight', button: '--c-button', button_text: '--c-button-text' };
+      if (c) Object.keys(map).forEach(function (k) { if (c[k]) document.documentElement.style.setProperty(map[k], c[k]); });
+    }).catch(function () {}).then(function () {
+      return getContent('page-404.json').catch(function () { return null; });
+    }).then(render);
+  </script>
+</body>
+</html>

@@ -64,14 +64,38 @@ const server = http.createServer(async (req, res) => {
 
   // --- API Routes ---
 
-  // POST /api/save-page
+  // POST /api/save-page  — any of: one page design, the page list, site settings
   if (req.method === 'POST' && pathname === '/api/save-page') {
     try {
       const body = await readBody(req);
       const contentDir = path.join(ROOT, 'content');
       ensureDir(contentDir);
-      const filePath = path.join(contentDir, `page-${body.page}.json`);
-      fs.writeFileSync(filePath, JSON.stringify(body.content, null, 2));
+      if (body.page !== undefined && body.content !== undefined) {
+        if (!/^[a-z0-9-]{1,40}$/i.test(body.page)) throw new Error('Bad page name');
+        fs.writeFileSync(path.join(contentDir, `page-${body.page}.json`), JSON.stringify(body.content, null, 2));
+      }
+      if (Array.isArray(body.pages)) {
+        fs.writeFileSync(path.join(contentDir, 'pages.json'), JSON.stringify({ pages: body.pages }, null, 2));
+      }
+      if (body.settings) {
+        fs.writeFileSync(path.join(contentDir, 'settings.json'), JSON.stringify(body.settings, null, 2));
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true }));
+    } catch (e) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: false, error: e.message }));
+    }
+    return;
+  }
+
+  // POST /api/delete-page
+  if (req.method === 'POST' && pathname === '/api/delete-page') {
+    try {
+      const body = await readBody(req);
+      if (!/^[a-z0-9-]{1,40}$/i.test(body.page || '') || body.page === 'home') throw new Error('Bad page name');
+      const filePath = path.join(ROOT, 'content', `page-${body.page}.json`);
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ success: true }));
     } catch (e) {
@@ -176,6 +200,14 @@ const server = http.createServer(async (req, res) => {
 
   fs.readFile(filePath, (err, data) => {
     if (err) {
+      // Unknown page address -> the custom Error page (404.html), like Netlify does.
+      // Missing data/asset files keep a plain 404 so the editor can tell they don't exist.
+      if (ext === '' || ext === '.html') {
+        return fs.readFile(path.join(ROOT, '404.html'), (e2, page) => {
+          res.writeHead(404, { 'Content-Type': e2 ? 'text/plain' : 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+          res.end(e2 ? '404 Not Found' : page);
+        });
+      }
       res.writeHead(404, { 'Content-Type': 'text/plain' });
       res.end('404 Not Found');
       return;

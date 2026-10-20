@@ -1,0 +1,6 @@
+{
+  "pages": [
+    { "id": "home", "title": "Home" },
+    { "id": "shop", "title": "Shop" }
+  ]
+}

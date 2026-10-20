@@ -8,91 +8,325 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Inter:wght@100..900&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Oswald:wght@200..700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Raleway:ital,wght@0,100..900;1,100..900&family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --c-bg: #0a0a0a; --c-text: #ffffff; --c-highlight: #e53935;
+      --c-button: #e53935; --c-button-text: #ffffff;
+    }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { background: #0a0a0a; min-height: 100vh; }
+    html { scroll-behavior: smooth; background: var(--c-bg); }
+    body { background: var(--c-bg); color: var(--c-text); min-height: 100vh; font-family: 'Inter', sans-serif; }
 
+    /* Loading cover: hides everything until the saved design is ready (no template flash) */
     #loading-screen {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: #0a0a0a;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
+      position: fixed; inset: 0; background: var(--c-bg); z-index: 9999;
+      display: flex; align-items: center; justify-content: center;
       transition: opacity 0.4s ease;
     }
-    #loading-screen.fade {
-      opacity: 0;
-      pointer-events: none;
+    #loading-screen.fade { opacity: 0; pointer-events: none; }
+    #loading-screen span { font-family: 'Playfair Display', serif; color: #e53935; font-size: 1.5rem; letter-spacing: 0.1em; }
+
+    /* Page backgrounds: stacked full-screen layers that cross-fade as you scroll */
+    #bg-stack { position: fixed; inset: 0; z-index: 0; overflow: hidden; }
+    .bg-layer {
+      position: absolute; inset: 0; opacity: 0; z-index: 0;
+      background-color: var(--c-bg); background-repeat: no-repeat;
+      background-position: center center; background-size: cover;
+      transition: opacity 0.8s cubic-bezier(.4, 0, .2, 1);
     }
-    #loading-screen span {
-      font-family: 'Playfair Display', serif;
-      color: #e53935;
-      font-size: 1.5rem;
-      letter-spacing: 0.1em;
+    .bg-layer.on { opacity: 1; z-index: 2; }
+    .bg-layer.under { opacity: 1; z-index: 1; }
+    .bg-layer .bg-overlay { position: absolute; inset: 0; background: #000; opacity: 0; }
+    #shade { position: fixed; inset: 0; background: rgba(0,0,0,.4); pointer-events: none; z-index: 3; display: none; }
+
+    /* Top navigation */
+    #nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100; height: 56px;
+      display: none; align-items: center; justify-content: center; gap: 6px;
+      background: rgba(0,0,0,.28); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      overflow-x: auto; white-space: nowrap; padding: 0 12px;
     }
+    #nav a {
+      color: var(--c-text); text-decoration: none; font-size: .78rem; font-weight: 600;
+      letter-spacing: .18em; text-transform: uppercase; padding: 8px 16px; border-radius: 4px;
+      opacity: .75; transition: opacity .25s, color .25s, background .25s; cursor: pointer;
+    }
+    #nav a:hover { opacity: 1; }
+    #nav a.active { opacity: 1; color: var(--c-highlight); }
+
+    /* Pages */
+    #pages { position: relative; z-index: 5; }
+    .site-page { position: relative; min-height: 100vh; }
   </style>
-  <style id="page-styles"></style>
+  <style id="page-fonts"></style>
 </head>
 <body>
   <div id="loading-screen"><span>Loading...</span></div>
-  <main id="page-content"></main>
+  <div id="bg-stack"></div>
+  <div id="shade"></div>
+  <nav id="nav"></nav>
+  <main id="pages"></main>
 
   <script>
-    function hideLoader() {
-      var loader = document.getElementById('loading-screen');
-      if (loader) {
-        loader.classList.add('fade');
-        setTimeout(function() { loader.style.display = 'none'; }, 400);
+    var IS_LOCAL = ['localhost', '127.0.0.1'].indexOf(location.hostname) !== -1;
+    var DEFAULT_PAGES = [{ id: 'home', title: 'Home' }, { id: 'shop', title: 'Shop' }];
+    var settings = {};
+
+    // ── Content loading ──
+    // Live site: read straight from GitHub via the function (instant after Save).
+    // Falls back to the deployed static file. Local: static file.
+    function getContent(name) {
+      function stat() {
+        return fetch('/content/' + name, { cache: 'no-store' }).then(function (r) {
+          if (!r.ok) throw new Error('Not found');
+          return r.json();
+        });
       }
+      if (IS_LOCAL) return stat();
+      return fetch('/api/content?name=' + encodeURIComponent(name), { cache: 'no-store' })
+        .then(function (r) { if (!r.ok) throw new Error('api'); return r.json(); })
+        .catch(stat);
     }
 
+    function hideLoader() {
+      var l = document.getElementById('loading-screen');
+      l.classList.add('fade');
+      setTimeout(function () { l.style.display = 'none'; }, 400);
+    }
+
+    // ── Theme colors from Site Colors (exact flat colors; shading only if enabled) ──
     function applySettings(s) {
-      s = s || {};
-      // Flat color exactly as chosen. Shading overlay only if explicitly enabled.
       var c = s.site_colors || (s.site_bg_color ? { bg: s.site_bg_color } : null);
       if (c) {
         var map = { bg: '--c-bg', text: '--c-text', highlight: '--c-highlight', button: '--c-button', button_text: '--c-button-text' };
-        Object.keys(map).forEach(function(k) { if (c[k]) document.documentElement.style.setProperty(map[k], c[k]); });
-        if (c.bg) {
-          document.documentElement.style.background = c.bg;
-          document.body.style.background = c.bg;
-          document.getElementById('loading-screen').style.background = c.bg;
+        Object.keys(map).forEach(function (k) { if (c[k]) document.documentElement.style.setProperty(map[k], c[k]); });
+      }
+      if (s.site_bg_shading) document.getElementById('shade').style.display = 'block';
+    }
+
+    // ── Scope a page's CSS so pages cannot affect each other ──
+    function scopeRules(rules, scope, fonts) {
+      var out = '';
+      for (var i = 0; i < rules.length; i++) {
+        var r = rules[i];
+        if (r.type === 1) { // style rule
+          var sels = r.selectorText.split(',').map(function (s) {
+            s = s.trim();
+            if (s === '*') return scope + ', ' + scope + ' *';
+            if (/^(html|body)(?![\w-])/.test(s)) return s.replace(/^(html|body)/, scope);
+            return scope + ' ' + s;
+          });
+          out += sels.join(',') + '{' + r.style.cssText + '}';
+        } else if (r.type === 5) { // @font-face must be global
+          fonts.push(r.cssText);
+        } else if (r.type === 4) { // @media
+          out += '@media ' + r.conditionText + '{' + scopeRules(r.cssRules, scope, fonts) + '}';
+        } else {
+          out += r.cssText; // keyframes etc.
         }
       }
-      if (s.site_bg_shading) {
-        var o = document.createElement('div');
-        o.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.4);pointer-events:none;z-index:1;';
-        document.body.appendChild(o);
+      return out;
+    }
+    function scopeCss(css, scope, fonts) {
+      var rules;
+      try {
+        var sheet = new CSSStyleSheet();
+        sheet.replaceSync(css);
+        rules = sheet.cssRules;
+      } catch (e) {
+        var st = document.createElement('style');
+        st.textContent = css;
+        document.head.appendChild(st);
+        rules = st.sheet.cssRules;
+        var res = scopeRules(rules, scope, fonts);
+        document.head.removeChild(st);
+        return res;
       }
+      return scopeRules(rules, scope, fonts);
     }
 
-    function getJSON(url) {
-      return fetch(url, { cache: 'no-store' }).then(function(res) {
-        if (!res.ok) throw new Error('Not found');
-        return res.json();
+    // ── Build ──
+    function fallbackHtml(title) {
+      var mail = settings.contact_email || 'inteerneets@gmail.com';
+      return '<section style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2rem;">' +
+        '<h1 style="font-family:\'Playfair Display\',serif;font-size:3rem;color:var(--c-highlight);margin-bottom:1rem;">' + title + '</h1>' +
+        '<p style="color:var(--c-text);opacity:.6;margin-bottom:2rem;">Coming soon</p>' +
+        '<a href="mailto:' + mail + '" style="background:var(--c-button);color:var(--c-button-text);text-decoration:none;padding:.8rem 2rem;letter-spacing:.15em;font-size:.85rem;font-weight:600;">EMAIL US</a>' +
+        '</section>';
+    }
+
+    function applyBgLayer(layer, bg) {
+      bg = bg || {};
+      if (bg.color) layer.style.backgroundColor = bg.color;
+      if (bg.image) {
+        layer.style.backgroundImage = 'url("' + bg.image + '")';
+        var mode = bg.mode || 'cover';
+        if (mode === 'tile') {
+          layer.style.backgroundRepeat = 'repeat';
+          layer.style.backgroundSize = (bg.tile_size || 256) + 'px';
+        } else {
+          layer.style.backgroundRepeat = 'no-repeat';
+          layer.style.backgroundSize = mode === 'stretch' ? '100% 100%' : mode; // cover | contain | auto
+        }
+        if (bg.position) layer.style.backgroundPosition = bg.position;
+      }
+      var ov = document.createElement('div');
+      ov.className = 'bg-overlay';
+      ov.style.opacity = Math.max(0, Math.min(0.9, Number(bg.overlay) || 0));
+      layer.appendChild(ov);
+    }
+
+    function buildSite(pages, designs) {
+      var nav = document.getElementById('nav');
+      var stack = document.getElementById('bg-stack');
+      var main = document.getElementById('pages');
+      var fonts = [];
+      var layers = [], sections = [], links = [];
+
+      pages.forEach(function (p, i) {
+        var d = designs[i];
+        var sec = document.createElement('section');
+        sec.className = 'site-page';
+        sec.id = p.id;
+        var inner = document.createElement('div');
+        inner.id = 'pg-' + p.id;
+        inner.innerHTML = d ? (d.html || '') : fallbackHtml(p.title);
+        sec.appendChild(inner);
+        if (d && d.css) {
+          var st = document.createElement('style');
+          st.textContent = scopeCss(d.css, '#pg-' + p.id, fonts);
+          sec.appendChild(st);
+        }
+        main.appendChild(sec);
+        sections.push(sec);
+
+        var layer = document.createElement('div');
+        layer.className = 'bg-layer';
+        applyBgLayer(layer, d && d.bg);
+        stack.appendChild(layer);
+        layers.push(layer);
+
+        var a = document.createElement('a');
+        a.textContent = p.title;
+        a.href = '#' + p.id;
+        a.addEventListener('click', function (e) {
+          e.preventDefault();
+          sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+        nav.appendChild(a);
+        links.push(a);
+      });
+
+      document.getElementById('page-fonts').textContent = fonts.join('\n');
+      if (pages.length > 1 && settings.show_nav !== false) nav.style.display = 'flex';
+
+      // Active page = the one under the upper-middle of the screen; cross-fade backgrounds
+      var current = -1, ticking = false;
+      function update() {
+        ticking = false;
+        var line = window.innerHeight * 0.4, idx = 0;
+        for (var i = 0; i < sections.length; i++) {
+          var r = sections[i].getBoundingClientRect();
+          if (r.top <= line && r.bottom > line) { idx = i; break; }
+          if (r.top <= line) idx = i;
+        }
+        if (idx === current) return;
+        var prev = current;
+        current = idx;
+        layers.forEach(function (l, i) {
+          l.classList.remove('on', 'under');
+          if (i === prev) l.classList.add('under');
+        });
+        layers[idx].classList.add('on');
+        links.forEach(function (a, i) { a.classList.toggle('active', i === idx); });
+        if (prev >= 0 && history.replaceState) history.replaceState(null, '', '#' + pages[idx].id);
+        setTimeout(function () { if (current === idx && prev >= 0 && prev !== idx) layers[prev].classList.remove('under'); }, 900);
+      }
+      function onScroll() { if (!ticking) { ticking = true; requestAnimationFrame(update); } }
+      window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', onScroll);
+      layers[0].style.transition = 'none';
+      update();
+      requestAnimationFrame(function () { layers[0].style.transition = ''; });
+
+      // Jump to #page from the URL (e.g. /#shop)
+      var h = (location.hash || '').slice(1);
+      var target = h && document.getElementById(h);
+      if (target) { document.documentElement.style.scrollBehavior = 'auto'; target.scrollIntoView(); document.documentElement.style.scrollBehavior = ''; update(); }
+    }
+
+    // ── Shopify (products from Site Settings render into [data-shopify-section] blocks) ──
+    function loadShopifySdk(cb) {
+      if (window.ShopifyBuy && window.ShopifyBuy.UI) return cb();
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://sdks.shopifycdn.com/buy-button/latest/buy-button-storefront.min.js';
+      s.onload = cb;
+      document.head.appendChild(s);
+    }
+    function initShopify() {
+      if (!settings.shopify_domain || !settings.shopify_storefront_token) return;
+      var sections = document.querySelectorAll('[data-shopify-section]');
+      if (!sections.length) return;
+      var colors = settings.site_colors || {};
+      loadShopifySdk(function () {
+        var client = ShopifyBuy.buildClient({
+          domain: settings.shopify_domain,
+          storefrontAccessToken: settings.shopify_storefront_token
+        });
+        var ui = ShopifyBuy.UI.init(client);
+        sections.forEach(function (section) {
+          var own = section.getAttribute('data-shopify-product');
+          var ids = own ? [own] : (settings.shopify_product_ids || []);
+          if (!ids.length) return;
+          section.innerHTML = '';
+          section.style.display = 'grid';
+          section.style.gridTemplateColumns = 'repeat(auto-fit, minmax(240px, 1fr))';
+          section.style.gap = '24px';
+          section.style.border = 'none';
+          ids.forEach(function (productId) {
+            var node = document.createElement('div');
+            section.appendChild(node);
+            ui.createComponent('product', {
+              id: productId,
+              node: node,
+              moneyFormat: '%24%7B%7Bamount%7D%7D',
+              options: { product: { styles: {
+                product: { '@media (min-width: 601px)': { 'max-width': '100%' } },
+                title: { 'font-family': '"Playfair Display", serif', 'color': colors.text || '#ffffff' },
+                price: { 'font-family': '"Inter", sans-serif', 'color': colors.highlight || '#e53935' },
+                button: {
+                  'background-color': colors.button || '#e53935',
+                  'color': colors.button_text || '#ffffff',
+                  'font-family': '"Inter", sans-serif', 'font-weight': '600', 'letter-spacing': '0.1em',
+                  ':hover': { 'background-color': '#b71c1c' }, ':focus': { 'background-color': '#b71c1c' }
+                }
+              } } }
+            });
+          });
+        });
       });
     }
 
+    // ── Start ──
     Promise.all([
-      getJSON('/content/page-home.json'),
-      getJSON('/content/settings.json').catch(function() { return {}; })
-    ])
-      .then(function(r) {
-        var data = r[0];
-        applySettings(r[1]);
-        document.getElementById('page-content').innerHTML = data.html || '';
-        document.getElementById('page-styles').textContent = data.css || '';
+      getContent('pages.json').then(function (j) { return (j && j.pages && j.pages.length) ? j.pages : DEFAULT_PAGES; }).catch(function () { return DEFAULT_PAGES; }),
+      getContent('settings.json').catch(function () { return {}; })
+    ]).then(function (r) {
+      var pages = r[0];
+      settings = r[1] || {};
+      applySettings(settings);
+      return Promise.all(pages.map(function (p) {
+        return getContent('page-' + p.id + '.json').catch(function () { return null; });
+      })).then(function (designs) {
+        buildSite(pages, designs);
         hideLoader();
-      })
-      .catch(function() {
-        document.getElementById('page-content').innerHTML =
-          '<section style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0a0a0a;color:#fff;font-family:\'Playfair Display\',serif;text-align:center;padding:2rem;">' +
-            '<h1 style="font-size:3rem;color:#e53935;margin-bottom:1rem;">Coming Soon</h1>' +
-            '<a href="mailto:inteerneets@gmail.com" style="color:#e53935;font-family:\'Inter\',sans-serif;text-decoration:none;border:1px solid #e53935;padding:0.75rem 2rem;letter-spacing:0.15em;font-size:0.85rem;transition:all 0.3s;">EMAIL US</a>' +
-          '</section>';
-        hideLoader();
+        try { initShopify(); } catch (e) { console.error(e); }
       });
+    }).catch(function (e) {
+      console.error(e);
+      document.getElementById('pages').innerHTML = fallbackHtml('INTEERNEETS');
+      hideLoader();
+    });
   </script>
 </body>
 </html>

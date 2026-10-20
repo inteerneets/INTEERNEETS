@@ -339,7 +339,7 @@ body {
   font-weight: 600;
 }
 .save-btn:hover {
-  background: #d4b87a !important;
+  background: #ff5a55 !important;
 }
 .settings-btn {
   font-size: 16px;
@@ -450,7 +450,7 @@ body {
   transition: background 0.2s;
 }
 .settings-save-btn:hover {
-  background: #d4b87a;
+  background: #ff5a55;
 }
 
 /* ═══════════════════════════════════
@@ -528,3 +528,73 @@ body {
 .preset:hover { border-color:#e53935; }
 .preset span { position:absolute; left:0; right:0; bottom:0; height:35%; }
 .colors-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:14px; }
+
+/* ─── Top bar: fits smaller screens ─── */
+.top-bar-left { min-width: 0; flex: 0 1 auto; }
+.top-bar-right { overflow-x: auto; flex: 1 1 auto; justify-content: flex-end; scrollbar-width: none; }
+.top-bar-right::-webkit-scrollbar { display: none; }
+.tb-btn { white-space: nowrap; text-decoration: none; display: inline-block; flex-shrink: 0; }
+a.tb-btn:hover { color: #ddd; border-color: #555; }
+
+/* ─── Page tabs (dynamic) ─── */
+.page-tabs { align-items: center; max-width: 42vw; overflow-x: auto; scrollbar-width: none; }
+.page-tabs::-webkit-scrollbar { display: none; }
+.page-btn { white-space: nowrap; flex-shrink: 0; }
+.page-btn .tab-dot { color: #e53935; margin-left: 6px; font-size: 10px; }
+.page-btn.active .tab-dot { color: #fff; }
+.page-btn .tab-x { margin-left: 8px; opacity: .6; font-size: 14px; line-height: 1; }
+.page-btn .tab-x:hover { opacity: 1; }
+.add-page-btn { border-style: dashed; color: #e53935; }
+.add-page-btn:hover { color: #fff; background: #e53935; border-color: #e53935; }
+
+/* ─── Settings modal: roomier, Shopify IDs box is big and scrollable/expandable ─── */
+.settings-modal { width: 560px; max-width: 94vw; }
+.settings-body input, .settings-body textarea { flex-shrink: 0; }
+.settings-body textarea.product-ids {
+  min-height: 190px; max-height: 60vh; resize: vertical; overflow: auto;
+  font-family: Consolas, 'Courier New', monospace; font-size: 12px; line-height: 1.6; white-space: pre;
+}
+
+/* ─── Page background panel ─── */
+.pagebg-panel { width: 340px; max-height: calc(100vh - 80px); overflow-y: auto; }
+.pbg-section-title { font-size: 12px; color: #888; margin: 14px 0 8px; text-transform: uppercase; letter-spacing: 1px; }
+.pbg-image-row { display: flex; gap: 12px; align-items: stretch; margin-bottom: 10px; }
+.pbg-thumb {
+  width: 96px; height: 64px; border: 1px solid #444; border-radius: 6px; flex-shrink: 0;
+  background: #111 center / cover no-repeat;
+  background-image: linear-gradient(45deg,#222 25%,transparent 25%,transparent 75%,#222 75%),linear-gradient(45deg,#222 25%,transparent 25%,transparent 75%,#222 75%);
+  background-size: 12px 12px; background-position: 0 0, 6px 6px;
+}
+.pbg-image-btns { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.pbg-image-btns .tb-btn { text-align: center; }
+.pbg-size-note {
+  background: #202020; border: 1px solid #3a2a2a; border-left: 3px solid #e53935; border-radius: 6px;
+  padding: 10px 12px; font-size: 12px; line-height: 1.6; color: #bbb; margin-bottom: 12px;
+}
+.pbg-size-note b { color: #fff; }
+.pbg-select, .pbg-num {
+  background: #111; border: 1px solid #333; border-radius: 6px; color: #ddd; padding: 6px 8px; font-size: 12px; outline: none;
+}
+.pbg-select { width: 170px; }
+.pbg-num { width: 84px; }
+.pbg-val { width: 40px; text-align: right; font-size: 12px; color: #aaa; }
+.swatch-row input[type=range] { flex: 0 0 120px; accent-color: #e53935; }
+
+/* ─── Font pickers: each option previews its own font ─── */
+.gjs-sm-property__font-family select, .gjs-sm-property__font-family option { font-size: 15px; }
+.gjs-sm-property__font-family select { padding: 4px 2px; }
+
+/* ─── Quick text controls in the component toolbar ─── */
+.gjs-toolbar-item select.tb-font {
+  background: #1a1a1a; color: #fff; border: 1px solid #555; border-radius: 3px;
+  font-size: 12px; max-width: 120px; padding: 2px 4px; cursor: pointer;
+}
+.gjs-toolbar-item .tb-fmt { font-weight: 700; font-size: 13px; padding: 0 4px; min-width: 18px; text-align: center; }
+.gjs-rte-toolbar select.rte-font, .gjs-rte-toolbar select.rte-size {
+  background: #1a1a1a; color: #fff; border: 1px solid #555; border-radius: 3px; font-size: 12px; max-width: 110px; padding: 2px 4px; cursor: pointer;
+}
+.gjs-rte-toolbar input.rte-color { width: 26px; height: 22px; padding: 0; border: 1px solid #555; background: #1a1a1a; cursor: pointer; vertical-align: middle; }
+/* Error (404) page tab */
+.page-btn.error-tab { margin-left: 14px; border-style: dashed; }
+.page-btn.error-tab::before { content: '\26A0  '; white-space: pre; }
+

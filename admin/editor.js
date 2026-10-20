@@ -36,7 +36,7 @@ const GOOGLE_FONTS_URL =
 // ═══════════════════════════════════════════════════════════════
 
 const DEFAULT_HOME_HTML = `
-<section style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;background:var(--c-bg,#0a0a0a);color:var(--c-text,#ffffff);text-align:center;padding:40px 20px;">
+<section style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;color:var(--c-text,#ffffff);text-align:center;padding:40px 20px;">
   <h1 style="font-family:'Playfair Display',serif;font-size:4.5rem;margin:0 0 20px 0;color:var(--c-text,#ffffff);letter-spacing:2px;">Coming Soon</h1>
   <p style="font-family:'Inter',sans-serif;font-size:1.1rem;max-width:500px;line-height:1.7;color:#999;margin:0 0 40px 0;">We are preparing something special. Stay tuned for the launch of INTEERNEETS — where art meets the internet.</p>
   <a href="mailto:inteerneets@gmail.com" style="display:inline-block;padding:14px 36px;background:var(--c-button,#e53935);border:2px solid var(--c-button,#e53935);color:var(--c-button-text,#ffffff);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:600;letter-spacing:3px;text-transform:uppercase;transition:all 0.3s;">EMAIL US</a>
@@ -44,32 +44,32 @@ const DEFAULT_HOME_HTML = `
 `;
 
 const DEFAULT_SHOP_HTML = `
-<section style="padding:80px 20px;background:var(--c-bg,#0a0a0a);color:var(--c-text,#ffffff);text-align:center;">
+<section style="padding:80px 20px;color:var(--c-text,#ffffff);text-align:center;">
   <h1 style="font-family:'Playfair Display',serif;font-size:3rem;margin:0 0 10px 0;color:var(--c-text,#ffffff);">Shop</h1>
   <p style="font-family:'Inter',sans-serif;font-size:1rem;color:#999;">Browse our collections below.</p>
 </section>
 
-<section style="padding:60px 20px;background:var(--c-bg,#0a0a0a);color:var(--c-text,#ffffff);">
+<section style="padding:60px 20px;color:var(--c-text,#ffffff);">
   <h2 style="font-family:'Playfair Display',serif;font-size:2rem;text-align:center;margin:0 0 40px 0;color:var(--c-text,#ffffff);">Original Works</h2>
   <div data-shopify-section="originals" style="min-height:200px;border:2px dashed #333;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#555;font-family:'Inter',sans-serif;">
     Shopify products will load here
   </div>
 </section>
 
-<section style="padding:60px 20px;background:var(--c-bg,#0a0a0a);color:var(--c-text,#ffffff);">
+<section style="padding:60px 20px;color:var(--c-text,#ffffff);">
   <h2 style="font-family:'Playfair Display',serif;font-size:2rem;text-align:center;margin:0 0 40px 0;color:var(--c-text,#ffffff);">Merchandise</h2>
   <div data-shopify-section="merch" style="min-height:200px;border:2px dashed #333;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#555;font-family:'Inter',sans-serif;">
     Shopify products will load here
   </div>
 </section>
 
-<section style="padding:60px 20px;background:var(--c-bg,#0a0a0a);text-align:center;">
+<section style="padding:60px 20px;text-align:center;">
   <a href="mailto:inteerneets@gmail.com" style="display:inline-block;padding:14px 36px;background:var(--c-button,#e53935);border:2px solid var(--c-button,#e53935);color:var(--c-button-text,#ffffff);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:600;letter-spacing:3px;text-transform:uppercase;">EMAIL US</a>
 </section>
 `;
 
 const DEFAULT_HOME_CSS = `
-  body { margin:0; padding:0; background:var(--c-bg,#0a0a0a); }
+  body { margin:0; padding:0; color:var(--c-text,#ffffff); }
   * { box-sizing:border-box; }
 `;
 const DEFAULT_SHOP_CSS = DEFAULT_HOME_CSS;
@@ -435,7 +435,7 @@ bm.add('hero-section', {
   label: 'Hero Section',
   category: 'Studio',
   content: `
-    <section style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;background:var(--c-bg,#0a0a0a);color:var(--c-text,#ffffff);text-align:center;padding:60px 20px;">
+    <section style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;color:var(--c-text,#ffffff);text-align:center;padding:60px 20px;">
       <h1 style="font-family:'Playfair Display',serif;font-size:4rem;margin:0 0 20px 0;">Your Headline</h1>
       <p style="font-family:'Inter',sans-serif;font-size:1.1rem;color:#999;max-width:500px;line-height:1.7;">Subtitle text goes here. Tell your story.</p>
     </section>`,
@@ -542,68 +542,375 @@ function showToast(msg) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// SAVE / LOAD
+// PAGES, SAVE / LOAD
+// The site is one scrolling page made of "pages" (Home, Shop, Video, ...).
+// In the editor you work on one page at a time via the tabs at the top.
 // ═══════════════════════════════════════════════════════════════
 
-async function savePage() {
-  const projectData = editor.getProjectData();
-  const html = editor.getHtml();
-  // Uploaded-font @font-face rules are prepended so the live site can use them
-  const css = fontFaceCss() + editor.getCss();
+const byId = (id) => document.getElementById(id);
 
+let pages = [{ id: 'home', title: 'Home' }, { id: 'shop', title: 'Shop' }];
+const pageBg = {};          // page id -> background settings (color / picture / pattern)
+const drafts = {};          // page id -> unsaved snapshot while you work on another tab
+const dirty = new Set();    // pages with unsaved changes
+const newPages = new Set(); // pages created in this session, not saved yet
+let pagesDirty = false;
+let settingsLoaded = false;
+let loadingPage = false;
+let saving = false;
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
+function slugify(s) {
+  return String(s).toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
+}
+// The Error page (shown for any unknown address) is a special page: it has its own
+// tab, is not part of the site menu and cannot be deleted.
+const ERROR_PAGE = { id: '404', title: 'Error Page' };
+function pageTitle(id) {
+  if (id === ERROR_PAGE.id) return ERROR_PAGE.title;
+  const p = pages.find((x) => x.id === id);
+  return p ? p.title : id;
+}
+
+// Read a content file. On the live site this reads straight from GitHub (always the
+// newest save, no waiting for a rebuild); locally it reads the file from disk.
+async function fetchContent(name) {
+  const fromStatic = async () => {
+    const r = await fetch(`/content/${name}?t=${Date.now()}`, { cache: 'no-store' });
+    if (!r.ok) throw new Error('nf');
+    return r.json();
+  };
+  if (IS_LIVE) {
+    try {
+      const r = await fetch(`/api/content?name=${encodeURIComponent(name)}&fresh=1`, { cache: 'no-store' });
+      if (r.ok) return r.json();
+      if (r.status === 404) throw new Error('nf');
+    } catch (e) {
+      if (e.message === 'nf') throw e;
+    }
+  }
+  return fromStatic();
+}
+
+// Make sure text you are still typing is written into the page before we read it
+function flushEditing() {
   try {
-    const res = await apiFetch('/api/save-page', {
+    const sel = editor.getSelected();
+    if (sel && sel.view && typeof sel.view.disableEditing === 'function') sel.view.disableEditing();
+  } catch (_) { /* nothing is being edited */ }
+}
+
+function snapshot() {
+  flushEditing();
+  return {
+    projectData: editor.getProjectData(),
+    html: editor.getHtml(),
+    css: fontFaceCss() + editor.getCss(),
+    bg: pageBg[currentPage] || null,
+  };
+}
+
+function markDirty(id) {
+  if (loadingPage || dirty.has(id)) return;
+  dirty.add(id);
+  renderTabs();
+}
+editor.on('update', () => markDirty(currentPage));
+window.addEventListener('beforeunload', (e) => {
+  if (dirty.size || pagesDirty) { e.preventDefault(); e.returnValue = ''; }
+});
+
+// ─── Tabs ───
+function renderTabs() {
+  const box = byId('page-tabs');
+  box.innerHTML = '';
+  [...pages, ERROR_PAGE].forEach((p) => {
+    const isError = p.id === ERROR_PAGE.id;
+    const b = document.createElement('button');
+    b.className = 'page-btn' + (p.id === currentPage ? ' active' : '') + (isError ? ' error-tab' : '');
+    b.dataset.page = p.id;
+    b.title = isError
+      ? 'Design the page visitors see when they open an address that does not exist (404)'
+      : 'Click to edit this page. Double-click to rename.';
+    b.appendChild(document.createTextNode(p.title));
+    if (dirty.has(p.id)) {
+      const dot = document.createElement('span');
+      dot.className = 'tab-dot';
+      dot.textContent = '●';
+      dot.title = 'Unsaved changes';
+      b.appendChild(dot);
+    }
+    if (p.id !== 'home' && !isError) {
+      const x = document.createElement('span');
+      x.className = 'tab-x';
+      x.textContent = '×';
+      x.title = 'Delete this page';
+      x.addEventListener('click', (e) => { e.stopPropagation(); deletePage(p.id); });
+      b.appendChild(x);
+    }
+    b.addEventListener('click', () => switchPage(p.id));
+    if (!isError) b.addEventListener('dblclick', () => renamePage(p.id));
+    box.appendChild(b);
+  });
+}
+
+async function switchPage(id) {
+  if (id === currentPage || loadingPage) return;
+  if (dirty.has(currentPage) || newPages.has(currentPage)) drafts[currentPage] = snapshot();
+  await loadPage(id);
+}
+
+function addPage() {
+  const name = prompt('Name of the new page (for example: Video, About, Portfolio):');
+  if (!name || !name.trim()) return;
+  let id = slugify(name) || 'page';
+  const base = id;
+  let n = 2;
+  while (pages.some((p) => p.id === id) || id === ERROR_PAGE.id) id = `${base}-${n++}`;
+  pages.push({ id, title: name.trim() });
+  newPages.add(id);
+  pagesDirty = true;
+  switchPage(id);
+}
+
+function renamePage(id) {
+  const name = prompt('Rename page (this is the name shown in the site menu):', pageTitle(id));
+  if (!name || !name.trim()) return;
+  pages.find((p) => p.id === id).title = name.trim();
+  pagesDirty = true;
+  renderTabs();
+  showToast('Renamed — press Save to publish');
+}
+
+async function deletePage(id) {
+  if (id === 'home') return;
+  if (!confirm(`Delete the "${pageTitle(id)}" page? This removes it from the site.`)) return;
+  try {
+    if (!newPages.has(id)) {
+      const res = await apiFetch('/api/delete-page', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ page: id }),
+      });
+      if (!res.ok) { showToast('Could not delete the page'); return; }
+    }
+    pages = pages.filter((p) => p.id !== id);
+    delete drafts[id]; delete pageBg[id];
+    dirty.delete(id); newPages.delete(id);
+    // Publish the updated page list right away so the site menu matches
+    await apiFetch('/api/save-page', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        page: currentPage,
-        content: { projectData, html, css },
-      }),
+      body: JSON.stringify({ pages }),
     });
-    if (res.ok) {
-      showToast(IS_LIVE ? 'Published! Live in about 1 minute' : 'Page saved!');
-    } else {
-      showToast('Save failed');
+    pagesDirty = false;
+    if (currentPage === id) { currentPage = 'home'; await loadPage('home'); } else { renderTabs(); }
+    showToast('Page deleted');
+  } catch (err) {
+    console.error(err);
+    showToast('Could not delete the page');
+  }
+}
+
+async function loadPagesList() {
+  try {
+    const j = await fetchContent('pages.json');
+    if (j && Array.isArray(j.pages) && j.pages.length) pages = j.pages;
+  } catch (_) { /* keep defaults */ }
+  if (!pages.some((p) => p.id === 'home')) pages.unshift({ id: 'home', title: 'Home' });
+}
+
+// ─── Save everything that changed (all edited pages + page list + colors/settings) ───
+async function saveAll() {
+  if (saving) return;
+  saving = true;
+  const btn = byId('btn-save');
+  const label = btn.innerHTML;
+  btn.innerHTML = 'Saving…';
+  try {
+    flushEditing();
+    const ids = new Set([...dirty, ...newPages, currentPage]);
+    const snaps = {};
+    ids.forEach((id) => { snaps[id] = id === currentPage ? snapshot() : drafts[id]; });
+
+    let first = true;
+    for (const id of ids) {
+      if (!snaps[id]) continue;
+      const body = { page: id, content: snaps[id] };
+      if (first) {
+        body.pages = pages;                                   // page list / names / order
+        if (settingsLoaded) body.settings = collectSettings(); // colors + settings travel together
+        first = false;
+      }
+      const res = await apiFetch('/api/save-page', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error(`save failed (${res.status})`);
     }
+    dirty.clear(); newPages.clear(); pagesDirty = false;
+    Object.keys(drafts).forEach((k) => delete drafts[k]);
+    renderTabs();
+    showToast(IS_LIVE ? 'Published! The live site updates within seconds' : 'Saved!');
   } catch (err) {
     console.error('Save error', err);
     showToast('Save failed');
+  } finally {
+    btn.innerHTML = label;
+    saving = false;
   }
+}
+function savePage() { return saveAll(); }
+
+// ─── Templates ───
+function defaultPageHtml(title) {
+  return `
+<section style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;color:var(--c-text,#ffffff);text-align:center;padding:80px 20px 40px;">
+  <h1 style="font-family:'Playfair Display',serif;font-size:3.5rem;margin:0 0 16px 0;color:var(--c-text,#ffffff);">${escapeHtml(title)}</h1>
+  <p style="font-family:'Inter',sans-serif;font-size:1.1rem;max-width:520px;line-height:1.7;color:#999;margin:0;">Add text, images and videos to this page.</p>
+</section>`;
 }
 
 // Default template: set the CSS FIRST, then the components. Calling setStyle()
 // after setComponents() would wipe the rules GrapesJS derives from inline styles.
 function applyDefaultTemplate(page) {
-  const html = page === 'shop' ? DEFAULT_SHOP_HTML : DEFAULT_HOME_HTML;
+  if (page === ERROR_PAGE.id) {
+    editor.setStyle('');
+    editor.setComponents(`
+<section style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;color:var(--c-text,#ffffff);text-align:center;padding:40px 20px;">
+  <h1 style="font-family:'Playfair Display',serif;font-size:8rem;line-height:1;margin:0;color:var(--c-highlight,#e53935);">404</h1>
+  <p style="font-family:'Inter',sans-serif;font-size:1.2rem;margin:16px 0 32px 0;color:var(--c-text,#ffffff);opacity:.75;">This page does not exist.</p>
+  <a href="/" style="background:var(--c-button,#e53935);color:var(--c-button-text,#ffffff);text-decoration:none;padding:14px 36px;font-family:'Inter',sans-serif;font-size:.85rem;font-weight:600;letter-spacing:.15em;">BACK HOME</a>
+</section>`);
+    return;
+  }
+  const html = page === 'shop' ? DEFAULT_SHOP_HTML : page === 'home' ? DEFAULT_HOME_HTML : defaultPageHtml(pageTitle(page));
   const css = page === 'shop' ? DEFAULT_SHOP_CSS : DEFAULT_HOME_CSS;
   editor.setStyle(css);
   editor.setComponents(html);
 }
 
-async function loadPage(page) {
-  currentPage = page;
+async function loadPage(id) {
+  loadingPage = true;
+  currentPage = id;
+  renderTabs();
 
-  // Update active tab
-  document.querySelectorAll('.page-btn').forEach((btn) => {
-    btn.classList.toggle('active', btn.dataset.page === page);
-  });
-
-  try {
-    const res = await fetch(`/content/page-${page}.json`);
-    if (res.ok) {
-      const data = await res.json();
-      editor.loadProjectData(data.projectData);
-      showToast(`Loaded ${page} page`);
-      return;
-    }
-  } catch (_) {
-    // fall through to defaults
+  let data = drafts[id] || null;
+  const fromDraft = !!data;
+  if (!data) {
+    try { data = await fetchContent(`page-${id}.json`); } catch (_) { data = null; }
   }
 
-  // Fall back to default template
-  applyDefaultTemplate(page);
-  showToast(`Loaded default ${page} template`);
+  if (data && data.projectData) {
+    editor.loadProjectData(data.projectData);
+    showToast(`Loaded ${pageTitle(id)}`);
+  } else {
+    applyDefaultTemplate(id);
+    showToast(`New ${pageTitle(id)} page — design it, then Save`);
+  }
+  pageBg[id] = (data && data.bg) || null;
+  applyPageBg();
+  editor.UndoManager.clear();
+
+  setTimeout(() => {
+    loadingPage = false;
+    if (!fromDraft && !newPages.has(id)) dirty.delete(id);
+    if (newPages.has(id)) dirty.add(id);
+    renderTabs();
+    syncPageBgPanel();
+  }, 600);
 }
+
+// ═══════════════════════════════════════════════════════════════
+// PAGE BACKGROUND (color, picture or pattern for the current page)
+// ═══════════════════════════════════════════════════════════════
+
+const DEFAULT_BG = { color: '', image: '', mode: 'cover', tile_size: 256, position: 'center center', overlay: 0 };
+const curBg = () => Object.assign({}, DEFAULT_BG, pageBg[currentPage] || {});
+
+function setBg(patch) {
+  pageBg[currentPage] = Object.assign(curBg(), patch);
+  applyPageBg();
+  syncPageBgPanel();
+  markDirty(currentPage);
+}
+
+// Shown on the editor canvas via the <html> element (the live site uses cross-fading layers)
+function applyPageBg() {
+  const doc = editor.Canvas.getDocument();
+  if (!doc) return;
+  let tag = doc.getElementById('page-bg');
+  if (!tag) { tag = doc.createElement('style'); tag.id = 'page-bg'; doc.head.appendChild(tag); }
+  const b = curBg();
+  let css = `html{background-color:${b.color || 'var(--c-bg,#0a0a0a)'};`;
+  if (b.image) {
+    const size = b.mode === 'tile' ? `${b.tile_size || 256}px` : b.mode === 'stretch' ? '100% 100%' : b.mode;
+    const rep = b.mode === 'tile' ? 'repeat' : 'no-repeat';
+    const a = Math.max(0, Math.min(0.9, (Number(b.overlay) || 0) / 100));
+    if (a > 0) {
+      css += `background-image:linear-gradient(rgba(0,0,0,${a}),rgba(0,0,0,${a})),url("${b.image}");` +
+             `background-size:cover,${size};background-repeat:no-repeat,${rep};background-position:center,${b.position};`;
+    } else {
+      css += `background-image:url("${b.image}");background-size:${size};background-repeat:${rep};background-position:${b.position};`;
+    }
+    css += 'background-attachment:fixed;';
+  }
+  tag.textContent = css + '}';
+}
+editor.on('canvas:frame:load', applyPageBg);
+
+function syncPageBgPanel() {
+  const b = curBg();
+  byId('pagebg-pagename').textContent = '— ' + pageTitle(currentPage);
+  byId('pbg-color').value = b.color || (siteColors && siteColors.bg) || '#0a0a0a';
+  byId('pbg-color-hex').value = b.color || '';
+  byId('pbg-color-hex').placeholder = 'site color';
+  byId('pbg-mode').value = b.mode;
+  byId('pbg-tile').value = b.tile_size;
+  byId('pbg-tile-row').style.display = b.mode === 'tile' ? 'flex' : 'none';
+  byId('pbg-position').value = b.position;
+  byId('pbg-overlay').value = b.overlay;
+  byId('pbg-overlay-val').textContent = `${b.overlay}%`;
+  byId('pbg-thumb').style.backgroundImage = b.image
+    ? `url("${b.image}")`
+    : '';
+}
+
+byId('btn-pagebg').addEventListener('click', () => {
+  syncPageBgPanel();
+  byId('colors-panel').classList.add('hidden');
+  byId('pagebg-panel').classList.toggle('hidden');
+});
+byId('pagebg-close').addEventListener('click', () => byId('pagebg-panel').classList.add('hidden'));
+byId('pbg-color').addEventListener('input', (e) => setBg({ color: e.target.value }));
+byId('pbg-color-hex').addEventListener('input', (e) => {
+  let v = e.target.value.trim();
+  if (v === '') return setBg({ color: '' });
+  if (!v.startsWith('#')) v = '#' + v;
+  if (/^#[0-9a-fA-F]{6}$/.test(v)) setBg({ color: v });
+});
+byId('pbg-mode').addEventListener('change', (e) => setBg({ mode: e.target.value }));
+byId('pbg-tile').addEventListener('input', (e) => setBg({ tile_size: Math.max(16, Number(e.target.value) || 256) }));
+byId('pbg-position').addEventListener('change', (e) => setBg({ position: e.target.value }));
+byId('pbg-overlay').addEventListener('input', (e) => setBg({ overlay: Number(e.target.value) }));
+byId('pbg-remove').addEventListener('click', () => setBg({ image: '' }));
+byId('pbg-reset').addEventListener('click', () => { pageBg[currentPage] = null; applyPageBg(); syncPageBgPanel(); markDirty(currentPage); });
+byId('pbg-choose').addEventListener('click', () => {
+  editor.AssetManager.open({
+    select(asset) {
+      const src = asset.get ? asset.get('src') : asset;
+      setBg({ image: src });
+      editor.AssetManager.close();
+    },
+  });
+});
+byId('pbg-save').addEventListener('click', async () => {
+  await saveAll();
+  byId('pagebg-panel').classList.add('hidden');
+});
 
 // ═══════════════════════════════════════════════════════════════
 // SETTINGS
@@ -611,10 +918,9 @@ async function loadPage(page) {
 
 async function loadSettings() {
   try {
-    const res = await fetch('/content/settings.json');
-    if (!res.ok) return;
-    const s = await res.json();
-    const set = (id, v) => { if (v) document.getElementById(id).value = v; };
+    let s = {};
+    try { s = await fetchContent('settings.json'); } catch (e) { if (e.message !== 'nf') throw e; }
+    const set = (id, v) => { if (v) byId(id).value = v; };
     set('set-email', s.contact_email);
     set('set-shopify-domain', s.shopify_domain);
     set('set-shopify-token', s.shopify_storefront_token);
@@ -624,15 +930,17 @@ async function loadSettings() {
     set('set-twitter', s.social_twitter);
     if (s.site_colors) setSiteColors(s.site_colors);
     else if (s.site_bg_color) setSiteColors({ bg: s.site_bg_color });
-    document.getElementById('set-bg-shading').checked = !!s.site_bg_shading;
+    byId('set-bg-shading').checked = !!s.site_bg_shading;
+    byId('set-show-nav').checked = s.show_nav !== false;
+    settingsLoaded = true; // only now is it safe to write settings back
   } catch (_) {
-    // Settings not found — that's fine
+    // Could not read settings — never overwrite them with blanks
   }
 }
 
-async function saveSettings() {
-  const val = (id) => document.getElementById(id).value.trim();
-  const payload = {
+function collectSettings() {
+  const val = (id) => byId(id).value.trim();
+  return {
     contact_email:            val('set-email'),
     shopify_domain:           val('set-shopify-domain'),
     shopify_storefront_token: val('set-shopify-token'),
@@ -643,18 +951,22 @@ async function saveSettings() {
     // Global swatches: flat exact colors; shading only when explicitly enabled
     site_colors:              siteColors,
     site_bg_color:            siteColors.bg,
-    site_bg_shading:          document.getElementById('set-bg-shading').checked,
+    site_bg_shading:          byId('set-bg-shading').checked,
+    show_nav:                 byId('set-show-nav').checked,
   };
+}
 
+async function saveSettings() {
+  if (!settingsLoaded) { showToast('Settings are still loading — try again in a moment'); return; }
   try {
     const res = await apiFetch('/api/save-settings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(collectSettings()),
     });
     if (res.ok) {
       showToast('Settings saved!');
-      document.getElementById('settings-overlay').classList.add('hidden');
+      byId('settings-overlay').classList.add('hidden');
     } else {
       showToast('Failed to save settings');
     }
@@ -768,7 +1080,7 @@ document.getElementById('btn-freedrag').addEventListener('click', (e) => {
   freeDrag = !freeDrag;
   editor.setDragMode(freeDrag ? 'absolute' : '');
   e.currentTarget.classList.toggle('active', freeDrag);
-  showToast(freeDrag ? 'Free Drag ON — drag elements anywhere' : 'Free Drag OFF — elements snap into layout');
+  showToast(freeDrag ? 'Free Drag ON — drag anywhere. Hold Ctrl to snap to guides & grid' : 'Free Drag OFF — elements snap into layout');
 });
 
 // Quick add: text box / image dropped onto the page, ready to drag
@@ -795,14 +1107,8 @@ document.getElementById('btn-add-image').addEventListener('click', () => {
 // UI EVENTS
 // ═══════════════════════════════════════════════════════════════
 
-// Page tabs
-document.querySelectorAll('.page-btn').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    if (btn.dataset.page !== currentPage) {
-      loadPage(btn.dataset.page);
-    }
-  });
-});
+// Page tabs are built dynamically (renderTabs); "+ Page" adds a new page
+document.getElementById('btn-add-page').addEventListener('click', addPage);
 
 // Save
 document.getElementById('btn-save').addEventListener('click', savePage);
@@ -830,8 +1136,9 @@ document.getElementById('btn-preview').addEventListener('click', () => {
 
 // Reset
 document.getElementById('btn-reset').addEventListener('click', () => {
-  if (confirm(`Reset the ${currentPage} page to its default template? All unsaved changes will be lost.`)) {
+  if (confirm(`Reset the ${pageTitle(currentPage)} page to its default template? All unsaved changes will be lost.`)) {
     applyDefaultTemplate(currentPage);
+    markDirty(currentPage);
     showToast('Page reset to default');
   }
 });
@@ -855,12 +1162,17 @@ document.getElementById('settings-save').addEventListener('click', saveSettings)
 // ═══════════════════════════════════════════════════════════════
 
 // Wait until the editor + canvas are ready before loading content
-editor.on('load', () => {
+editor.on('load', async () => {
   // Allow styling the page body itself (default only allows background)
   editor.getWrapper().set('stylable', true);
+  await loadPagesList();
   loadPage('home');
   loadSettings();
   loadAssets();
+  setupTooltips();
+  setupFontPreview();
+  setupTextToolbars();
+  setupSnapping();
 });
 
 
@@ -948,3 +1260,310 @@ document.getElementById('colors-save').addEventListener('click', async () => {
   document.getElementById('colors-panel').classList.add('hidden');
 });
 syncColorInputs();
+
+
+// ═══════════════════════════════════════════════════════════════
+// TOOLTIPS — every icon in the editor gets a hover name
+// ═══════════════════════════════════════════════════════════════
+
+const ICON_TIPS = {
+  'fa-paint-brush': 'Style Manager — fonts, colors, size and spacing of the selected element',
+  'fa-cog': 'Settings — link address, ID and other attributes',
+  'fa-bars': 'Layers — see and reorder what is on top of what',
+  'fa-th-large': 'Blocks — drag new elements onto the page',
+  'fa-square-o': 'Show / hide the dotted outlines around elements',
+  'fa-eye': 'Preview — see the page without editing outlines',
+  'fa-arrows-alt': 'Fullscreen',
+  'fa-code': 'View the page code',
+  'fa-arrow-up': 'Select the parent (container) of this element',
+  'fa-arrows': 'Move this element (drag)',
+  'fa-clone': 'Duplicate this element',
+  'fa-trash-o': 'Delete this element',
+  'fa-undo': 'Undo',
+  'fa-repeat': 'Redo',
+};
+
+function setupTooltips() {
+  const apply = () => {
+    document.querySelectorAll('[class*="fa-"]').forEach((el) => {
+      if (el.title) return;
+      for (const k in ICON_TIPS) {
+        if (el.classList.contains(k)) { el.title = ICON_TIPS[k]; break; }
+      }
+    });
+    document.querySelectorAll('.gjs-pn-devices-c select, .gjs-devices-c select, .gjs-pn-devices-c').forEach((el) => {
+      if (!el.title) el.title = 'Preview size — Desktop, Tablet or Mobile';
+    });
+    document.querySelectorAll('.gjs-rte-action').forEach((el) => {
+      if (!el.title && el.dataset.title) el.title = el.dataset.title;
+    });
+  };
+  let pending = false;
+  new MutationObserver(() => {
+    if (pending) return;
+    pending = true;
+    requestAnimationFrame(() => { pending = false; apply(); });
+  }).observe(document.body, { childList: true, subtree: true });
+  apply();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FONT PREVIEW — every font in the Font dropdown is shown in its own style
+// ═══════════════════════════════════════════════════════════════
+
+function setupFontPreview() {
+  const refresh = () => {
+    document.querySelectorAll('.gjs-sm-property__font-family select').forEach((sel) => {
+      if (sel.dataset.fp !== String(sel.options.length)) {
+        sel.dataset.fp = String(sel.options.length);
+        Array.from(sel.options).forEach((o) => { o.style.fontFamily = o.value; o.style.fontSize = '16px'; });
+        sel.addEventListener('change', refresh);
+      }
+      sel.style.fontFamily = sel.value;
+      sel.style.fontSize = '15px';
+      // Live sample line under the dropdown
+      let sample = sel.parentElement && sel.parentElement.querySelector('.font-sample');
+      if (!sample && sel.parentElement) {
+        sample = document.createElement('div');
+        sample.className = 'font-sample';
+        sample.textContent = 'Aa — The quick brown fox 123';
+        sample.style.cssText = 'margin-top:6px;padding:6px 8px;background:#111;border:1px solid #333;border-radius:4px;font-size:18px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;';
+        sel.parentElement.appendChild(sample);
+      }
+      if (sample) sample.style.fontFamily = sel.value || 'inherit';
+    });
+  };
+  let pending = false;
+  const schedule = () => { if (pending) return; pending = true; requestAnimationFrame(() => { pending = false; refresh(); }); };
+  new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true });
+  editor.on('component:selected', () => setTimeout(refresh, 50));
+  editor.on('style:property:update', schedule);
+  refresh();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// QUICK TEXT CONTROLS
+//  • Click any text → font, bold, italic, underline, size buttons in its toolbar
+//  • Double-click text to type → font / size / color in the text toolbar
+// ═══════════════════════════════════════════════════════════════
+
+function fontOptionsHtml(selected) {
+  return FONT_OPTIONS.map((f) =>
+    `<option value="${f.value.replace(/"/g, '&quot;')}" style="font-family:${f.value.replace(/"/g, '&quot;')}"${f.value === selected ? ' selected' : ''}>${f.name}</option>`
+  ).join('');
+}
+function firstFamily(v) {
+  return String(v || '').split(',')[0].replace(/['"]/g, '').trim().toLowerCase();
+}
+function matchFontOption(cssValue) {
+  const fam = firstFamily(cssValue);
+  const hit = FONT_OPTIONS.find((f) => firstFamily(f.value) === fam);
+  return hit ? hit.value : '';
+}
+function computedOf(comp, prop) {
+  const el = comp.getEl && comp.getEl();
+  return el ? el.ownerDocument.defaultView.getComputedStyle(el)[prop] : '';
+}
+
+function refreshToolbarFont() {
+  const comp = editor.getSelected();
+  document.querySelectorAll('select.tb-font').forEach((sel) => {
+    sel.innerHTML = '<option value="">Font…</option>' + fontOptionsHtml('');
+    if (comp) sel.value = matchFontOption(computedOf(comp, 'fontFamily'));
+    sel.style.fontFamily = sel.value || 'inherit';
+  });
+}
+
+function isTextual(c) {
+  return c && (c.is('text') || c.is('link'));
+}
+
+function ensureTextToolbar(c) {
+  if (!isTextual(c)) return;
+  const tb = c.get('toolbar') || [];
+  if (tb.some((t) => t.id === 'q-font')) return;
+  const toggle = (prop, on, off, test) => () => {
+    const cur = computedOf(c, prop);
+    c.addStyle({ [prop]: test(cur) ? off : on });
+  };
+  const size = (delta) => () => {
+    const px = parseFloat(computedOf(c, 'fontSize')) || 16;
+    c.addStyle({ 'font-size': `${Math.max(8, Math.round(px + delta))}px` });
+  };
+  c.set('toolbar', [
+    { id: 'q-font', label: '<select class="tb-font" title="Font"></select>', command: () => {} },
+    { id: 'q-b', label: '<span class="tb-fmt">B</span>', attributes: { title: 'Bold' },
+      command: toggle('font-weight', '700', '400', (v) => v === 'bold' || parseInt(v, 10) >= 600) },
+    { id: 'q-i', label: '<span class="tb-fmt" style="font-style:italic">I</span>', attributes: { title: 'Italic' },
+      command: toggle('font-style', 'italic', 'normal', (v) => v === 'italic') },
+    { id: 'q-u', label: '<span class="tb-fmt" style="text-decoration:underline">U</span>', attributes: { title: 'Underline' },
+      command: toggle('text-decoration', 'underline', 'none', (v) => String(v).includes('underline')) },
+    { id: 'q-sm', label: '<span class="tb-fmt">A−</span>', attributes: { title: 'Smaller text' }, command: size(-2) },
+    { id: 'q-lg', label: '<span class="tb-fmt">A+</span>', attributes: { title: 'Bigger text' }, command: size(2) },
+    ...tb,
+  ]);
+}
+
+function setupTextToolbars() {
+  editor.on('component:add', ensureTextToolbar);
+  editor.on('component:selected', (c) => { ensureTextToolbar(c); setTimeout(refreshToolbarFont, 30); });
+  // Existing components (already on the page)
+  editor.getWrapper().find('*').forEach(ensureTextToolbar);
+
+  document.addEventListener('change', (e) => {
+    if (!e.target.matches || !e.target.matches('select.tb-font')) return;
+    const comp = editor.getSelected();
+    if (comp && e.target.value) {
+      comp.addStyle({ 'font-family': e.target.value });
+      e.target.style.fontFamily = e.target.value;
+    }
+  });
+
+  // Uploaded fonts appear in the text toolbar too
+  editor.on('rte:enable', () => {
+    document.querySelectorAll('select.rte-font').forEach((s) => {
+      s.innerHTML = '<option value="">Font…</option>' + fontOptionsHtml('');
+    });
+  });
+
+  // Rich-text toolbar (while typing in a text box): font, size, color for the selected words
+  const rte = editor.RichTextEditor;
+  const wrapSel = (rteInst, style) => {
+    const s = String(rteInst.selection ? rteInst.selection() : '');
+    if (s) rteInst.insertHTML(`<span style="${style}">${escapeHtml(s)}</span>`);
+  };
+  rte.add('rte-font', {
+    name: 'rte-font',
+    icon: `<select class="rte-font" title="Font for the selected words"><option value="">Font…</option>${fontOptionsHtml('')}</select>`,
+    event: 'change',
+    attributes: { title: 'Font for the selected words' },
+    result: (r, action) => {
+      const sel = action.btn && action.btn.querySelector('select');
+      if (sel && sel.value) { wrapSel(r, `font-family:${sel.value}`); sel.value = ''; }
+    },
+  });
+  rte.add('rte-size', {
+    name: 'rte-size',
+    icon: `<select class="rte-size" title="Size of the selected words"><option value="">Size…</option>${[12, 14, 16, 18, 24, 32, 48, 64, 96].map((n) => `<option value="${n}">${n}px</option>`).join('')}</select>`,
+    event: 'change',
+    attributes: { title: 'Size of the selected words' },
+    result: (r, action) => {
+      const sel = action.btn && action.btn.querySelector('select');
+      if (sel && sel.value) { wrapSel(r, `font-size:${sel.value}px`); sel.value = ''; }
+    },
+  });
+  rte.add('rte-color', {
+    name: 'rte-color',
+    icon: '<input type="color" class="rte-color" value="#ffffff" title="Color of the selected words" />',
+    event: 'change',
+    attributes: { title: 'Color of the selected words' },
+    result: (r, action) => {
+      const inp = action.btn && action.btn.querySelector('input');
+      if (inp) wrapSel(r, `color:${inp.value}`);
+    },
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SNAPPING — hold Ctrl while dragging in Free Drag mode (like Photoshop)
+// Snaps edges/centers to the page, to other elements and to a 10px grid,
+// and shows red guide lines.
+// ═══════════════════════════════════════════════════════════════
+
+function setupSnapping() {
+  const THRESH = 8;
+  const GRID = 10;
+  let dragging = null;
+
+  const guideLayer = () => {
+    const doc = editor.Canvas.getDocument();
+    if (!doc) return null;
+    let g = doc.getElementById('snap-guides');
+    if (!g) {
+      g = doc.createElement('div');
+      g.id = 'snap-guides';
+      g.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:2147483000;';
+      doc.body.appendChild(g);
+    }
+    return g;
+  };
+  const clearGuides = () => { const g = guideLayer(); if (g) g.innerHTML = ''; };
+  const drawGuide = (axis, pos) => {
+    const g = guideLayer();
+    if (!g) return;
+    const d = g.ownerDocument.createElement('div');
+    d.style.cssText = axis === 'x'
+      ? `position:absolute;top:0;bottom:0;left:${pos}px;width:1px;background:#ff2d55;box-shadow:0 0 4px #ff2d55;`
+      : `position:absolute;left:0;right:0;top:${pos}px;height:1px;background:#ff2d55;box-shadow:0 0 4px #ff2d55;`;
+    g.appendChild(d);
+  };
+
+  // Best snap for one axis: anchors of the dragged element vs. candidate lines
+  const bestSnap = (anchors, lines, gridOrigin, size) => {
+    let best = null;
+    anchors.forEach((a) => lines.forEach((l) => {
+      const dist = l - a;
+      if (Math.abs(dist) <= THRESH && (!best || Math.abs(dist) < Math.abs(best.delta))) best = { delta: dist, line: l };
+    }));
+    if (!best) { // fall back to the grid (left/top edge)
+      const rel = anchors[0] - gridOrigin;
+      const snapped = Math.round(rel / GRID) * GRID + gridOrigin;
+      if (Math.abs(snapped - anchors[0]) <= GRID / 2) best = { delta: snapped - anchors[0], line: snapped };
+    }
+    return best;
+  };
+
+  const onMove = (e) => {
+    if (!dragging) return;
+    if (!(e.ctrlKey || e.metaKey)) { clearGuides(); return; }
+    const el = dragging.getEl();
+    if (!el) return;
+    const doc = el.ownerDocument;
+    const r = el.getBoundingClientRect();
+
+    // Container the element is positioned in
+    const host = el.offsetParent && el.offsetParent !== doc.body ? el.offsetParent : null;
+    const pr = host
+      ? host.getBoundingClientRect()
+      : { left: 0, right: doc.documentElement.clientWidth, top: -doc.defaultView.scrollY, bottom: doc.documentElement.scrollHeight - doc.defaultView.scrollY };
+    const pw = pr.right - pr.left, ph = pr.bottom - pr.top;
+
+    const xs = [pr.left, pr.left + pw / 2, pr.right];
+    const ys = [pr.top, pr.top + ph / 2, pr.bottom];
+    Array.from(el.parentElement ? el.parentElement.children : []).forEach((sib) => {
+      if (sib === el || sib.id === 'snap-guides') return;
+      const s = sib.getBoundingClientRect();
+      if (!s.width && !s.height) return;
+      xs.push(s.left, s.left + s.width / 2, s.right);
+      ys.push(s.top, s.top + s.height / 2, s.bottom);
+    });
+
+    const sx = bestSnap([r.left, r.left + r.width / 2, r.right], xs, pr.left, pw);
+    const sy = bestSnap([r.top, r.top + r.height / 2, r.bottom], ys, pr.top, ph);
+
+    clearGuides();
+    if (sx || sy) {
+      const st = dragging.getStyle();
+      const left = parseFloat(st.left) || 0;
+      const top = parseFloat(st.top) || 0;
+      const patch = {};
+      if (sx && sx.delta) patch.left = `${Math.round(left + sx.delta)}px`;
+      if (sy && sy.delta) patch.top = `${Math.round(top + sy.delta)}px`;
+      if (Object.keys(patch).length) dragging.addStyle(patch);
+      if (sx) drawGuide('x', sx.line);
+      if (sy) drawGuide('y', sy.line);
+    }
+  };
+
+  editor.on('dmode:start', (opts) => {
+    dragging = opts && opts.target;
+    const doc = editor.Canvas.getDocument();
+    if (doc) doc.addEventListener('mousemove', onMove);
+  });
+  editor.on('dmode:end', () => {
+    const doc = editor.Canvas.getDocument();
+    if (doc) doc.removeEventListener('mousemove', onMove);
+    dragging = null;
+    clearGuides();
+  });
+}
