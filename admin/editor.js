@@ -1822,9 +1822,13 @@ function centerHorizontally(c) {
   if (!el) return;
   const cs = el.ownerDocument.defaultView.getComputedStyle(el);
   if (cs.position === 'absolute' || cs.position === 'fixed') {
-    const host = el.offsetParent;
-    const pw = host && host !== el.ownerDocument.body ? host.clientWidth : el.ownerDocument.documentElement.clientWidth;
-    c.addStyle({ left: Math.round((pw - el.offsetWidth) / 2) + 'px', right: 'auto', transform: 'none' });
+    // Percent-based so it stays centered on every screen size (desktop, tablet, phone).
+    const patch = { left: '50%', right: 'auto', transform: 'translateX(-50%)', 'margin-left': '0', 'margin-right': '0' };
+    if (c.is('text') || isButtonLike(c)) {
+      // fit the box to its text and center the text, otherwise a wide fixed box looks off-center
+      Object.assign(patch, { width: 'max-content', 'max-width': '100%', 'text-align': 'center' });
+    }
+    c.addStyle(patch);
   } else {
     const patch = { 'margin-left': 'auto', 'margin-right': 'auto', 'max-width': '100%' };
     if (cs.display === 'inline') patch.display = 'block';
@@ -1988,3 +1992,14 @@ document.querySelectorAll('#bp-presets button').forEach((b) => b.addEventListene
   byId('bp-shadow').value = b.dataset.v === 'none' ? '' : b.dataset.v;
   bpApply({ 'box-shadow': b.dataset.v });
 }));
+
+// Dragging an element that was centered with "Center": convert its percent position to pixels first
+editor.on('dmode:start', (opts) => {
+  const c = opts && opts.target;
+  if (!c || !c.getStyle) return;
+  const st = c.getStyle();
+  if (st.transform && /translateX\(-50%\)/.test(st.transform) && /%$/.test(String(st.left || ''))) {
+    const el = c.getEl();
+    if (el) c.addStyle({ left: el.offsetLeft + 'px', transform: 'none' });
+  }
+});
