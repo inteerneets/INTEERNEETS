@@ -3,6 +3,13 @@
     "assets": [
       {
         "type": "image",
+        "src": "/images/uploads/inteerneets_logo.png",
+        "unitDim": "px",
+        "height": 0,
+        "width": 0
+      },
+      {
+        "type": "image",
         "src": "/images/uploads/1444658-hi-res-wallpaper-2560-x-1440-2560x1440-720p.jpg",
         "unitDim": "px",
         "height": 0,
@@ -49,44 +56,31 @@
       },
       {
         "selectors": [
-          "#i5ho"
-        ],
-        "style": {
-          "font-family": "'Playfair Display',serif",
-          "font-size": "4.5rem",
-          "margin": "0 0 20px 0",
-          "color": "var(--c-text,#ffffff)",
-          "letter-spacing": "2px",
-          "font-weight": "700",
-          "left": "50%",
-          "top": "100px",
-          "position": "absolute",
-          "width": "max-content",
-          "height": "96px",
-          "right": "auto",
-          "transform": "translateX(-50%)",
-          "max-width": "100%",
-          "text-align": "center",
-          "margin-left": "0",
-          "margin-right": "0"
-        }
-      },
-      {
-        "selectors": [
           "#ihan"
         ],
         "style": {
           "font-family": "'Inter',sans-serif",
-          "font-size": "1.1rem",
-          "max-width": "500px",
+          "font-size": "18px",
+          "max-width": "100%",
           "line-height": "1.7",
           "color": "#999",
-          "margin": "0 0 40px 0"
+          "margin": "0 0 40px 0",
+          "left": "50%",
+          "top": "365px",
+          "position": "absolute",
+          "width": "100",
+          "height": "70px",
+          "right": "auto",
+          "transform": "translateX(-50%)",
+          "margin-left": "0",
+          "margin-right": "0",
+          "text-align": "center",
+          "text-decoration": "none"
         }
       },
       {
         "selectors": [
-          "#ixae"
+          "#i3b4t"
         ],
         "style": {
           "display": "inline-block",
@@ -96,12 +90,22 @@
           "color": "#ffffff",
           "text-decoration": "none",
           "font-family": "'Inter',sans-serif",
-          "font-size": "14px",
+          "font-size": "0.9rem",
           "font-weight": "600",
           "letter-spacing": "3px",
           "text-transform": "uppercase",
-          "transition": "all 0.3s",
-          "background-color": "rgba(0,0,0,0)"
+          "--btn-text": "#ffffff",
+          "--btn-shadow": "drop-shadow(0px 0px 18px rgba(255,255,255,0.71))"
+        }
+      },
+      {
+        "selectors": [
+          "#icfaj"
+        ],
+        "style": {
+          "color": "black",
+          "width": "383px",
+          "height": "383px"
         }
       }
     ],
@@ -120,41 +124,58 @@
                   },
                   "components": [
                     {
-                      "tagName": "h1",
-                      "type": "text",
-                      "attributes": {
-                        "id": "i5ho"
+                      "type": "image",
+                      "resizable": {
+                        "ratioDefault": 1
                       },
-                      "components": [
-                        {
-                          "type": "textnode",
-                          "content": "INTEERNEETS"
-                        }
-                      ]
+                      "attributes": {
+                        "id": "icfaj",
+                        "src": "/images/uploads/inteerneets_logo.png"
+                      }
                     },
                     {
                       "tagName": "p",
                       "type": "text",
+                      "resizable": {
+                        "tl": 1,
+                        "tr": 1,
+                        "bl": 1,
+                        "br": 1,
+                        "cl": 1,
+                        "cr": 1,
+                        "tc": 0,
+                        "bc": 0
+                      },
                       "attributes": {
                         "id": "ihan"
                       },
                       "components": [
                         {
                           "type": "textnode",
-                          "content": "We are preparing something special. Stay tuned for the launch of INTEERNEETS — where art meets the internet."
+                          "content": "We are preparing something special. Stay tuned for the launch of INTEERNEETS RECORDS — where art meets the internet."
                         }
                       ]
                     },
                     {
                       "type": "link",
+                      "resizable": {
+                        "tl": 1,
+                        "tr": 1,
+                        "bl": 1,
+                        "br": 1,
+                        "cl": 1,
+                        "cr": 1,
+                        "tc": 0,
+                        "bc": 0
+                      },
                       "attributes": {
-                        "href": "mailto:inteerneets@gmail.com",
-                        "id": "ixae"
+                        "href": "#shop",
+                        "id": "i3b4t"
                       },
                       "components": [
                         {
                           "type": "textnode",
-                          "content": "EMAIL US"
+                          "content": "GO TO SHOP"
                         }
                       ]
                     }
@@ -177,8 +198,8 @@
     ],
     "symbols": []
   },
-  "html": "<body><section id=\"i39i\"><h1 id=\"i5ho\">INTEERNEETS</h1><p id=\"ihan\">We are preparing something special. Stay tuned for the launch of INTEERNEETS — where art meets the internet.</p><a href=\"mailto:inteerneets@gmail.com\" id=\"ixae\">EMAIL US</a></section></body>",
-  "css": "* { box-sizing: border-box; } body {margin: 0;}body{margin-top:0px;margin-right:0px;margin-bottom:0px;margin-left:0px;padding-top:0px;padding-right:0px;padding-bottom:0px;padding-left:0px;}*{box-sizing:border-box;}#i39i{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;color:rgba(0,0,0,0);text-align:center;padding:40px 20px;border:solid;}#i5ho{font-family:'Playfair Display',serif;font-size:4.5rem;margin:0 0 20px 0;color:var(--c-text,#ffffff);letter-spacing:2px;font-weight:700;left:50%;top:100px;position:absolute;width:max-content;max-width:100%;text-align:center;height:96px;right:auto;transform:translateX(-50%);margin-left:0;margin-right:0;}#ihan{font-family:'Inter',sans-serif;font-size:1.1rem;max-width:500px;line-height:1.7;color:#999;margin:0 0 40px 0;}#ixae{display:inline-block;padding:14px 36px;background:var(--btn-fill,transparent);border:1.6px solid #ffffff;color:#ffffff;text-decoration:none;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;letter-spacing:3px;text-transform:uppercase;transition:all 0.3s;background-color:rgba(0,0,0,0);}",
+  "html": "<body><section id=\"i39i\"><img id=\"icfaj\" src=\"/images/uploads/inteerneets_logo.png\"/><p id=\"ihan\">We are preparing something special. Stay tuned for the launch of INTEERNEETS RECORDS — where art meets the internet.</p><a href=\"#shop\" id=\"i3b4t\">GO TO SHOP</a></section></body>",
+  "css": "@font-face{font-family:'Inter 18pt Bold';src:url('/fonts/Inter_18pt-Bold.ttf') format('truetype');font-display:swap;}\n@font-face{font-family:'Inter 18pt Regular';src:url('/fonts/Inter_18pt-Regular.ttf') format('truetype');font-display:swap;}\n* { box-sizing: border-box; } body {margin: 0;}body{margin-top:0px;margin-right:0px;margin-bottom:0px;margin-left:0px;padding-top:0px;padding-right:0px;padding-bottom:0px;padding-left:0px;}*{box-sizing:border-box;}#i39i{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;color:rgba(0,0,0,0);text-align:center;padding:40px 20px;border:solid;}#ihan{font-family:'Inter',sans-serif;font-size:18px;max-width:100%;line-height:1.7;color:#999;margin:0 0 40px 0;left:50%;top:365px;position:absolute;width:100;height:70px;right:auto;transform:translateX(-50%);margin-left:0;margin-right:0;text-align:center;text-decoration:none;}#i3b4t{display:inline-block;padding:14px 36px;background:var(--btn-fill,transparent);border:1.6px solid #ffffff;color:#ffffff;text-decoration:none;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:600;letter-spacing:3px;text-transform:uppercase;--btn-text:#ffffff;--btn-shadow:drop-shadow(0px 0px 18px rgba(255,255,255,0.71));}#icfaj{color:black;width:383px;height:383px;}",
   "bg": {
     "color": "#000000",
     "image": "",
