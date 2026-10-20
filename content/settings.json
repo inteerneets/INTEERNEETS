@@ -1,16 +1,19 @@
 {
-  "studio_name": "Your Studio",
+  "studio_name": "Studio",
   "tagline": "Creative Studio",
   "logo_image": "",
   "primary_color": "#c9a96e",
   "background_color": "#0a0a0a",
   "text_color": "#f5f5f5",
   "card_color": "#141414",
+  "enable_bg_overlay": false,
+  "overlay_opacity": 0.0,
   "nav_show_shop": true,
+  "contact_email": "inteerneets@gmail.com",
   "social_instagram": "",
   "social_twitter": "",
   "social_tiktok": "",
-  "social_email": "",
+  "social_email": "inteerneets@gmail.com",
   "shopify_domain": "",
   "shopify_storefront_token": ""
 }

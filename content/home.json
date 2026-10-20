@@ -1,8 +1,15 @@
 {
   "heading": "Coming Soon",
+  "heading_font": "Playfair Display",
+  "heading_color": "#f5f5f5",
+  "heading_size": 4.5,
   "subtitle": "We're working on something special. Stay tuned.",
+  "subtitle_font": "Inter",
+  "subtitle_color": "#888888",
+  "subtitle_size": 1.2,
   "background_image": "",
-  "show_email_signup": false,
-  "cta_text": "Follow us for updates",
-  "cta_link": ""
+  "custom_layers": [],
+  "show_email_button": true,
+  "email_button_text": "EMAIL US",
+  "email_button_color": "#c9a96e"
 }

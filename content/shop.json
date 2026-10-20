@@ -7,22 +7,17 @@
   "pod_section_subtitle": "Print-on-demand — ships worldwide",
   "in_person_items": [
     {
-      "title": "Example Artwork",
-      "description": "An original piece from the studio. Replace this with your own item!",
-      "shopify_product_id": "",
-      "image": ""
-    },
-    {
-      "title": "Another Example",
-      "description": "Add as many items as you want through the admin panel.",
-      "shopify_product_id": "",
-      "image": ""
+      "title": "Original Painting #1",
+      "description": "Original studio piece. Ships directly from the studio.",
+      "price": "$250",
+      "image": "",
+      "shopify_product_id": ""
     }
   ],
   "pod_products": [
     {
       "shopify_product_id": "",
-      "label": "Example T-Shirt"
+      "label": "Studio T-Shirt"
     }
   ]
 }

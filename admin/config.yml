@@ -1,256 +1,137 @@
-# =============================================================
-# DECAP CMS CONFIGURATION
-# This file defines what you can edit in the admin panel.
-# =============================================================
-
-# --- Backend: uses Netlify's Git Gateway to save changes to GitHub ---
 backend:
   name: git-gateway
   branch: main
 
-# --- Where uploaded images are stored ---
 media_folder: "images/uploads"
 public_folder: "/images/uploads"
 
-# =============================================================
-# COLLECTIONS — These are the sections you'll see in the admin
-# =============================================================
 collections:
-
   # ---------------------------------------------------------
-  # SITE SETTINGS
-  # Studio name, colors, logo, social links, Shopify config
+  # ⚙️ SITE SETTINGS
   # ---------------------------------------------------------
   - name: "settings"
     label: "⚙️ Site Settings"
-    description: "Change your studio name, colors, logo, and social links"
     files:
       - name: "general"
         label: "General Settings"
         file: "content/settings.json"
         fields:
-          - label: "Studio Name"
-            name: "studio_name"
-            widget: "string"
-            hint: "Your studio's name — appears in the navigation and page titles"
+          - { label: "Studio Name", name: "studio_name", widget: "string", default: "Studio" }
+          - { label: "Tagline", name: "tagline", widget: "string", required: false }
+          - { label: "Logo Image", name: "logo_image", widget: "image", required: false }
 
-          - label: "Tagline"
-            name: "tagline"
-            widget: "string"
-            hint: "A short tagline (e.g., 'Creative Studio' or 'Art & Design')"
-            required: false
+          - { label: "Primary / Accent Color", name: "primary_color", widget: "color", default: "#c9a96e" }
+          - { label: "Background Color (Pure Hex)", name: "background_color", widget: "color", default: "#0a0a0a", hint: "Choose pure white #ffffff, pure black #000000, or any color without shading" }
+          - { label: "Text Color", name: "text_color", widget: "color", default: "#f5f5f5" }
+          - { label: "Card Color", name: "card_color", widget: "color", default: "#141414" }
 
-          - label: "Logo Image"
-            name: "logo_image"
-            widget: "image"
-            hint: "Upload your logo (optional — if empty, the studio name is shown as text)"
-            required: false
+          - { label: "Enable Background Dark Shading/Overlay", name: "enable_bg_overlay", widget: "boolean", default: false, hint: "Turn this OFF if you want pure 100% flat background colors with zero gray shading" }
+          - { label: "Shading Opacity (if enabled)", name: "overlay_opacity", widget: "number", default: 0.5, value_type: "float", min: 0, max: 1, step: 0.05, required: false }
 
-          - label: "Primary / Accent Color"
-            name: "primary_color"
-            widget: "color"
-            default: "#c9a96e"
-            hint: "The main accent color for buttons, links, and highlights"
+          - { label: "Show Shop Link in Navigation", name: "nav_show_shop", widget: "boolean", default: true }
+          - { label: "Studio Contact Email", name: "contact_email", widget: "string", default: "inteerneets@gmail.com" }
 
-          - label: "Background Color"
-            name: "background_color"
-            widget: "color"
-            default: "#0a0a0a"
-            hint: "The page background color"
+          - { label: "Shopify Domain", name: "shopify_domain", widget: "string", required: false, hint: "e.g. your-store.myshopify.com" }
+          - { label: "Shopify Storefront Access Token", name: "shopify_storefront_token", widget: "string", required: false }
 
-          - label: "Text Color"
-            name: "text_color"
-            widget: "color"
-            default: "#f5f5f5"
-            hint: "The main text color"
-
-          - label: "Card Background Color"
-            name: "card_color"
-            widget: "color"
-            default: "#141414"
-            hint: "Background color for product cards and content boxes"
-
-          - label: "Show Shop Link in Navigation"
-            name: "nav_show_shop"
-            widget: "boolean"
-            default: true
-            hint: "Turn this off to hide the Shop link (useful while you're still setting up)"
-
-          - label: "Instagram URL"
-            name: "social_instagram"
-            widget: "string"
-            hint: "Full URL (e.g., https://instagram.com/yourstudio)"
-            required: false
-
-          - label: "Twitter / X URL"
-            name: "social_twitter"
-            widget: "string"
-            required: false
-
-          - label: "TikTok URL"
-            name: "social_tiktok"
-            widget: "string"
-            required: false
-
-          - label: "Contact Email"
-            name: "social_email"
-            widget: "string"
-            hint: "Email address for contact (e.g., hello@yourstudio.com)"
-            required: false
-
-          - label: "Shopify Domain"
-            name: "shopify_domain"
-            widget: "string"
-            hint: "Your Shopify store domain (e.g., your-store.myshopify.com). Leave empty if not using Shopify yet."
-            required: false
-
-          - label: "Shopify Storefront Access Token"
-            name: "shopify_storefront_token"
-            widget: "string"
-            hint: "Get this from Shopify Admin → Apps → Develop apps → Storefront API. Leave empty if not using Shopify yet."
-            required: false
+          - { label: "Instagram URL", name: "social_instagram", widget: "string", required: false }
+          - { label: "TikTok URL", name: "social_tiktok", widget: "string", required: false }
+          - { label: "Twitter/X URL", name: "social_twitter", widget: "string", required: false }
 
   # ---------------------------------------------------------
-  # HOME PAGE
-  # The "Coming Soon" landing page content
+  # 📄 HOME PAGE (COMING SOON)
   # ---------------------------------------------------------
-  - name: "pages"
-    label: "📄 Pages"
-    description: "Edit your page content"
+  - name: "home_page"
+    label: "📄 Home Page"
     files:
       - name: "home"
-        label: "Home Page (Coming Soon)"
+        label: "Home Page Elements"
         file: "content/home.json"
         fields:
-          - label: "Main Heading"
-            name: "heading"
-            widget: "string"
-            default: "Coming Soon"
-            hint: "The big text in the center of the page"
+          - { label: "Main Heading", name: "heading", widget: "string", default: "Coming Soon" }
+          - label: "Heading Font"
+            name: "heading_font"
+            widget: "select"
+            default: "Playfair Display"
+            options: ["Playfair Display", "Inter", "Poppins", "Montserrat", "Oswald", "Raleway", "Space Grotesk"]
+          - { label: "Heading Text Color", name: "heading_color", widget: "color", default: "#f5f5f5" }
+          - { label: "Heading Size (rem)", name: "heading_size", widget: "number", default: 4.5, value_type: "float" }
 
-          - label: "Subtitle"
-            name: "subtitle"
-            widget: "text"
-            hint: "The smaller text below the heading"
+          - { label: "Subtitle Text", name: "subtitle", widget: "text", default: "We're working on something special. Stay tuned." }
+          - label: "Subtitle Font"
+            name: "subtitle_font"
+            widget: "select"
+            default: "Inter"
+            options: ["Inter", "Playfair Display", "Poppins", "Montserrat", "Oswald", "Raleway", "Space Grotesk"]
+          - { label: "Subtitle Text Color", name: "subtitle_color", widget: "color", default: "#888888" }
+          - { label: "Subtitle Size (rem)", name: "subtitle_size", widget: "number", default: 1.2, value_type: "float" }
 
-          - label: "Background Image"
-            name: "background_image"
-            widget: "image"
-            hint: "Upload a background image for the home page (optional — if empty, shows solid color)"
-            required: false
+          - { label: "Background Image", name: "background_image", widget: "image", required: false }
 
-          - label: "Show Email Signup"
-            name: "show_email_signup"
-            widget: "boolean"
-            default: false
-            required: false
+          - { label: "Show EMAIL US Button", name: "show_email_button", widget: "boolean", default: true }
+          - { label: "Email Button Text", name: "email_button_text", widget: "string", default: "EMAIL US" }
+          - { label: "Email Button Color", name: "email_button_color", widget: "color", default: "#c9a96e" }
 
-          - label: "Button Text"
-            name: "cta_text"
-            widget: "string"
-            hint: "Text for the button below the subtitle (leave empty to hide the button)"
-            required: false
-
-          - label: "Button Link"
-            name: "cta_link"
-            widget: "string"
-            hint: "Where the button links to (e.g., your Instagram URL)"
-            required: false
+          # Freeform Layer System (Drag/Reposition Text & Image Layers)
+          - label: "Custom Freeform Layers"
+            name: "custom_layers"
+            widget: "list"
+            hint: "Add text boxes or images with custom layering and placement on the home page"
+            fields:
+              - label: "Layer Type"
+                name: "type"
+                widget: "select"
+                options: ["text", "image"]
+                default: "text"
+              - { label: "Text Content", name: "text", widget: "string", required: false }
+              - { label: "Image File", name: "image", widget: "image", required: false }
+              - label: "Font Family (if text)"
+                name: "font_family"
+                widget: "select"
+                default: "Inter"
+                options: ["Inter", "Playfair Display", "Poppins", "Montserrat", "Oswald", "Raleway", "Space Grotesk"]
+                required: false
+              - { label: "Text Color", name: "color", widget: "color", default: "#ffffff", required: false }
+              - { label: "Font Size (rem)", name: "font_size", widget: "number", default: 1.0, value_type: "float", required: false }
+              - { label: "Image Max Width (px)", name: "width", widget: "number", default: 200, required: false }
+              - { label: "Top Position (% from top)", name: "top", widget: "number", default: 20, min: 0, max: 100 }
+              - { label: "Left Position (% from left)", name: "left", widget: "number", default: 20, min: 0, max: 100 }
+              - { label: "Layer Order (Z-Index: higher = on top)", name: "z_index", widget: "number", default: 5 }
 
   # ---------------------------------------------------------
-  # SHOP PAGE
-  # In-person items + print-on-demand config
+  # 🛍️ SHOP (SHOPIFY ONLY)
   # ---------------------------------------------------------
-  - name: "shop"
+  - name: "shop_page"
     label: "🛍️ Shop"
-    description: "Manage your shop products and settings"
     files:
-      - name: "shop_content"
-        label: "Shop Page"
+      - name: "shop"
+        label: "Shop Page Content"
         file: "content/shop.json"
         fields:
-          - label: "Shop Page Title"
-            name: "hero_title"
-            widget: "string"
-            default: "Shop"
+          - { label: "Shop Title", name: "hero_title", widget: "string", default: "Shop" }
+          - { label: "Shop Subtitle", name: "hero_subtitle", widget: "string", default: "Original works and exclusive merchandise" }
 
-          - label: "Shop Page Subtitle"
-            name: "hero_subtitle"
-            widget: "string"
+          - { label: "In-Person Section Title", name: "in_person_section_title", widget: "string", default: "Original Works" }
+          - { label: "In-Person Section Subtitle", name: "in_person_section_subtitle", widget: "string", default: "One-of-a-kind pieces — ships directly from the studio" }
 
-          - label: "In-Person Section Title"
-            name: "in_person_section_title"
-            widget: "string"
-            default: "Original Works"
-
-          - label: "In-Person Section Subtitle"
-            name: "in_person_section_subtitle"
-            widget: "string"
-
-          - label: "Merch Section Title"
-            name: "pod_section_title"
-            widget: "string"
-            default: "Merchandise"
-
-          - label: "Merch Section Subtitle"
-            name: "pod_section_subtitle"
-            widget: "string"
-
-          - label: "Inquiry Form Heading"
-            name: "inquiry_form_heading"
-            widget: "string"
-            default: "Inquire About This Piece"
-
-          - label: "Inquiry Form Success Message"
-            name: "inquiry_form_success"
-            widget: "string"
-            default: "Thanks! We'll get back to you shortly."
-
-          # --- In-Person Items (the ticket system products) ---
-          - label: "In-Person Items"
+          - label: "Original Works (In-Person Pieces)"
             name: "in_person_items"
             widget: "list"
-            hint: "Add items you sell in person. Customers will submit an inquiry form to purchase."
-            summary: "{{fields.title}} — {{fields.price}}"
+            summary: "{{fields.title}} - {{fields.price}}"
             fields:
-              - label: "Title"
-                name: "title"
-                widget: "string"
+              - { label: "Title", name: "title", widget: "string" }
+              - { label: "Description", name: "description", widget: "text" }
+              - { label: "Price", name: "price", widget: "string" }
+              - { label: "Image", name: "image", widget: "image", required: false }
+              - { label: "Shopify Product ID", name: "shopify_product_id", widget: "string", hint: "Direct checkout creates a ticket in your Shopify admin" }
 
-              - label: "Description"
-                name: "description"
-                widget: "text"
+          - { label: "Merch Section Title", name: "pod_section_title", widget: "string", default: "Merchandise" }
+          - { label: "Merch Section Subtitle", name: "pod_section_subtitle", widget: "string", default: "Print-on-demand — ships worldwide" }
 
-              - label: "Price"
-                name: "price"
-                widget: "string"
-                hint: "Include the currency symbol (e.g., $250, €200)"
-
-              - label: "Image"
-                name: "image"
-                widget: "image"
-                required: false
-                hint: "Upload a photo of the item"
-
-              - label: "Available"
-                name: "available"
-                widget: "boolean"
-                default: true
-                hint: "Turn off when the item is sold"
-
-          # --- Print on Demand Products (Shopify) ---
-          - label: "Print-on-Demand Products (Shopify)"
+          - label: "Print-on-Demand Merch (Shopify)"
             name: "pod_products"
             widget: "list"
-            hint: "Add Shopify product IDs for your print-on-demand merchandise. Get the ID from your Shopify admin."
             summary: "{{fields.label}}"
             fields:
-              - label: "Label (for your reference)"
-                name: "label"
-                widget: "string"
-                hint: "Just a name so you remember what this product is"
-
-              - label: "Shopify Product ID"
-                name: "shopify_product_id"
-                widget: "string"
-                hint: "The numeric product ID from Shopify (find it in the product URL in Shopify admin)"
+              - { label: "Label", name: "label", widget: "string" }
+              - { label: "Shopify Product ID", name: "shopify_product_id", widget: "string" }
