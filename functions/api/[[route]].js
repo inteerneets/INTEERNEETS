@@ -57,7 +57,8 @@ async function handle(context) {
   };
 
   if (!env.GITHUB_TOKEN || !env.ADMIN_PASSWORD) {
-    return json(500, { success: false, error: 'Server not configured: set GITHUB_TOKEN and ADMIN_PASSWORD in Cloudflare (Settings > Variables and Secrets) and redeploy.' });
+    const missing = ['GITHUB_TOKEN', 'ADMIN_PASSWORD'].filter((k) => !env[k]);
+    return json(500, { success: false, missing, bindingsSeen: Object.keys(context.env || {}), error: 'Server not configured (missing: ' + missing.join(', ') + '): set GITHUB_TOKEN and ADMIN_PASSWORD in Cloudflare (Settings > Variables and Secrets) and redeploy.' });
   }
 
   const REPO = env.GITHUB_REPO || 'inteerneets/INTEERNEETS';
