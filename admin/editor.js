@@ -811,8 +811,10 @@ async function loadPage(id) {
     applyDefaultTemplate(id);
     showToast(`New ${pageTitle(id)} page — design it, then Save`);
   }
+  stripThemeBg();
   pageBg[id] = (data && data.bg) || null;
   applyPageBg();
+  applyColorsToCanvas();
   editor.UndoManager.clear();
 
   setTimeout(() => {
@@ -858,9 +860,43 @@ function applyPageBg() {
     }
     css += 'background-attachment:fixed;';
   }
-  tag.textContent = css + '}';
+  // The editor canvas paints <body> white by default; keep it see-through so the Page BG shows
+  tag.textContent = css + '}body{background:transparent !important;}';
 }
 editor.on('canvas:frame:load', applyPageBg);
+
+// A page's background is controlled only by the Page BG button. Remove any background that
+// older designs painted on the page itself (var(--c-bg) full-page sections, html/body rules).
+function stripThemeBg() {
+  const THEME = /^var\(--c-bg/;
+  const clean = (obj) => {
+    if (!obj) return null;
+    const patch = {};
+    ['background', 'background-color', 'background-image'].forEach((k) => {
+      if (obj[k] !== undefined && THEME.test(String(obj[k]).trim())) patch[k] = '';
+    });
+    return Object.keys(patch).length ? patch : null;
+  };
+  try {
+    editor.Css.getRules().forEach((rule) => {
+      const sel = rule.selectorsToString ? rule.selectorsToString() : '';
+      const st = rule.getStyle();
+      let patch = clean(st);
+      if (/^(html|body)$/i.test(String(sel).trim())) {
+        patch = Object.assign(patch || {}, ...['background', 'background-color', 'background-image']
+          .filter((k) => st[k] !== undefined).map((k) => ({ [k]: '' })));
+      }
+      if (patch) { const next = Object.assign({}, st); Object.keys(patch).forEach((k) => delete next[k]); rule.setStyle(next); }
+    });
+    editor.getWrapper().find('*').forEach((c) => {
+      const patch = clean(c.getStyle());
+      if (patch) c.removeStyle(Object.keys(patch).join(' '));
+    });
+    const w = editor.getWrapper();
+    const ws = w.getStyle();
+    ['background', 'background-color', 'background-image'].forEach((k) => { if (ws[k] !== undefined) w.removeStyle(k); });
+  } catch (e) { console.warn('stripThemeBg', e); }
+}
 
 function syncPageBgPanel() {
   const b = curBg();

@@ -35,6 +35,13 @@
     }
 
     // Scope the saved CSS to #err so it cannot leak (same approach as index.html)
+    // A page's background is controlled only by its Page BG setting, so drop any
+    // background that old designs painted on the page itself (html/body or full-page sections).
+    var THEME_BG = /background(?:-color)?\s*:\s*var\(--c-bg[^;}]*;?/gi;
+    function stripBg(css) { return css ? css.replace(THEME_BG, '') : css; }
+    function dropBodyBg(style) {
+      ['background', 'background-color', 'background-image'].forEach(function (p) { style.removeProperty(p); });
+    }
     function scopeRules(rules, scope, fonts) {
       var out = '';
       for (var i = 0; i < rules.length; i++) {
@@ -46,6 +53,7 @@
             if (/^(html|body)(?![\w-])/.test(s)) return s.replace(/^(html|body)/, scope);
             return scope + ' ' + s;
           });
+          if (/^(html|body)$/i.test(r.selectorText.trim())) dropBodyBg(r.style);
           out += sels.join(',') + '{' + r.style.cssText + '}';
         } else if (r.type === 5) { fonts.push(r.cssText); }
         else if (r.type === 4) { out += '@media ' + r.conditionText + '{' + scopeRules(r.cssRules, scope, fonts) + '}'; }
@@ -71,11 +79,11 @@
 
     function render(d) {
       var main = document.getElementById('err');
-      main.innerHTML = d && d.html ? d.html : fallback();
+      main.innerHTML = d && d.html ? stripBg(d.html) : fallback();
       if (d && d.css) {
         var fonts = [];
         var st = document.createElement('style');
-        st.textContent = scopeCss(d.css, '#err', fonts);
+        st.textContent = scopeCss(stripBg(d.css), '#err', fonts);
         document.head.appendChild(st);
         document.getElementById('page-fonts').textContent = fonts.join('\n');
       }
