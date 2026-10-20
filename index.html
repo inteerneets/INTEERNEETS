@@ -31,10 +31,8 @@
       position: absolute; inset: 0; opacity: 0; z-index: 0;
       background-color: var(--c-bg); background-repeat: no-repeat;
       background-position: center center; background-size: cover;
-      transition: opacity 0.8s cubic-bezier(.4, 0, .2, 1);
+      /* opacity is driven by scroll position (see blend() in the script) */
     }
-    .bg-layer.on { opacity: 1; z-index: 2; }
-    .bg-layer.under { opacity: 1; z-index: 1; }
     .bg-layer .bg-overlay { position: absolute; inset: 0; background: #000; opacity: 0; }
     #shade { position: fixed; inset: 0; background: rgba(0,0,0,.4); pointer-events: none; z-index: 3; display: none; }
 
@@ -227,10 +225,25 @@
       document.getElementById('page-fonts').textContent = fonts.join('\n');
       if (pages.length > 1 && settings.show_nav !== false) nav.style.display = 'flex';
 
-      // Active page = the one under the upper-middle of the screen; cross-fade backgrounds
+      // Backgrounds blend smoothly while you scroll: the next page's background fades in
+      // over the previous one across one screen of scrolling (a gradient between pages).
+      function ease(t) { return t * t * (3 - 2 * t); }
+      function blend() {
+        var vh = window.innerHeight, center = window.scrollY + vh * 0.5;
+        layers.forEach(function (l, i) {
+          l.style.zIndex = i;
+          if (i === 0) { l.style.opacity = 1; return; }
+          var B = sections[i].getBoundingClientRect().top + window.scrollY; // where page i starts
+          var p = (center - (B - vh * 0.5)) / vh;                            // 0 -> 1 across one screen
+          l.style.opacity = ease(Math.max(0, Math.min(1, p)));
+        });
+      }
+
+      // Active page (menu highlight) = the one under the upper-middle of the screen
       var current = -1, ticking = false;
       function update() {
         ticking = false;
+        blend();
         var line = window.innerHeight * 0.4, idx = 0;
         for (var i = 0; i < sections.length; i++) {
           var r = sections[i].getBoundingClientRect();
@@ -240,21 +253,13 @@
         if (idx === current) return;
         var prev = current;
         current = idx;
-        layers.forEach(function (l, i) {
-          l.classList.remove('on', 'under');
-          if (i === prev) l.classList.add('under');
-        });
-        layers[idx].classList.add('on');
         links.forEach(function (a, i) { a.classList.toggle('active', i === idx); });
         if (prev >= 0 && history.replaceState) history.replaceState(null, '', '#' + pages[idx].id);
-        setTimeout(function () { if (current === idx && prev >= 0 && prev !== idx) layers[prev].classList.remove('under'); }, 900);
       }
       function onScroll() { if (!ticking) { ticking = true; requestAnimationFrame(update); } }
       window.addEventListener('scroll', onScroll, { passive: true });
       window.addEventListener('resize', onScroll);
-      layers[0].style.transition = 'none';
       update();
-      requestAnimationFrame(function () { layers[0].style.transition = ''; });
 
       // Jump to #page from the URL (e.g. /#shop)
       var h = (location.hash || '').slice(1);
