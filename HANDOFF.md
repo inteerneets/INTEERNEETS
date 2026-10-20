@@ -31,7 +31,7 @@ The `.html` files in `C:\Users\xxx\Desktop\INTEERNEETS\` are the user's personal
 - `404.html` – error page. Netlify serves it automatically for unknown URLs; `server.js` does too locally (only for extensionless/.html URLs — missing `.json`/assets stay plain 404 because the editor relies on that). Its design comes from `content/page-404.json`; falls back to a default 404 if never saved.
 - `admin/` – GrapesJS editor. Tabs: pages from `pages.json` + a dashed **⚠ Error Page** tab (id `404`, not in the menu, not deletable, id reserved).
 - `content/` – `pages.json`, `page-<id>.json` (`{projectData, html, css, bg}`), `settings.json`.
-- `netlify/functions/api.js` – routes: `content`, `assets`, `save-page`, `save-settings`, `delete-page`, `upload`. Needs env vars `GITHUB_TOKEN`, `ADMIN_PASSWORD`.
+- `functions/api/[[route]].js` - Cloudflare Pages Function, routes: `content`, `assets`, `save-page`, `save-settings`, `delete-page`, `upload`. Needs env vars `GITHUB_TOKEN`, `ADMIN_PASSWORD`. `_routes.json` limits it to `/api/*`; `_headers` sets no-cache on `/content/*`. `netlify/functions/api.js` + `netlify.toml` = identical API for Netlify (fallback only).
 - `server.js` + `RUN WEBSITE.bat` – local server on :8000.
 
 ## Test notes
@@ -39,5 +39,5 @@ Headless Edge (puppeteer-core) tests live in the Antigravity scratch folder (`br
 
 ## Known / to do on first deploy
 - `content/page-shop.json` doesn't exist yet → Shop shows the placeholder and the console logs one 404. Open the Shop tab in `/admin/`, design it, Save.
-- Netlify function cannot be tested locally. After pushing: open `/admin/` on the live site, edit, Save, reload the main site; also visit a bogus URL to see the Error page.
+- Hosting moved from Netlify to Cloudflare Pages because Netlify paused production deploys (out of credits; deploys showed "Skipped"). Setup steps are in README. The function logic was unit-tested with a mocked GitHub API but not against real Cloudflare - after the first deploy: open /admin/, edit, Save, reload the main site, visit a bogus URL to see the Error page.
 - Files use CRLF line endings; when scripting edits normalise `\r\n` first.

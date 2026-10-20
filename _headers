@@ -1,0 +1,3 @@
+# Cloudflare Pages: never serve a stale saved design
+/content/*
+  Cache-Control: no-cache
