@@ -59,7 +59,7 @@
           "letter-spacing": "2px",
           "font-weight": "700",
           "left": "381px",
-          "top": "117px",
+          "top": "100px",
           "position": "absolute",
           "width": "542.4750366210938px",
           "height": "96px"
@@ -122,7 +122,7 @@
                       "components": [
                         {
                           "type": "textnode",
-                          "content": "INTEERNEETS "
+                          "content": "INTEERNEETS"
                         }
                       ]
                     },
@@ -171,8 +171,8 @@
     ],
     "symbols": []
   },
-  "html": "<body><section id=\"i39i\"><h1 id=\"i5ho\">INTEERNEETS </h1><p id=\"ihan\">We are preparing something special. Stay tuned for the launch of INTEERNEETS — where art meets the internet.</p><a href=\"mailto:inteerneets@gmail.com\" id=\"ixae\">EMAIL US</a></section></body>",
-  "css": "* { box-sizing: border-box; } body {margin: 0;}body{margin-top:0px;margin-right:0px;margin-bottom:0px;margin-left:0px;padding-top:0px;padding-right:0px;padding-bottom:0px;padding-left:0px;}*{box-sizing:border-box;}#i39i{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;color:rgba(0,0,0,0);text-align:center;padding:40px 20px;border:solid;}#i5ho{font-family:'Playfair Display',serif;font-size:4.5rem;margin:0 0 20px 0;color:var(--c-text,#ffffff);letter-spacing:2px;font-weight:700;left:381px;top:117px;position:absolute;width:542.4750366210938px;height:96px;}#ihan{font-family:'Inter',sans-serif;font-size:1.1rem;max-width:500px;line-height:1.7;color:#999;margin:0 0 40px 0;}#ixae{display:inline-block;padding:14px 36px;background:var(--btn-fill,transparent);border:var(--btn-border-width,2px) solid #ffffff;color:#ffffff;text-decoration:none;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;letter-spacing:3px;text-transform:uppercase;transition:all 0.3s;background-color:rgba(0,0,0,0);}",
+  "html": "<body><section id=\"i39i\"><h1 id=\"i5ho\">INTEERNEETS</h1><p id=\"ihan\">We are preparing something special. Stay tuned for the launch of INTEERNEETS — where art meets the internet.</p><a href=\"mailto:inteerneets@gmail.com\" id=\"ixae\">EMAIL US</a></section></body>",
+  "css": "* { box-sizing: border-box; } body {margin: 0;}body{margin-top:0px;margin-right:0px;margin-bottom:0px;margin-left:0px;padding-top:0px;padding-right:0px;padding-bottom:0px;padding-left:0px;}*{box-sizing:border-box;}#i39i{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;color:rgba(0,0,0,0);text-align:center;padding:40px 20px;border:solid;}#i5ho{font-family:'Playfair Display',serif;font-size:4.5rem;margin:0 0 20px 0;color:var(--c-text,#ffffff);letter-spacing:2px;font-weight:700;left:381px;top:100px;position:absolute;width:542.4750366210938px;height:96px;}#ihan{font-family:'Inter',sans-serif;font-size:1.1rem;max-width:500px;line-height:1.7;color:#999;margin:0 0 40px 0;}#ixae{display:inline-block;padding:14px 36px;background:var(--btn-fill,transparent);border:var(--btn-border-width,2px) solid #ffffff;color:#ffffff;text-decoration:none;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;letter-spacing:3px;text-transform:uppercase;transition:all 0.3s;background-color:rgba(0,0,0,0);}",
   "bg": {
     "color": "#000000",
     "image": "",
