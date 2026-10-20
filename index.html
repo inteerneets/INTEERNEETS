@@ -388,6 +388,60 @@
       if (document.fonts && document.fonts.ready) document.fonts.ready.then(run);
       window.addEventListener('load', run);
     })();
+  
+    // ?? Email Us: open the visitor's mail app with our address already filled in. If no mail
+    // app opens (common on desktop), offer Gmail compose / copy address so it always works. ??
+    (function () {
+      var panel;
+      function closePanel() { if (panel) { panel.remove(); panel = null; } }
+      function showFallback(to, su, body) {
+        closePanel();
+        panel = document.createElement('div');
+        panel.style.cssText = 'position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:10000;background:rgba(10,10,10,.92);color:#fff;' +
+          'padding:16px 20px;border-radius:8px;font:500 14px Inter,sans-serif;display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:center;' +
+          'box-shadow:0 8px 30px rgba(0,0,0,.5);max-width:92vw;user-select:text;-webkit-user-select:text;';
+        var msg = document.createElement('span');
+        msg.textContent = 'No mail app opened? Write to ' + to + ':';
+        function btn(label, fn) {
+          var b = document.createElement('button');
+          b.textContent = label;
+          b.style.cssText = 'cursor:pointer;border:0;padding:9px 16px;border-radius:4px;font:600 13px Inter,sans-serif;letter-spacing:.06em;background:var(--c-button,#e53935);color:var(--c-button-text,#fff);';
+          b.addEventListener('click', fn);
+          return b;
+        }
+        var gmail = 'https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(to) +
+          (su ? '&su=' + encodeURIComponent(su) : '') + (body ? '&body=' + encodeURIComponent(body) : '');
+        panel.appendChild(msg);
+        panel.appendChild(btn('OPEN GMAIL', function () { window.open(gmail, '_blank', 'noopener'); closePanel(); }));
+        panel.appendChild(btn('COPY ADDRESS', function (e) {
+          var t = e.target;
+          function done() { t.textContent = 'COPIED'; setTimeout(closePanel, 900); }
+          if (navigator.clipboard) navigator.clipboard.writeText(to).then(done, done); else done();
+        }));
+        var x = btn('\u2715', closePanel);
+        x.style.background = 'transparent'; x.style.color = '#aaa';
+        panel.appendChild(x);
+        document.body.appendChild(panel);
+        setTimeout(closePanel, 20000);
+      }
+      document.addEventListener('click', function (e) {
+        var a = e.target.closest && e.target.closest('a[href^="mailto:"]');
+        if (!a) return;
+        e.preventDefault();
+        var u;
+        try { u = new URL(a.getAttribute('href')); } catch (_) { return; }
+        var to = decodeURIComponent(u.pathname), su = u.searchParams.get('subject') || '', body = u.searchParams.get('body') || '';
+        var left = false;
+        function gone() { left = true; }
+        window.addEventListener('blur', gone, { once: true });
+        document.addEventListener('visibilitychange', gone, { once: true });
+        window.location.href = a.getAttribute('href');
+        setTimeout(function () {
+          window.removeEventListener('blur', gone);
+          if (!left && !document.hidden) showFallback(to, su, body);
+        }, 1200);
+      });
+    })();
   </script>
 </body>
 </html>
