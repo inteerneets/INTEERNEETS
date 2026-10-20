@@ -1,0 +1,512 @@
+/* ============================================================
+   INTEERNEETS — GrapesJS Dark Theme
+   ============================================================ */
+
+/* ─── Reset & Base ─── */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 0;
+  background: #111;
+  color: #ddd;
+  font-family: 'Inter', sans-serif;
+  overflow: hidden;
+}
+
+/* ─── GrapesJS Core Overrides ─── */
+.gjs-one-bg   { background-color: #1a1a1a !important; }
+.gjs-two-color { color: #ddd !important; }
+.gjs-three-bg  { background-color: #222 !important; }
+.gjs-four-color,
+.gjs-four-color-h:hover { color: #c9a96e !important; }
+
+.gjs-one-color   { color: #ddd !important; }
+.gjs-two-bg      { background-color: #1e1e1e !important; }
+.gjs-three-color { color: #bbb !important; }
+
+/* ─── Panels ─── */
+.gjs-pn-panel {
+  background-color: #1a1a1a !important;
+  border-color: #333 !important;
+}
+.gjs-pn-views-container,
+.gjs-pn-views {
+  background-color: #1a1a1a !important;
+}
+.gjs-pn-btn {
+  color: #aaa !important;
+  border-radius: 4px;
+}
+.gjs-pn-btn:hover {
+  color: #c9a96e !important;
+}
+.gjs-pn-btn.gjs-pn-active {
+  color: #c9a96e !important;
+  box-shadow: none !important;
+}
+
+/* ─── Blocks ─── */
+.gjs-blocks-cs {
+  background: #1a1a1a !important;
+}
+.gjs-block {
+  background: #252525 !important;
+  border: 1px solid #333 !important;
+  border-radius: 6px !important;
+  color: #ccc !important;
+  min-height: 60px;
+  transition: border-color 0.2s;
+}
+.gjs-block:hover {
+  border-color: #c9a96e !important;
+  color: #fff !important;
+}
+.gjs-block svg {
+  fill: #aaa !important;
+}
+.gjs-block:hover svg {
+  fill: #c9a96e !important;
+}
+.gjs-block-label {
+  color: #bbb !important;
+  font-size: 11px !important;
+}
+.gjs-block-category .gjs-title {
+  background: #1e1e1e !important;
+  border-color: #333 !important;
+  color: #ddd !important;
+  font-weight: 600 !important;
+}
+
+/* ─── Style Manager ─── */
+.gjs-sm-sector {
+  background: #1a1a1a !important;
+  border-color: #333 !important;
+}
+.gjs-sm-sector .gjs-sm-sector-title {
+  background: #1e1e1e !important;
+  color: #ddd !important;
+  border-color: #333 !important;
+}
+.gjs-sm-properties {
+  background: #1a1a1a !important;
+}
+.gjs-sm-property {
+  color: #bbb !important;
+}
+.gjs-sm-property .gjs-sm-label {
+  color: #aaa !important;
+}
+.gjs-field {
+  background: #252525 !important;
+  border: 1px solid #444 !important;
+  color: #ddd !important;
+  border-radius: 4px !important;
+}
+.gjs-field:focus-within {
+  border-color: #c9a96e !important;
+}
+.gjs-field input,
+.gjs-field select,
+.gjs-field textarea {
+  color: #ddd !important;
+  background: transparent !important;
+}
+.gjs-field-arrow-u,
+.gjs-field-arrow-d {
+  border-top-color: #888 !important;
+  border-bottom-color: #888 !important;
+}
+.gjs-sm-composite {
+  background: #222 !important;
+  border-color: #333 !important;
+}
+.gjs-sm-stack #gjs-sm-add {
+  color: #c9a96e !important;
+}
+.gjs-sm-layer {
+  background: #252525 !important;
+  border-color: #333 !important;
+}
+
+/* ─── Layers ─── */
+.gjs-layers {
+  background: #1a1a1a !important;
+}
+.gjs-layer {
+  background: #1e1e1e !important;
+  border-color: #333 !important;
+}
+.gjs-layer:hover {
+  background: #252525 !important;
+}
+.gjs-layer-title {
+  color: #ccc !important;
+}
+.gjs-layer-name {
+  color: #ddd !important;
+}
+.gjs-layer.gjs-selected .gjs-layer-title {
+  background: #2a2a2a !important;
+}
+
+/* ─── Traits ─── */
+.gjs-trt-traits {
+  background: #1a1a1a !important;
+}
+.gjs-trt-trait {
+  border-color: #333 !important;
+  color: #bbb !important;
+}
+.gjs-trt-trait .gjs-label {
+  color: #aaa !important;
+}
+
+/* ─── Canvas ─── */
+.gjs-cv-canvas {
+  background: #0d0d0d !important;
+}
+.gjs-frame-wrapper {
+  background: #111 !important;
+}
+
+/* ─── Toolbar ─── */
+.gjs-toolbar {
+  background: #1a1a1a !important;
+  border: 1px solid #444 !important;
+  border-radius: 4px !important;
+}
+.gjs-toolbar-item {
+  color: #ddd !important;
+}
+.gjs-toolbar-item:hover {
+  color: #c9a96e !important;
+}
+
+/* ─── Resizer ─── */
+.gjs-resizer-h {
+  border-color: #c9a96e !important;
+}
+.gjs-highlighter {
+  outline-color: #c9a96e !important;
+}
+
+/* ─── Badge ─── */
+.gjs-badge {
+  background: #c9a96e !important;
+  color: #111 !important;
+  font-weight: 600;
+}
+
+/* ─── RTE ─── */
+.gjs-rte-toolbar {
+  background: #1a1a1a !important;
+  border: 1px solid #444 !important;
+  border-radius: 4px;
+}
+.gjs-rte-actionbar .gjs-rte-action {
+  color: #ddd !important;
+  border-color: #444 !important;
+}
+.gjs-rte-actionbar .gjs-rte-action:hover {
+  color: #c9a96e !important;
+}
+
+/* ─── Modals (GrapesJS built-in) ─── */
+.gjs-mdl-dialog {
+  background: #1a1a1a !important;
+  border: 1px solid #333 !important;
+  border-radius: 8px !important;
+  color: #ddd !important;
+}
+.gjs-mdl-header {
+  background: #1e1e1e !important;
+  border-color: #333 !important;
+  color: #ddd !important;
+}
+.gjs-mdl-title {
+  color: #ddd !important;
+}
+.gjs-mdl-btn-close {
+  color: #aaa !important;
+}
+.gjs-mdl-content {
+  background: #1a1a1a !important;
+}
+
+/* ─── Asset Manager ─── */
+.gjs-am-assets-cont {
+  background: #1a1a1a !important;
+}
+.gjs-am-asset-image {
+  background: #252525 !important;
+  border: 1px solid #333 !important;
+  border-radius: 6px !important;
+}
+.gjs-am-preview-cont {
+  background: #222 !important;
+}
+.gjs-am-meta {
+  color: #bbb !important;
+}
+
+/* ─── Selection / Placeholder ─── */
+.gjs-selected {
+  outline: 2px solid #c9a96e !important;
+}
+.gjs-placeholder {
+  border-color: #c9a96e !important;
+}
+
+/* ═══════════════════════════════════
+   Top Bar
+   ═══════════════════════════════════ */
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 50px;
+  padding: 0 16px;
+  background: #151515;
+  border-bottom: 1px solid #333;
+  z-index: 10;
+  position: relative;
+}
+.top-bar-left,
+.top-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.logo {
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 2px;
+  color: #c9a96e;
+  margin-right: 16px;
+  user-select: none;
+}
+
+/* Page tabs */
+.page-tabs {
+  display: flex;
+  gap: 6px;
+}
+.page-btn {
+  background: #222;
+  color: #aaa;
+  border: 1px solid #333;
+  padding: 6px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+.page-btn:hover {
+  color: #ddd;
+  border-color: #555;
+}
+.page-btn.active {
+  background: #c9a96e;
+  color: #111;
+  border-color: #c9a96e;
+  font-weight: 600;
+}
+
+/* Toolbar buttons */
+.tb-btn {
+  background: #222;
+  color: #aaa;
+  border: 1px solid #333;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+.tb-btn:hover {
+  color: #ddd;
+  border-color: #555;
+}
+.save-btn {
+  background: #c9a96e !important;
+  color: #111 !important;
+  border-color: #c9a96e !important;
+  font-weight: 600;
+}
+.save-btn:hover {
+  background: #d4b87a !important;
+}
+.settings-btn {
+  font-size: 16px;
+}
+
+/* ═══════════════════════════════════
+   Settings Modal
+   ═══════════════════════════════════ */
+.settings-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.settings-overlay.hidden {
+  display: none;
+}
+.settings-modal {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 10px;
+  width: 480px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+.settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #333;
+}
+.settings-header h2 {
+  margin: 0;
+  font-size: 16px;
+  color: #ddd;
+  font-weight: 600;
+}
+.settings-close-btn {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 22px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+}
+.settings-close-btn:hover {
+  color: #fff;
+}
+.settings-body {
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.settings-body label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #aaa;
+  margin-top: 4px;
+}
+.settings-body label small {
+  color: #666;
+}
+.settings-body input,
+.settings-body textarea {
+  background: #252525;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 8px 10px;
+  color: #ddd;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.settings-body input:focus,
+.settings-body textarea:focus {
+  border-color: #c9a96e;
+}
+.settings-body textarea {
+  resize: vertical;
+}
+.settings-footer {
+  padding: 14px 20px;
+  border-top: 1px solid #333;
+  display: flex;
+  justify-content: flex-end;
+}
+.settings-save-btn {
+  background: #c9a96e;
+  color: #111;
+  border: none;
+  padding: 8px 24px;
+  border-radius: 4px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.settings-save-btn:hover {
+  background: #d4b87a;
+}
+
+/* ═══════════════════════════════════
+   Toast Notification
+   ═══════════════════════════════════ */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: #c9a96e;
+  color: #111;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  z-index: 9999;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  transform: translateX(120%);
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.toast.hidden {
+  display: block;
+  transform: translateX(120%);
+}
+.toast.show {
+  transform: translateX(0);
+}
+
+/* ═══════════════════════════════════
+   Custom Scrollbars
+   ═══════════════════════════════════ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+::-webkit-scrollbar-thumb {
+  background: #444;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #666;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #444 #1a1a1a;
+}
+
+/* Active toolbar toggle (Free Drag) */
+.tb-btn.active { background:#c9a96e; color:#111; border-color:#c9a96e; }
+.settings-body .check-row { display:flex; align-items:center; gap:8px; margin-top:14px; }
+.settings-body .check-row input { width:auto; }
+.settings-body input[type=color] { height:40px; padding:2px; cursor:pointer; }
+.tb-btn[hidden], input[hidden] { display:none; }

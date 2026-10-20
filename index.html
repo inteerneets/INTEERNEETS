@@ -3,66 +3,91 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title id="page-title">Coming Soon</title>
-  <meta name="description" content="Coming Soon — Studio">
+  <title>INTEERNEETS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Inter:wght@100..900&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Oswald:wght@200..700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Raleway:ital,wght@0,100..900;1,100..900&family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { background: #0a0a0a; min-height: 100vh; }
 
-  <link rel="stylesheet" href="/css/style.css">
-  <script src="https://unpkg.com/feather-icons"></script>
-  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+    #loading-screen {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #0a0a0a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      transition: opacity 0.4s ease;
+    }
+    #loading-screen.fade {
+      opacity: 0;
+      pointer-events: none;
+    }
+    #loading-screen span {
+      font-family: 'Playfair Display', serif;
+      color: #c9a96e;
+      font-size: 1.5rem;
+      letter-spacing: 0.1em;
+    }
+  </style>
+  <style id="page-styles"></style>
 </head>
 <body>
+  <div id="loading-screen"><span>Loading...</span></div>
+  <main id="page-content"></main>
 
-  <nav class="nav" id="nav">
-    <div class="container nav__inner">
-      <a href="/" class="nav__logo" id="nav-logo">Studio</a>
-
-      <ul class="nav__links" id="nav-links">
-        <li><a href="/" class="active">Home</a></li>
-        <li id="nav-shop-link"><a href="/shop.html">Shop</a></li>
-      </ul>
-
-      <button class="nav__hamburger" id="nav-hamburger" aria-label="Open menu">
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
-    </div>
-  </nav>
-
-  <section class="hero" id="hero">
-    <!-- Pure background image & optional shading overlay -->
-    <div class="hero__bg" id="hero-bg"></div>
-    <div class="hero__overlay" id="hero-overlay"></div>
-
-    <!-- Freeform custom layers container (z-indexed text and images) -->
-    <div id="hero-layers-container"></div>
-
-    <div class="hero__content">
-      <h1 class="hero__heading" id="hero-heading">Coming Soon</h1>
-      <p class="hero__subtitle" id="hero-subtitle">We're working on something special. Stay tuned.</p>
-
-      <!-- EMAIL US Button -->
-      <a href="mailto:inteerneets@gmail.com" class="hero__cta" id="hero-cta">EMAIL US</a>
-
-      <div class="hero__socials" id="hero-socials"></div>
-    </div>
-  </section>
-
-  <script src="/js/main.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      initSite('home');
-    });
+    function hideLoader() {
+      var loader = document.getElementById('loading-screen');
+      if (loader) {
+        loader.classList.add('fade');
+        setTimeout(function() { loader.style.display = 'none'; }, 400);
+      }
+    }
 
-    if (window.netlifyIdentity) {
-      window.netlifyIdentity.on("init", function(user) {
-        if (!user) {
-          window.netlifyIdentity.on("login", function() {
-            document.location.href = "/admin/";
-          });
-        }
+    function applySettings(s) {
+      s = s || {};
+      // Flat color exactly as chosen. Shading overlay only if explicitly enabled.
+      if (s.site_bg_color) {
+        document.documentElement.style.background = s.site_bg_color;
+        document.body.style.background = s.site_bg_color;
+        document.getElementById('loading-screen').style.background = s.site_bg_color;
+      }
+      if (s.site_bg_shading) {
+        var o = document.createElement('div');
+        o.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.4);pointer-events:none;z-index:1;';
+        document.body.appendChild(o);
+      }
+    }
+
+    function getJSON(url) {
+      return fetch(url, { cache: 'no-store' }).then(function(res) {
+        if (!res.ok) throw new Error('Not found');
+        return res.json();
       });
     }
+
+    Promise.all([
+      getJSON('/content/page-home.json'),
+      getJSON('/content/settings.json').catch(function() { return {}; })
+    ])
+      .then(function(r) {
+        var data = r[0];
+        applySettings(r[1]);
+        document.getElementById('page-content').innerHTML = data.html || '';
+        document.getElementById('page-styles').textContent = data.css || '';
+        hideLoader();
+      })
+      .catch(function() {
+        document.getElementById('page-content').innerHTML =
+          '<section style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0a0a0a;color:#fff;font-family:\'Playfair Display\',serif;text-align:center;padding:2rem;">' +
+            '<h1 style="font-size:3rem;color:#c9a96e;margin-bottom:1rem;">Coming Soon</h1>' +
+            '<a href="mailto:inteerneets@gmail.com" style="color:#c9a96e;font-family:\'Inter\',sans-serif;text-decoration:none;border:1px solid #c9a96e;padding:0.75rem 2rem;letter-spacing:0.15em;font-size:0.85rem;transition:all 0.3s;">EMAIL US</a>' +
+          '</section>';
+        hideLoader();
+      });
   </script>
 </body>
 </html>

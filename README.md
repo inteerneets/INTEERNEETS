@@ -1,52 +1,75 @@
-# INTEERNEETS WEB — Studio Website
+# INTEERNEETS WEB
 
-A static studio website with a "Coming Soon" landing page, full visual CMS, and direct Shopify checkout integration.
-
----
-
-## ⚡ Quick Start (Local Preview)
-
-1. Open the folder: `Desktop\INTEERNEETS\INTEERNEETS WEB`
-2. Double-click `RUN WEBSITE.bat`.
-3. Your browser will open to:
-   - **Website**: `http://localhost:8000`
-   - **CMS Admin**: `http://localhost:8000/admin/`
+Studio website: a "Coming Soon" home page, a Shopify-powered shop, and a built-in **dark-mode visual editor** where you drag, layer and style everything.
 
 ---
 
-## 🚀 How to Put This Live on Netlify (Free)
+## Quick start (editing)
 
-1. **Push to GitHub**:
-   - Commit all files in this folder to your GitHub repository `inteerneets/INTEERNEETS`.
-2. **Connect to Netlify**:
-   - Go to [netlify.com](https://www.netlify.com) $\rightarrow$ Add New Site $\rightarrow$ Import an existing project from GitHub.
-   - Choose your repo `INTEERNEETS`.
-   - Leave build command blank and publish directory as `.`. Click **Deploy site**.
-3. **Enable Identity & Git Gateway (for the Admin panel)**:
-   - In Netlify, go to **Site configuration** $\rightarrow$ **Identity** $\rightarrow$ **Enable Identity**.
-   - Scroll down to **Services** $\rightarrow$ click **Enable Git Gateway**.
-   - Under Identity $\rightarrow$ click **Invite users** $\rightarrow$ invite your own email.
-   - Open the confirmation link in your email to set your password.
-4. Go to `https://your-site.netlify.app/admin/` and log in to start editing!
+1. Install [Node.js](https://nodejs.org) (LTS) once.
+2. Double-click **`RUN WEBSITE.bat`**.
+3. Open:
+   - Website: <http://localhost:8000>
+   - Editor: <http://localhost:8000/admin/>
+
+> The editor saves to files on your PC (`content/page-home.json`, `content/page-shop.json`, `content/settings.json`, `images/uploads/`, `fonts/`). To publish, push those changes to GitHub — Netlify redeploys automatically.
 
 ---
 
-## ✏️ Features & Controls
+## Editor guide (`/admin/`)
 
-1. **Direct Shopify Purchases (No Inquiry Forms)**:
-   - All pieces (both studio works and merchandise) use direct Shopify checkout.
-   - Purchases create real orders / tickets in your Shopify backend with full shipping and customer details.
-2. **Visual Live Preview**:
-   - In `/admin/`, editing text, font sizes, and colors updates a live side-by-side preview in real-time.
-3. **Dark Mode Admin**:
-   - The `/admin/` dashboard has a dark theme.
-4. **Freeform Layer System**:
-   - In the Home Page section of the admin, you can add new text blocks or images and position them freely on top of the page using top/left percentages and layer order (z-index).
-5. **Per-Element Font & Color Controls**:
-   - Heading and subtitle font families, sizes, and colors can be customized individually.
-6. **"EMAIL US" Button**:
-   - A direct link configured to open an email directly to `inteerneets@gmail.com`.
-7. **Pure Flat Colors**:
-   - In **Site Settings**, you can set background colors (like pure white `#ffffff`) with zero gray shading. A dark shading toggle is available if you ever want shading over a background photo.
-8. **Zero-Flash Loading**:
-   - Refreshes render smoothly without flashing default template text.
+| I want to... | How |
+|---|---|
+| See the full live site while editing | The canvas **is** the real page (WYSIWYG). **Preview** hides the editing UI. Switch **Home / Shop** with the tabs. Desktop/Tablet/Mobile buttons preview responsive sizes. |
+| Add a new text box | **+ Text** (top bar) or drag blocks from the **Blocks** panel (category *Studio*) |
+| Add an image | **+ Image**, pick/upload one, it appears on the page |
+| Drag things around freely | Turn on **Free Drag**, then drag any element anywhere |
+| Layering | Select an element → **Position & Layers** → set `Z-Index` (higher = on top). Use the **Layers** panel to reorder/select. Example: background `z-index 0`, text `10`, image `20`. |
+| Change font / color / style per element | Select it → **Typography**: font, size, weight, italic, color, align, spacing, decoration, case |
+| Upload images or fonts | **Upload** (top bar): images (png/jpg/webp/svg/gif) and fonts (`.woff .woff2 .ttf .otf`). Uploaded fonts appear in the Font dropdown as `Name (uploaded)`. |
+| Background color / image | **Background** section of any element (e.g. the full-page section) |
+| Save | **Save** or `Ctrl+S` |
+| Undo / Redo / Reset | Top bar buttons |
+
+### Site Settings (gear icon)
+- **Contact email** (default `inteerneets@gmail.com`)
+- **Shopify domain, Storefront token, Product IDs** (one per line)
+- **Social links**
+- **Site background color** — shown *exactly* as chosen (white = pure `#ffffff`). A dark shading overlay is applied **only** if you tick *Add dark shading overlay*.
+
+---
+
+## Selling (Shopify only — no inquiry forms)
+
+Everything is bought directly through Shopify checkout. Each order creates an order/ticket in your Shopify admin with all customer and shipping info, and you ship it.
+
+1. In Shopify, enable the **Headless / Buy Button** sales channel and create a **Storefront access token**.
+2. In the editor: Settings → paste domain (`your-store.myshopify.com`), token, and product IDs.
+3. On the Shop page, add **Shopify Products** blocks (or use the existing *Original Works* / *Merchandise* sections). Products from Settings render there on the live site.
+
+## "EMAIL US"
+
+Pricing varies per session, so the home and shop pages have an **EMAIL US** button (`mailto:inteerneets@gmail.com`) that opens the visitor's email app. Change its text, style or address by selecting it in the editor.
+
+## No template flash on refresh
+
+The pages ship as empty shells behind a loading cover and only reveal once your saved design (and settings) are loaded. Files are served uncached locally.
+
+---
+
+## Putting it live (Netlify, free)
+
+1. Push this folder to your GitHub repo.
+2. Netlify → Add new site → Import from GitHub → build command empty, publish directory `.`.
+3. To edit: run the editor locally (`RUN WEBSITE.bat`), Save, then commit & push the changed files. (The editor's save/upload API only exists in the local server; the live site is static.)
+
+## File map
+
+```
+index.html / shop.html   page shells (load saved design from /content)
+admin/                   visual editor (GrapesJS, dark theme)
+server.js                local server + save/upload API (port 8000)
+content/                 page-home.json, page-shop.json, settings.json
+images/uploads/, fonts/  uploaded media
+RUN WEBSITE.bat          one-click launcher
+```

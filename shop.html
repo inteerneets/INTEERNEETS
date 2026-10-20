@@ -3,99 +3,165 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title id="page-title">Shop</title>
-  <meta name="description" content="Shop — Original works and exclusive merchandise">
+  <title>INTEERNEETS - Shop</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Inter:wght@100..900&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Oswald:wght@200..700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Raleway:ital,wght@0,100..900;1,100..900&family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { background: #0a0a0a; min-height: 100vh; }
 
-  <link rel="stylesheet" href="/css/style.css">
-  <script src="https://unpkg.com/feather-icons"></script>
-
-  <!-- Shopify Buy Button Storefront SDK -->
-  <script type="text/javascript">
-    (function () {
-      var scriptURL = 'https://sdks.shopifycdn.com/buy-button/latest/buy-button-storefront.min.js';
-      if (window.ShopifyBuy) {
-        if (window.ShopifyBuy.UI) { window.shopifySDKReady = true; }
-        else { loadScript(); }
-      } else { loadScript(); }
-      function loadScript() {
-        var script = document.createElement('script');
-        script.async = true;
-        script.src = scriptURL;
-        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(script);
-        script.onload = function() {
-          window.shopifySDKReady = true;
-          if (window.onShopifySDKReady) window.onShopifySDKReady();
-        };
-      }
-    })();
-  </script>
-
-  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+    #loading-screen {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #0a0a0a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      transition: opacity 0.4s ease;
+    }
+    #loading-screen.fade {
+      opacity: 0;
+      pointer-events: none;
+    }
+    #loading-screen span {
+      font-family: 'Playfair Display', serif;
+      color: #c9a96e;
+      font-size: 1.5rem;
+      letter-spacing: 0.1em;
+    }
+  </style>
+  <style id="page-styles"></style>
 </head>
 <body>
+  <div id="loading-screen"><span>Loading...</span></div>
+  <main id="page-content"></main>
 
-  <nav class="nav scrolled" id="nav">
-    <div class="container nav__inner">
-      <a href="/" class="nav__logo" id="nav-logo">Studio</a>
-
-      <ul class="nav__links" id="nav-links">
-        <li><a href="/">Home</a></li>
-        <li><a href="/shop.html" class="active">Shop</a></li>
-      </ul>
-
-      <button class="nav__hamburger" id="nav-hamburger" aria-label="Open menu">
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
-    </div>
-  </nav>
-
-  <section class="shop-hero">
-    <div class="container">
-      <h1 class="shop-hero__title" id="shop-hero-title">Shop</h1>
-      <p class="shop-hero__subtitle" id="shop-hero-subtitle">Original works and exclusive merchandise</p>
-    </div>
-  </section>
-
-  <!-- In-Person Pieces Section (Direct Shopify Checkout) -->
-  <section class="section" id="in-person-section">
-    <div class="container">
-      <div class="section__header">
-        <h2 class="section__title" id="in-person-title">Original Works</h2>
-        <p class="section__subtitle" id="in-person-subtitle">One-of-a-kind pieces — ships directly from the studio</p>
-        <div class="section__divider"></div>
-      </div>
-
-      <div class="product-grid" id="in-person-grid"></div>
-    </div>
-  </section>
-
-  <!-- Print On Demand Section (Direct Shopify Checkout) -->
-  <section class="section pod-section" id="pod-section">
-    <div class="container">
-      <div class="section__header">
-        <h2 class="section__title" id="pod-title">Merchandise</h2>
-        <p class="section__subtitle" id="pod-subtitle">Print-on-demand — ships worldwide</p>
-        <div class="section__divider"></div>
-      </div>
-
-      <div class="product-grid" id="pod-grid"></div>
-    </div>
-  </section>
-
-  <footer class="footer">
-    <div class="container">
-      <div class="footer__socials" id="footer-socials"></div>
-      <p class="footer__text" id="footer-text">&copy; Studio. All rights reserved.</p>
-    </div>
-  </footer>
-
-  <script src="/js/main.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      initSite('shop');
-    });
+    // Load Shopify Buy Button SDK
+    (function() {
+      if (window.ShopifyBuy) {
+        window.shopifyReady = true;
+        return;
+      }
+      var script = document.createElement('script');
+      script.async = true;
+      script.src = 'https://sdks.shopifycdn.com/buy-button/latest/buy-button-storefront.min.js';
+      script.onload = function() { window.shopifyReady = true; };
+      (document.head || document.getElementsByTagName('head')[0]).appendChild(script);
+    })();
+
+    function hideLoader() {
+      var loader = document.getElementById('loading-screen');
+      if (loader) {
+        loader.classList.add('fade');
+        setTimeout(function() { loader.style.display = 'none'; }, 400);
+      }
+    }
+
+    function initShopify(settings) {
+      if (!settings.shopify_domain || !settings.shopify_storefront_token) return;
+
+      var sections = document.querySelectorAll('[data-shopify-section]');
+      if (!sections.length) return;
+
+      function waitForSDK(cb) {
+        if (window.shopifyReady && window.ShopifyBuy) { cb(); return; }
+        setTimeout(function() { waitForSDK(cb); }, 200);
+      }
+
+      waitForSDK(function() {
+        var client = ShopifyBuy.buildClient({
+          domain: settings.shopify_domain,
+          storefrontAccessToken: settings.shopify_storefront_token
+        });
+
+        var ui = ShopifyBuy.UI.init(client);
+
+        sections.forEach(function(section) {
+          // Product IDs: a section's own data-shopify-product, else all IDs from Site Settings
+          var own = section.getAttribute('data-shopify-product');
+          var ids = own ? [own] : (settings.shopify_product_ids || []);
+          if (!ids.length) return;
+          section.innerHTML = '';
+          section.style.display = 'grid';
+          section.style.gridTemplateColumns = 'repeat(auto-fit, minmax(240px, 1fr))';
+          section.style.gap = '24px';
+          section.style.border = 'none';
+
+          ids.forEach(function(productId) {
+          var node = document.createElement('div');
+          section.appendChild(node);
+          ui.createComponent('product', {
+            id: productId,
+            node: node,
+            moneyFormat: '%24%7B%7Bamount%7D%7D',
+            options: {
+              product: {
+                styles: {
+                  product: { '@media (min-width: 601px)': { 'max-width': '100%' } },
+                  title: { 'font-family': '"Playfair Display", serif', 'color': '#ffffff' },
+                  price: { 'font-family': '"Inter", sans-serif', 'color': '#c9a96e' },
+                  button: {
+                    'background-color': '#c9a96e',
+                    'color': '#0a0a0a',
+                    'font-family': '"Inter", sans-serif',
+                    'font-weight': '600',
+                    'letter-spacing': '0.1em',
+                    ':hover': { 'background-color': '#b8944f' },
+                    ':focus': { 'background-color': '#b8944f' }
+                  }
+                }
+              }
+            }
+          });
+          });
+        });
+      });
+    }
+
+    function applySettings(s) {
+      s = s || {};
+      if (s.site_bg_color) {
+        document.documentElement.style.background = s.site_bg_color;
+        document.body.style.background = s.site_bg_color;
+        document.getElementById('loading-screen').style.background = s.site_bg_color;
+      }
+      if (s.site_bg_shading) {
+        var o = document.createElement('div');
+        o.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.4);pointer-events:none;z-index:1;';
+        document.body.appendChild(o);
+      }
+    }
+
+    function getJSON(url) {
+      return fetch(url, { cache: 'no-store' }).then(function(res) {
+        if (!res.ok) throw new Error('Not found');
+        return res.json();
+      });
+    }
+
+    Promise.all([
+      getJSON('/content/page-shop.json'),
+      getJSON('/content/settings.json').catch(function() { return {}; })
+    ])
+      .then(function(r) {
+        var data = r[0], settings = r[1];
+        applySettings(settings);
+        document.getElementById('page-content').innerHTML = data.html || '';
+        document.getElementById('page-styles').textContent = data.css || '';
+        hideLoader();
+        try { initShopify(settings); } catch (e) { console.error(e); }
+      })
+      .catch(function() {
+        document.getElementById('page-content').innerHTML =
+          '<section style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0a0a0a;color:#fff;font-family:\'Playfair Display\',serif;text-align:center;padding:2rem;">' +
+            '<h1 style="font-size:3rem;color:#c9a96e;margin-bottom:1rem;">Shop</h1>' +
+            '<p style="color:#888;font-family:\'Inter\',sans-serif;">Coming soon</p>' +
+          '</section>';
+        hideLoader();
+      });
   </script>
 </body>
 </html>

@@ -1,136 +1,102 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin — Content Manager</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>INTEERNEETS — Page Editor</title>
 
-  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@300;400;500;600;700&family=Oswald:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Poppins:wght@300;400;500;600;700&family=Raleway:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
 
-  <!-- Dark Mode Theme for Decap CMS -->
-  <style>
-    body { background-color: #121212 !important; color: #e0e0e0 !important; }
-    /* Top App Bar & Sidebar */
-    header, [class*="AppHeader"] { background-color: #1a1a1a !important; border-bottom: 1px solid #2a2a2a !important; }
-    aside, [class*="SidebarContainer"] { background-color: #161616 !important; border-right: 1px solid #2a2a2a !important; }
-    /* Cards, Forms, & Inputs */
-    [class*="Card"], [class*="FieldContainer"], [class*="ControlContainer"] {
-      background-color: #1e1e1e !important;
-      border-color: #333 !important;
-      color: #eee !important;
-    }
-    input, textarea, select {
-      background-color: #282828 !important;
-      border: 1px solid #444 !important;
-      color: #f0f0f0 !important;
-    }
-    input:focus, textarea:focus, select:focus {
-      border-color: #c9a96e !important;
-      outline: none !important;
-    }
-    /* Buttons */
-    button[class*="Button"] {
-      background-color: #2a2a2a !important;
-      color: #f0f0f0 !important;
-      border: 1px solid #444 !important;
-    }
-    button[class*="Button"]:hover {
-      background-color: #c9a96e !important;
-      color: #121212 !important;
-    }
-    /* Labels & Text */
-    label, [class*="Label"] { color: #aaa !important; }
-    h1, h2, h3, h4 { color: #f5f5f5 !important; }
-    /* Preview Pane Container */
-    [class*="PreviewPaneContainer"] {
-      background-color: #0a0a0a !important;
-      border-left: 2px solid #2a2a2a !important;
-    }
-  </style>
+  <!-- GrapesJS -->
+  <link rel="stylesheet" href="https://unpkg.com/grapesjs@0.21.13/dist/css/grapes.min.css" />
+  <script src="https://unpkg.com/grapesjs@0.21.13/dist/grapes.min.js"></script>
+  <script src="https://unpkg.com/grapesjs-blocks-basic@1.0.2/dist/index.js"></script>
+
+  <!-- Editor theme -->
+  <link rel="stylesheet" href="editor.css" />
 </head>
 <body>
-  <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
 
-  <!-- Live Visual Preview Component Registration -->
-  <script>
-    // Register site stylesheet into the live preview pane
-    CMS.registerPreviewStyle('/css/style.css');
+  <!-- ─── Top Bar ─── -->
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <span class="logo">INTEERNEETS</span>
+      <div class="page-tabs">
+        <button class="page-btn active" data-page="home">Home Page</button>
+        <button class="page-btn" data-page="shop">Shop Page</button>
+      </div>
+    </div>
 
-    // Home Page Live Visual Preview Template
-    const HomePreview = createClass({
-      render: function() {
-        const entry = this.props.entry;
-        const heading = entry.getIn(['data', 'heading']) || 'Coming Soon';
-        const headingFont = entry.getIn(['data', 'heading_font']) || 'Playfair Display';
-        const headingColor = entry.getIn(['data', 'heading_color']) || '#f5f5f5';
-        const headingSize = entry.getIn(['data', 'heading_size']) || 4.5;
+    <div class="top-bar-right">
+      <button id="btn-add-text" class="tb-btn" title="Add a new draggable text box">+ Text</button>
+      <button id="btn-add-image" class="tb-btn" title="Add a new draggable image">+ Image</button>
+      <button id="btn-freedrag" class="tb-btn" title="Drag elements anywhere on the page">&#10021; Free Drag</button>
+      <button id="btn-upload" class="tb-btn" title="Upload images or fonts (.woff .woff2 .ttf .otf)">&#8682; Upload</button>
+      <input type="file" id="upload-input" multiple accept="image/*,.woff,.woff2,.ttf,.otf" hidden />
+      <button id="btn-undo" class="tb-btn" title="Undo">&#8630; Undo</button>
+      <button id="btn-redo" class="tb-btn" title="Redo">&#8631; Redo</button>
+      <button id="btn-preview" class="tb-btn" title="Preview">&#9654; Preview</button>
+      <button id="btn-save" class="tb-btn save-btn" title="Save (Ctrl+S)">&#128190; Save</button>
+      <button id="btn-reset" class="tb-btn" title="Reset page to default">&#8634; Reset</button>
+      <button id="btn-settings" class="tb-btn settings-btn" title="Settings">&#9881;</button>
+    </div>
+  </div>
 
-        const subtitle = entry.getIn(['data', 'subtitle']) || '';
-        const subtitleFont = entry.getIn(['data', 'subtitle_font']) || 'Inter';
-        const subtitleColor = entry.getIn(['data', 'subtitle_color']) || '#888888';
-        const subtitleSize = entry.getIn(['data', 'subtitle_size']) || 1.2;
+  <!-- ─── GrapesJS Container ─── -->
+  <div id="gjs"></div>
 
-        const bg = this.props.getAsset(entry.getIn(['data', 'background_image']));
-        const emailBtnText = entry.getIn(['data', 'email_button_text']) || 'EMAIL US';
-        const emailBtnColor = entry.getIn(['data', 'email_button_color']) || '#c9a96e';
+  <!-- ─── Settings Modal ─── -->
+  <div id="settings-overlay" class="settings-overlay hidden">
+    <div class="settings-modal">
+      <div class="settings-header">
+        <h2>Site Settings</h2>
+        <button id="settings-close" class="settings-close-btn">&times;</button>
+      </div>
 
-        return h('div', {
-          style: {
-            minHeight: '100vh',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            textAlign: 'center',
-            backgroundColor: '#0a0a0a',
-            backgroundImage: bg ? 'url(' + bg.toString() + ')' : 'none',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            position: 'relative',
-            padding: '24px'
-          }
-        },
-          h('div', { style: { maxWidth: '750px', zIndex: 10 } },
-            h('h1', {
-              style: {
-                fontFamily: headingFont + ', serif',
-                color: headingColor,
-                fontSize: headingSize + 'rem',
-                letterSpacing: '2px',
-                marginBottom: '16px',
-                lineHeight: '1.1'
-              }
-            }, heading),
-            h('p', {
-              style: {
-                fontFamily: subtitleFont + ', sans-serif',
-                color: subtitleColor,
-                fontSize: subtitleSize + 'rem',
-                marginBottom: '40px'
-              }
-            }, subtitle),
-            h('a', {
-              href: '#',
-              style: {
-                display: 'inline-block',
-                padding: '14px 40px',
-                border: '1px solid ' + emailBtnColor,
-                color: emailBtnColor,
-                fontSize: '0.85rem',
-                fontWeight: '600',
-                letterSpacing: '1.5px',
-                textTransform: 'uppercase',
-                textDecoration: 'none',
-                borderRadius: '4px'
-              }
-            }, emailBtnText)
-          )
-        );
-      }
-    });
+      <div class="settings-body">
+        <label>Contact Email</label>
+        <input type="email" id="set-email" value="inteerneets@gmail.com" />
 
-    CMS.registerPreviewTemplate('home_page', HomePreview);
-  </script>
+        <label>Shopify Domain</label>
+        <input type="text" id="set-shopify-domain" placeholder="your-store.myshopify.com" />
+
+        <label>Shopify Storefront Token</label>
+        <input type="text" id="set-shopify-token" placeholder="storefront access token" />
+
+        <label>Product IDs <small>(one per line)</small></label>
+        <textarea id="set-product-ids" rows="4" placeholder="gid://shopify/Product/123456&#10;gid://shopify/Product/789012"></textarea>
+
+        <label>Instagram URL</label>
+        <input type="url" id="set-instagram" placeholder="https://instagram.com/..." />
+
+        <label>TikTok URL</label>
+        <input type="url" id="set-tiktok" placeholder="https://tiktok.com/@..." />
+
+        <label>Twitter URL</label>
+        <input type="url" id="set-twitter" placeholder="https://twitter.com/..." />
+
+        <label>Site Background Color <small>(exact color, no tint)</small></label>
+        <input type="color" id="set-bg-color" value="#0a0a0a" />
+
+        <label class="check-row"><input type="checkbox" id="set-bg-shading" /> Add dark shading overlay (off = pure flat color)</label>
+      </div>
+
+      <div class="settings-footer">
+        <button id="settings-save" class="settings-save-btn">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Toast ─── -->
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- ─── Editor logic ─── -->
+  <script src="editor.js"></script>
 </body>
 </html>
