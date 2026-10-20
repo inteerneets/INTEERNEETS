@@ -1087,6 +1087,14 @@ async function uploadFiles(files) {
       if (FONT_EXT.test(json.url)) {
         registerFont(json.url);
         showToast(`Font "${fontNameFromUrl(json.url)}" uploaded — pick it in Typography > Font`);
+      } else if (IS_LIVE) {
+        // On the live site the picture only exists after Cloudflare redeploys (about a minute).
+        // Wait until it is really available so the picker never shows a broken thumbnail.
+        showToast('Image uploaded \u2014 publishing it to the live site (about a minute)\u2026');
+        const ok = await waitForUrl(json.url, 240000);
+        if (!ok) { showToast('Still publishing \u2014 reopen the picture picker in a minute'); continue; }
+        if (!editor.AssetManager.getAll().some((a) => a.get('src') === json.url)) editor.AssetManager.add(json.url);
+        showToast('Image ready \u2014 pick it in the picture picker');
       } else {
         editor.AssetManager.add(json.url);
         showToast('Image uploaded — double-click an image or use Bg Image to pick it');
@@ -1098,12 +1106,32 @@ async function uploadFiles(files) {
   }
 }
 
+// Resolves true once a URL can be fetched (used to wait for a fresh upload to be published)
+async function waitForUrl(url, maxMs) {
+  const end = Date.now() + maxMs;
+  while (Date.now() < end) {
+    try {
+      const r = await fetch(`${url}?t=${Date.now()}`, { method: 'HEAD', cache: 'no-store' });
+      if (r.ok && /^image\//i.test(r.headers.get('content-type') || '')) return true;
+    } catch (_) { /* keep waiting */ }
+    await new Promise((r) => setTimeout(r, 4000));
+  }
+  return false;
+}
+
 async function loadAssets() {
   try {
     const res = await fetch('/api/assets');
     if (!res.ok) return;
     const data = await res.json();
-    if (Array.isArray(data.images)) editor.AssetManager.add(data.images.filter((u) => !u.endsWith('.gitkeep')));
+    if (Array.isArray(data.images)) {
+      let imgs = data.images.filter((u) => !u.endsWith('.gitkeep'));
+      if (IS_LIVE) { // hide pictures that are uploaded but not published yet (they would be broken thumbnails)
+        const ok = await Promise.all(imgs.map((u) => fetch(`${u}?t=${Date.now()}`, { method: 'HEAD', cache: 'no-store' }).then((r) => r.ok).catch(() => false)));
+        imgs = imgs.filter((_, i) => ok[i]);
+      }
+      editor.AssetManager.add(imgs);
+    }
     if (Array.isArray(data.fonts)) data.fonts.filter((u) => FONT_EXT.test(u)).forEach(registerFont);
   } catch (_) {
     // Assets endpoint not available yet — no problem
