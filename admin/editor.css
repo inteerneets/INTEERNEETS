@@ -661,3 +661,16 @@ a.tb-btn:hover { color: #ddd; border-color: #555; }
 
 .sh-ed input[type=range], .shadow-pop input[type=range] { accent-color: #e53935; }
 
+
+/* Resize handles: large, easy to grab (corners are squares, sides are bars) */
+.gjs-resizer-c { z-index: 99; }
+.gjs-resizer-h {
+  width: 13px !important; height: 13px !important;
+  background: #ffffff !important; border: 2px solid #e53935 !important; border-radius: 3px !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,.6) !important;
+  margin: -7px !important; opacity: 1 !important;
+}
+.gjs-resizer-h:hover { background: #e53935 !important; transform: scale(1.15); }
+.gjs-resizer-h-tc, .gjs-resizer-h-bc { cursor: ns-resize; }
+.gjs-resizer-h-cl, .gjs-resizer-h-cr { cursor: ew-resize; }
+.gjs-toolbar-item__q-img { width: auto !important; min-width: 56px; padding: 0 6px !important; }

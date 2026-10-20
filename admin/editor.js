@@ -2147,3 +2147,123 @@ function shrinkIfBig(file, dataUrl) {
     img.src = dataUrl;
   });
 }
+
+
+// ???????????????????????????????????????????????????????????????
+// PICTURE RESIZE ? big drag handles + a panel with exact size, proportions, fit, corners, opacity
+// ???????????????????????????????????????????????????????????????
+const isImageComp = (c) => !!c && (c.is('image') || (c.get('tagName') || '').toLowerCase() === 'img');
+const imgSel = () => { const c = editor.getSelected(); return isImageComp(c) ? c : null; };
+function openImagePanel() {
+  ['colors-panel', 'pagebg-panel', 'button-panel'].forEach((id) => byId(id).classList.add('hidden'));
+  byId('image-panel').classList.remove('hidden');
+  syncImagePanel();
+}
+function syncImagePanel() {
+  const c = imgSel();
+  byId('bi-hint').style.display = c ? 'none' : 'block';
+  byId('bi-body').style.display = c ? 'block' : 'none';
+  if (!c) return;
+  const el = c.getEl();
+  const cs = el.ownerDocument.defaultView.getComputedStyle(el);
+  const st = c.getStyle();
+  const w = String(st.width || '');
+  const unit = /%$/.test(w) ? '%' : 'px';
+  byId('bi-unit').value = unit;
+  byId('bi-width').value = unit === '%' ? parseFloat(w) : Math.round(el.getBoundingClientRect().width);
+  const wsl = byId('bi-wslider');
+  wsl.max = unit === '%' ? 100 : 1600;
+  wsl.value = byId('bi-width').value;
+  // "Keep proportions" is on when the height follows the width (auto) or already matches the picture's own shape
+  const rect = el.getBoundingClientRect();
+  const nat = el.naturalWidth && el.naturalHeight ? el.naturalWidth / el.naturalHeight : 0;
+  const auto = !st.height || st.height === 'auto' || (nat && Math.abs(rect.width / rect.height - nat) / nat < 0.03);
+  byId('bi-lock').checked = auto;
+  byId('bi-height').value = Math.round(el.getBoundingClientRect().height);
+  byId('bi-height').disabled = auto;
+  byId('bi-fit').value = cs.objectFit || 'fill';
+  byId('bi-radius').value = parseFloat(cs.borderTopLeftRadius) || 0;
+  byId('bi-opacity').value = Math.round((parseFloat(cs.opacity) || 1) * 100);
+}
+function setImageWidth(val, unit) {
+  const c = imgSel();
+  if (!c) return;
+  const patch = { width: val + unit, 'max-width': '100%' };
+  if (byId('bi-lock').checked) patch.height = 'auto';
+  c.addStyle(patch);
+}
+byId('btn-imgsize').addEventListener('click', () => {
+  const p = byId('image-panel');
+  if (p.classList.contains('hidden')) openImagePanel(); else p.classList.add('hidden');
+});
+byId('bi-close').addEventListener('click', () => byId('image-panel').classList.add('hidden'));
+editor.on('component:selected', () => { if (!byId('image-panel').classList.contains('hidden')) syncImagePanel(); });
+editor.on('component:styleUpdate', () => { if (!byId('image-panel').classList.contains('hidden')) clearTimeout(window.__imgSync), window.__imgSync = setTimeout(syncImagePanel, 150); });
+byId('bi-width').addEventListener('input', (e) => {
+  const v = Number(e.target.value) || 1;
+  byId('bi-wslider').value = v;
+  setImageWidth(v, byId('bi-unit').value);
+});
+byId('bi-wslider').addEventListener('input', (e) => { byId('bi-width').value = e.target.value; setImageWidth(Number(e.target.value), byId('bi-unit').value); });
+byId('bi-unit').addEventListener('change', () => {
+  const c = imgSel();
+  if (!c) return;
+  const el = c.getEl(), pw = el.parentElement ? el.parentElement.clientWidth : el.ownerDocument.documentElement.clientWidth;
+  const unit = byId('bi-unit').value, cur = el.getBoundingClientRect().width;
+  const v = unit === '%' ? Math.max(1, Math.min(100, Math.round(cur / pw * 100))) : Math.round(cur);
+  byId('bi-wslider').max = unit === '%' ? 100 : 1600;
+  byId('bi-width').value = v; byId('bi-wslider').value = v;
+  setImageWidth(v, unit);
+});
+byId('bi-lock').addEventListener('change', (e) => {
+  const c = imgSel();
+  if (!c) return;
+  byId('bi-height').disabled = e.target.checked;
+  if (e.target.checked) c.addStyle({ height: 'auto' });
+  else { const h = Math.round(c.getEl().getBoundingClientRect().height); byId('bi-height').value = h; c.addStyle({ height: h + 'px' }); }
+});
+byId('bi-height').addEventListener('input', (e) => { const c = imgSel(); if (c && !byId('bi-lock').checked) c.addStyle({ height: (Number(e.target.value) || 1) + 'px' }); });
+byId('bi-fit').addEventListener('change', (e) => { const c = imgSel(); if (c) c.addStyle({ 'object-fit': e.target.value }); });
+byId('bi-radius').addEventListener('input', (e) => { const c = imgSel(); if (c) c.addStyle({ 'border-radius': (Number(e.target.value) || 0) + 'px' }); });
+byId('bi-opacity').addEventListener('input', (e) => { const c = imgSel(); if (c) c.addStyle({ opacity: String((Number(e.target.value) || 0) / 100) }); });
+byId('bi-center').addEventListener('click', () => centerHorizontally(imgSel()));
+byId('bi-quick').querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
+  const c = imgSel();
+  if (!c) return;
+  byId('bi-lock').checked = true;
+  if (b.dataset.w === 'orig') {
+    const nw = c.getEl().naturalWidth || 400;
+    byId('bi-unit').value = 'px'; byId('bi-width').value = nw;
+    setImageWidth(nw, 'px');
+  } else {
+    byId('bi-unit').value = '%'; byId('bi-width').value = parseFloat(b.dataset.w);
+    setImageWidth(parseFloat(b.dataset.w), '%');
+  }
+  syncImagePanel();
+}));
+byId('bi-replace').addEventListener('click', () => {
+  const c = imgSel();
+  if (!c) return;
+  editor.AssetManager.open({
+    select(asset, complete) {
+      const src = asset.get ? asset.get('src') : asset;
+      c.set('src', src); c.addAttributes({ src });
+      if (complete !== false) editor.AssetManager.close();
+      markDirty(currentPage);
+    },
+  });
+});
+// "Size" shortcut on the little toolbar above a selected picture
+(function addImageTool() {
+  const prev = ensureExtraTools;
+  ensureExtraTools = function (c) {
+    prev(c);
+    if (!isImageComp(c)) return;
+    const tb = c.get('toolbar') || [];
+    if (tb.some((t) => t.id === 'q-img')) return;
+    c.set('toolbar', [{ id: 'q-img', label: '<span class="tb-fmt" style="font-size:11px">Size\u270E</span>', attributes: { title: 'Resize this picture: exact size, proportions, fit, corners' }, command: () => openImagePanel() }, ...tb]);
+  };
+})();
+
+editor.on('component:add', ensureExtraTools);
+editor.on('component:selected', ensureExtraTools);
