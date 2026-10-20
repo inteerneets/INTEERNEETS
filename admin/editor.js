@@ -1310,7 +1310,7 @@ function syncColorInputs() {
     byId('btn-samehover').checked = !siteColors.btn_hover_fill;
     byId('btn-width').value = parseFloat(siteColors.btn_border_width) || 0;
     byId('btn-radius').value = parseFloat(siteColors.btn_radius) || 0;
-    byId('btn-shadow').value = siteColors.btn_shadow || '';
+    if (window.__btnShadowEd) window.__btnShadowEd.set(siteColors.btn_shadow || 'none', true);
   }
 }
 function setSiteColors(c) {
@@ -1796,7 +1796,6 @@ editor.on('component:add', refreshBtnCssSoon);
   byId('sw-btn-hover').addEventListener('input', () => { byId('btn-samehover').checked = false; });
   byId('btn-width').addEventListener('input', (e) => set({ btn_border_width: (Number(e.target.value) || 0) + 'px' }));
   byId('btn-radius').addEventListener('input', (e) => set({ btn_radius: (Number(e.target.value) || 0) + 'px' }));
-  byId('btn-shadow').addEventListener('input', (e) => set({ btn_shadow: e.target.value.trim() }));
 })();
 ﻿
 // ═══════════════════════════════════════════════════════════════
@@ -1933,6 +1932,69 @@ editor.on('component:deselected', () => byId('shadow-pop').classList.add('hidden
 })();
 
 // ── Button editor panel ──
+
+// Reusable shadow editor: on/off, X, Y, blur, spread, a real color picker and opacity. No typing of CSS.
+function parseShadow(str) {
+  const out = { on: false, x: 0, y: 6, blur: 16, spread: 0, color: '#000000', opacity: 30 };
+  str = String(str || '').trim();
+  if (!str || str === 'none') return out;
+  const first = str.split(/,(?![^(]*\))/)[0]; // first layer only
+  const col = /(rgba?\([^)]*\)|#[0-9a-fA-F]{3,8})/.exec(first);
+  if (col) {
+    const c = col[1];
+    if (c[0] === '#') { out.color = c.length === 4 ? '#' + [...c.slice(1)].map((x) => x + x).join('') : c.slice(0, 7); }
+    else {
+      const m = /rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)(?:[,\s/]+([\d.]+))?/.exec(c);
+      if (m) { out.color = '#' + [m[1], m[2], m[3]].map((n) => Number(n).toString(16).padStart(2, '0')).join(''); out.opacity = Math.round((m[4] === undefined ? 1 : Number(m[4])) * 100); }
+    }
+  }
+  const nums = (first.replace(col ? col[1] : '', '').match(/-?[\d.]+(?=px|\s|$)/g) || []).map(Number);
+  if (nums.length >= 2) { out.on = true; out.x = nums[0]; out.y = nums[1]; out.blur = nums[2] || 0; out.spread = nums[3] || 0; }
+  return out;
+}
+function buildShadow(v) {
+  if (!v.on) return 'none';
+  return `${v.x}px ${v.y}px ${v.blur}px ${v.spread}px ${hexToRgba(v.color, (v.opacity || 0) / 100)}`;
+}
+function makeShadowEditor(host, { spread = true, onChange }) {
+  const presets = [
+    ['Soft', { x: 0, y: 2, blur: 6, spread: 0, opacity: 30 }],
+    ['Medium', { x: 0, y: 6, blur: 16, spread: 0, opacity: 35 }],
+    ['Strong', { x: 0, y: 12, blur: 30, spread: 0, opacity: 50 }],
+    ['Glow', { x: 0, y: 0, blur: 18, spread: 0, opacity: 70, color: '#ffffff' }],
+  ];
+  const sliders = [['x', 'X (right)', -60, 60], ['y', 'Y (down)', -60, 60], ['blur', 'Blur', 0, 80]];
+  if (spread) sliders.push(['spread', 'Spread', -30, 60]);
+  sliders.push(['opacity', 'Opacity %', 0, 100]);
+  host.classList.add('sh-ed');
+  host.innerHTML =
+    '<div class="sh-top"><label class="mini-check"><input type="checkbox" class="se-on" /> On</label>' +
+    '<span class="sh-presets">' + presets.map((p, i) => '<button type="button" data-i="' + i + '">' + p[0] + '</button>').join('') + '</span></div>' +
+    sliders.map((s) => '<div class="sh-row"><span>' + s[1] + '</span><input type="range" class="se-' + s[0] + '" min="' + s[2] + '" max="' + s[3] + '" /><b class="sv-' + s[0] + '"></b></div>').join('') +
+    '<div class="sh-row"><span>Color</span><input type="color" class="se-color" /></div>';
+  const q = (c) => host.querySelector(c);
+  const state = parseShadow('none');
+  const render = () => {
+    q('.se-on').checked = state.on;
+    sliders.forEach((s) => { q('.se-' + s[0]).value = state[s[0]]; q('.sv-' + s[0]).textContent = state[s[0]]; });
+    q('.se-color').value = state.color;
+    host.classList.toggle('off', !state.on);
+  };
+  const fire = () => { render(); if (onChange) onChange(buildShadow(state)); };
+  q('.se-on').addEventListener('change', (e) => { state.on = e.target.checked; fire(); });
+  sliders.forEach((s) => q('.se-' + s[0]).addEventListener('input', (e) => { state[s[0]] = Number(e.target.value); state.on = true; fire(); }));
+  q('.se-color').addEventListener('input', (e) => { state.color = e.target.value; state.on = true; fire(); });
+  host.querySelectorAll('.sh-presets button').forEach((b) => b.addEventListener('click', () => {
+    Object.assign(state, { color: '#000000' }, presets[Number(b.dataset.i)][1], { on: true }); fire();
+  }));
+  render();
+  return { set(str) { Object.assign(state, parseShadow(str)); render(); }, get: () => buildShadow(state) };
+}
+const bpDropEd = makeShadowEditor(byId('bp-shadow-box'), { spread: true, onChange: (v) => { const c = editor.getSelected(); if (isButtonLike(c)) c.addStyle({ 'box-shadow': v }); } });
+const bpHoverEd = makeShadowEditor(byId('bp-hshadow-box'), { spread: true, onChange: (v) => { const c = editor.getSelected(); if (isButtonLike(c)) c.addStyle({ '--btn-shadow': v }); } });
+window.__btnShadowEd = makeShadowEditor(byId('btn-shadow-box'), { spread: true, onChange: (v) => { siteColors.btn_shadow = v; applyColorsToCanvas(); } });
+window.__btnShadowEd.set(siteColors.btn_shadow || 'none');
+
 const BP_FONT = byId('bp-font');
 function openButtonPanel() {
   byId('colors-panel').classList.add('hidden');
@@ -1962,8 +2024,8 @@ function syncButtonPanel() {
   byId('bp-bwidth').value = parseFloat(cs.borderTopWidth) || 0;
   byId('bp-bcolor').value = rgbToHex(cs.borderTopColor);
   byId('bp-radius').value = parseFloat(cs.borderTopLeftRadius) || 0;
-  byId('bp-shadow').value = cs.boxShadow && cs.boxShadow !== 'none' ? cs.boxShadow : '';
-  byId('bp-hshadow').value = (cs.getPropertyValue('--btn-shadow') || '').trim() || siteColors.btn_shadow || '';
+  bpDropEd.set(cs.boxShadow);
+  bpHoverEd.set((cs.getPropertyValue('--btn-shadow') || '').trim() || siteColors.btn_shadow || 'none');
 }
 const bpSel = () => { const c = editor.getSelected(); return isButtonLike(c) ? c : null; };
 const bpApply = (patch) => { const c = bpSel(); if (c) c.addStyle(patch); };
@@ -1986,12 +2048,6 @@ const bpBorder = () => bpApply({ border: `${Number(byId('bp-bwidth').value) || 0
 byId('bp-bwidth').addEventListener('input', bpBorder);
 byId('bp-bcolor').addEventListener('input', bpBorder);
 byId('bp-radius').addEventListener('input', (e) => bpApply({ 'border-radius': (Number(e.target.value) || 0) + 'px', '--btn-radius': (Number(e.target.value) || 0) + 'px' }));
-byId('bp-shadow').addEventListener('input', (e) => bpApply({ 'box-shadow': e.target.value.trim() || 'none' }));
-byId('bp-hshadow').addEventListener('input', (e) => bpApply({ '--btn-shadow': e.target.value.trim() || 'none' }));
-document.querySelectorAll('#bp-presets button').forEach((b) => b.addEventListener('click', () => {
-  byId('bp-shadow').value = b.dataset.v === 'none' ? '' : b.dataset.v;
-  bpApply({ 'box-shadow': b.dataset.v });
-}));
 
 // Dragging an element that was centered with "Center": convert its percent position to pixels first
 editor.on('dmode:start', (opts) => {

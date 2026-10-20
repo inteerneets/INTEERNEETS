@@ -19,7 +19,7 @@
   <script src="https://unpkg.com/grapesjs-blocks-basic@1.0.2/dist/index.js"></script>
 
   <!-- Editor theme -->
-  <link rel="stylesheet" href="editor.css?v=20261020h" />
+  <link rel="stylesheet" href="editor.css?v=20261020i" />
 </head>
 <body>
 
@@ -162,9 +162,10 @@
       <div class="swatch-row"><label for="bp-bwidth">Outline width (px)</label><input type="number" id="bp-bwidth" class="pbg-num" min="0" max="20" /></div>
       <div class="swatch-row"><label for="bp-bcolor">Outline color</label><input type="color" id="bp-bcolor" /></div>
       <div class="swatch-row"><label for="bp-radius">Corner radius (px)</label><input type="number" id="bp-radius" class="pbg-num" min="0" max="80" /></div>
-      <div class="swatch-row"><label for="bp-shadow">Drop shadow</label><input type="text" id="bp-shadow" class="bp-wide" placeholder="x y blur color, e.g. 0 6px 16px rgba(0,0,0,.3)" /></div>
-      <div id="bp-presets" class="shadow-presets"><button type="button" data-v="none">None</button><button type="button" data-v="0 2px 6px rgba(0,0,0,.3)">Soft</button><button type="button" data-v="0 6px 16px rgba(0,0,0,.35)">Medium</button><button type="button" data-v="0 12px 30px rgba(0,0,0,.5)">Strong</button><button type="button" data-v="0 0 18px rgba(255,255,255,.7)">Glow</button></div>
-      <div class="swatch-row"><label for="bp-hshadow">Hover shadow</label><input type="text" id="bp-hshadow" class="bp-wide" placeholder="shows when hovered" /></div>
+      <div class="sh-title">Drop shadow</div>
+      <div id="bp-shadow-box"></div>
+      <div class="sh-title">Hover shadow <span>(when the mouse is over it)</span></div>
+      <div id="bp-hshadow-box"></div>
       <p class="colors-hint small">Changes only this button. Site-wide defaults are in <b>Colors → Buttons</b>.</p>
     </div>
   </div>
@@ -196,8 +197,9 @@
     <div class="swatch-row"><label for="btn-width">Outline width (px)</label><input type="number" id="btn-width" class="pbg-num" min="0" max="12" value="2" /></div>
     <div class="swatch-row"><label for="btn-radius">Corner radius (px)</label><input type="number" id="btn-radius" class="pbg-num" min="0" max="60" value="0" /></div>
     <div class="swatch-row"><label for="sw-btn-hover">Hover fill</label><input type="color" id="sw-btn-hover" data-key="btn_hover_fill" /><input type="text" class="hex" data-for="sw-btn-hover" maxlength="7" /><label class="mini-check"><input type="checkbox" id="btn-samehover" checked /> same</label></div>
-    <div class="swatch-row"><label for="btn-shadow">Hover shadow</label><input type="text" id="btn-shadow" class="hex" style="width:150px" placeholder="0 6px 16px rgba(0,0,0,.28)" /></div>
-    <p class="colors-hint small">Shadow = <code>x y blur color</code>. Type <code>none</code> for no shadow. Each button can also be styled on its own in the Style panel.</p>
+    <div class="sh-title">Hover shadow</div>
+    <div id="btn-shadow-box"></div>
+    <p class="colors-hint small">Each button can also be styled on its own: select it, then click <b>Button</b> in the top bar.</p>
     <div class="colors-presets-title">Quick schemes</div>
     <div id="color-presets" class="color-presets"></div>
     <div class="colors-actions">
@@ -211,6 +213,6 @@
   <div id="toast" class="toast hidden"></div>
 
   <!-- ─── Editor logic ─── -->
-  <script src="editor.js?v=20261020h"></script>
+  <script src="editor.js?v=20261020i"></script>
 </body>
 </html>
