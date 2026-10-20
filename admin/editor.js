@@ -549,6 +549,15 @@ async function savePage() {
   }
 }
 
+// Default template: set the CSS FIRST, then the components. Calling setStyle()
+// after setComponents() would wipe the rules GrapesJS derives from inline styles.
+function applyDefaultTemplate(page) {
+  const html = page === 'shop' ? DEFAULT_SHOP_HTML : DEFAULT_HOME_HTML;
+  const css = page === 'shop' ? DEFAULT_SHOP_CSS : DEFAULT_HOME_CSS;
+  editor.setStyle(css);
+  editor.setComponents(html);
+}
+
 async function loadPage(page) {
   currentPage = page;
 
@@ -570,10 +579,7 @@ async function loadPage(page) {
   }
 
   // Fall back to default template
-  const defaultHTML = page === 'shop' ? DEFAULT_SHOP_HTML : DEFAULT_HOME_HTML;
-  const defaultCSS = page === 'shop' ? DEFAULT_SHOP_CSS : DEFAULT_HOME_CSS;
-  editor.setComponents(defaultHTML);
-  editor.setStyle(defaultCSS);
+  applyDefaultTemplate(page);
   showToast(`Loaded default ${page} template`);
 }
 
@@ -801,10 +807,7 @@ document.getElementById('btn-preview').addEventListener('click', () => {
 // Reset
 document.getElementById('btn-reset').addEventListener('click', () => {
   if (confirm(`Reset the ${currentPage} page to its default template? All unsaved changes will be lost.`)) {
-    const defaultHTML = currentPage === 'shop' ? DEFAULT_SHOP_HTML : DEFAULT_HOME_HTML;
-    const defaultCSS = currentPage === 'shop' ? DEFAULT_SHOP_CSS : DEFAULT_HOME_CSS;
-    editor.setComponents(defaultHTML);
-    editor.setStyle(defaultCSS);
+    applyDefaultTemplate(currentPage);
     showToast('Page reset to default');
   }
 });
@@ -827,6 +830,11 @@ document.getElementById('settings-save').addEventListener('click', saveSettings)
 // INIT
 // ═══════════════════════════════════════════════════════════════
 
-loadPage('home');
-loadSettings();
-loadAssets();
+// Wait until the editor + canvas are ready before loading content
+editor.on('load', () => {
+  // Allow styling the page body itself (default only allows background)
+  editor.getWrapper().set('stylable', true);
+  loadPage('home');
+  loadSettings();
+  loadAssets();
+});
