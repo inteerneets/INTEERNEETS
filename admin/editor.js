@@ -1289,7 +1289,7 @@ const DEFAULT_COLORS = {
   bg: '#0a0a0a', text: '#ffffff', highlight: '#e53935', button: '#e53935', button_text: '#ffffff',
   // Buttons: outline only, black, soft shadow on hover (all customizable in the Colors panel)
   btn_fill: 'transparent', btn_text: '#000000', btn_border: '#000000', btn_border_width: '2px', btn_radius: '0px',
-  btn_hover_fill: '', btn_shadow: '0 6px 16px rgba(0,0,0,0.28)',
+  btn_hover_fill: '', btn_shadow: 'drop-shadow(0 6px 16px rgba(0,0,0,0.28))',
 };
 const COLOR_PRESETS = [
   { name: 'Dark + Red',    c: { bg: '#0a0a0a', text: '#ffffff', highlight: '#e53935', button: '#e53935', button_text: '#ffffff' } },
@@ -1305,7 +1305,7 @@ function colorVarsCss(c) {
   return `:root{--c-bg:${c.bg};--c-text:${c.text};--c-highlight:${c.highlight};--c-button:${c.button};--c-button-text:${c.button_text};` +
     `--btn-fill:${c.btn_fill || 'transparent'};--btn-text:${c.btn_text || '#000000'};--btn-border:${c.btn_border || '#000000'};` +
     `--btn-border-width:${c.btn_border_width || '0px'};--btn-radius:${c.btn_radius || '0px'};` +
-    `--btn-hover-fill:${c.btn_hover_fill || 'var(--btn-fill)'};--btn-shadow:${c.btn_shadow || 'none'};}`;
+    `--btn-hover-fill:${c.btn_hover_fill || 'var(--btn-fill)'};--btn-shadow:${toFilterShadow(c.btn_shadow)};}`;
 }
 function applyColorsToCanvas() {
   const doc = editor.Canvas.getDocument();
@@ -1775,6 +1775,11 @@ function normalizeEditorBtn() {
         }
         next[k] = st[k];
       });
+      if (JSON.stringify(st).includes('--btn-fill') && next['box-shadow'] && next['box-shadow'] !== 'none' && !next.filter) {
+        next.filter = toFilterShadow(next['box-shadow']);
+        next['box-shadow'] = 'none';
+        changed = true;
+      }
       if (changed) rule.setStyle(next);
     });
   } catch (e) { console.warn('normalizeEditorBtn', e); }
@@ -1792,8 +1797,8 @@ function refreshBtnCss() {
     if (!JSON.stringify(rule.getStyle()).includes('--btn-fill')) return;
     const sel = rule.selectorsToString();
     if (!sel || /:hover/.test(sel)) return;
-    css += sel + '{border-radius:var(--btn-radius,0);transition:box-shadow .25s ease,background .25s ease,color .25s ease;}' +
-           sel + ':hover{box-shadow:var(--btn-shadow,none);background:var(--btn-hover-fill,var(--btn-fill,transparent));}';
+    css += ':where(' + sel + '){border-radius:var(--btn-radius,0);transition:filter .25s ease,background .25s ease,color .25s ease;}' +
+           sel + ':hover{filter:var(--btn-shadow,none);background:var(--btn-hover-fill,var(--btn-fill,transparent));}';
   });
   tag.textContent = css;
 }
@@ -1952,7 +1957,7 @@ editor.on('component:deselected', () => byId('shadow-pop').classList.add('hidden
 // Reusable shadow editor: on/off, X, Y, blur, spread, a real color picker and opacity. No typing of CSS.
 function parseShadow(str) {
   const out = { on: false, x: 0, y: 6, blur: 16, spread: 0, color: '#000000', opacity: 30 };
-  str = String(str || '').trim();
+  str = String(str || '').trim().replace(/^drop-shadow\((.*)\)$/i, '$1');
   if (!str || str === 'none') return out;
   const first = str.split(/,(?![^(]*\))/)[0]; // first layer only
   const col = /(rgba?\([^)]*\)|#[0-9a-fA-F]{3,8})/.exec(first);
@@ -1970,7 +1975,7 @@ function parseShadow(str) {
 }
 function buildShadow(v) {
   if (!v.on) return 'none';
-  return `${v.x}px ${v.y}px ${v.blur}px ${v.spread}px ${hexToRgba(v.color, (v.opacity || 0) / 100)}`;
+  return `${v.x}px ${v.y}px ${v.blur}px${v.spread ? ' ' + v.spread + 'px' : ''} ${hexToRgba(v.color, (v.opacity || 0) / 100)}`;
 }
 function makeShadowEditor(host, { spread = true, onChange }) {
   const presets = [
@@ -2006,9 +2011,11 @@ function makeShadowEditor(host, { spread = true, onChange }) {
   render();
   return { set(str) { Object.assign(state, parseShadow(str)); render(); }, get: () => buildShadow(state) };
 }
-const bpDropEd = makeShadowEditor(byId('bp-shadow-box'), { spread: true, onChange: (v) => { const c = editor.getSelected(); if (isButtonLike(c)) c.addStyle({ 'box-shadow': v }); } });
-const bpHoverEd = makeShadowEditor(byId('bp-hshadow-box'), { spread: true, onChange: (v) => { const c = editor.getSelected(); if (isButtonLike(c)) c.addStyle({ '--btn-shadow': v }); } });
-window.__btnShadowEd = makeShadowEditor(byId('btn-shadow-box'), { spread: true, onChange: (v) => { siteColors.btn_shadow = v; applyColorsToCanvas(); } });
+// Button shadows are drop-shadow filters: they follow the outline and text, so a see-through button stays see-through
+const wrapDrop = (v) => (v === 'none' ? 'none' : `drop-shadow(${v})`);
+const bpDropEd = makeShadowEditor(byId('bp-shadow-box'), { spread: false, onChange: (v) => { const c = editor.getSelected(); if (isButtonLike(c)) c.addStyle({ filter: wrapDrop(v), 'box-shadow': 'none' }); } });
+const bpHoverEd = makeShadowEditor(byId('bp-hshadow-box'), { spread: false, onChange: (v) => { const c = editor.getSelected(); if (isButtonLike(c)) c.addStyle({ '--btn-shadow': wrapDrop(v) }); } });
+window.__btnShadowEd = makeShadowEditor(byId('btn-shadow-box'), { spread: false, onChange: (v) => { siteColors.btn_shadow = wrapDrop(v); applyColorsToCanvas(); } });
 window.__btnShadowEd.set(siteColors.btn_shadow || 'none');
 
 const BP_FONT = byId('bp-font');
@@ -2040,7 +2047,7 @@ function syncButtonPanel() {
   byId('bp-bwidth').value = parseFloat(cs.borderTopWidth) || 0;
   byId('bp-bcolor').value = rgbToHex(cs.borderTopColor);
   byId('bp-radius').value = parseFloat(cs.borderTopLeftRadius) || 0;
-  bpDropEd.set(cs.boxShadow);
+  bpDropEd.set(cs.filter && cs.filter !== 'none' ? cs.filter : cs.boxShadow);
   bpHoverEd.set((cs.getPropertyValue('--btn-shadow') || '').trim() || siteColors.btn_shadow || 'none');
 }
 const bpSel = () => { const c = editor.getSelected(); return isButtonLike(c) ? c : null; };
@@ -2075,3 +2082,24 @@ editor.on('dmode:start', (opts) => {
     if (el) c.addStyle({ left: el.offsetLeft + 'px', transform: 'none' });
   }
 });
+
+// Helper shared with the live site: turn any shadow text into a drop-shadow() filter value
+function toFilterShadow(v) {
+  v = String(v || '').trim();
+  if (!v || v === 'none') return 'none';
+  if (/^drop-shadow\(/i.test(v)) return v;
+  var col = /(rgba?\([^)]*\)|#[0-9a-fA-F]{3,8})/.exec(v);
+  var rest = v.replace(col ? col[1] : '', '');
+  var nums = (rest.match(/-?[\d.]+(?:px)?/g) || []).slice(0, 3).map(function (n) { return parseFloat(n) + 'px'; });
+  while (nums.length < 3) nums.push('0px');
+  return 'drop-shadow(' + nums.join(' ') + ' ' + (col ? col[1] : 'rgba(0,0,0,.3)') + ')';
+}
+// Old designs used a box-shadow on buttons (it can't show through a see-through button).
+// Convert it to a drop-shadow filter that follows the outline and text.
+function migrateBtnShadow(style) {
+  var bs = style.getPropertyValue('box-shadow');
+  if (bs && bs !== 'none' && !style.getPropertyValue('filter')) {
+    style.setProperty('filter', toFilterShadow(bs));
+    style.setProperty('box-shadow', 'none');
+  }
+}

@@ -13,7 +13,7 @@
       --c-button: #e53935; --c-button-text: #ffffff;
       /* Buttons: outline only, black, soft shadow on hover (customizable in the editor: Colors -> Buttons) */
       --btn-fill: transparent; --btn-text: #000000; --btn-border: #000000; --btn-border-width: 2px; --btn-radius: 0px;
-      --btn-hover-fill: var(--btn-fill); --btn-shadow: 0 6px 16px rgba(0,0,0,.28);
+      --btn-hover-fill: var(--btn-fill); --btn-shadow: drop-shadow(0 6px 16px rgba(0,0,0,.28));
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html { scroll-behavior: smooth; background: var(--c-bg); }
@@ -114,7 +114,7 @@
         var map = { bg: '--c-bg', text: '--c-text', highlight: '--c-highlight', button: '--c-button', button_text: '--c-button-text',
           btn_fill: '--btn-fill', btn_text: '--btn-text', btn_border: '--btn-border', btn_border_width: '--btn-border-width',
           btn_radius: '--btn-radius', btn_hover_fill: '--btn-hover-fill', btn_shadow: '--btn-shadow' };
-        Object.keys(map).forEach(function (k) { if (c[k]) document.documentElement.style.setProperty(map[k], c[k]); });
+        Object.keys(map).forEach(function (k) { if (c[k]) document.documentElement.style.setProperty(map[k], k === 'btn_shadow' ? toFilterShadow(c[k]) : c[k]); });
       }
       if (s.site_bg_shading) document.getElementById('shade').style.display = 'block';
     }
@@ -123,7 +123,29 @@
     // A page's background is controlled only by its Page BG setting, so drop any
     // background that old designs painted on the page itself (html/body or full-page sections).
     var THEME_BG = /background(?:-color)?\s*:\s*var\(--c-bg[^;}]*;?/gi;
-    function stripBg(css) { return css ? normBtn(css.replace(THEME_BG, '')) : css; }
+    function stripBg(css) { return css ? migrateBtnCss(normBtn(css.replace(THEME_BG, ''))) : css; }
+    // Buttons are found in the saved CSS text (rules that use the --btn-* variables), so a button that
+    // also has its own background/shadow settings still gets the hover shadow and the see-through shadow.
+    function migrateBtnCss(css) {
+      return String(css).replace(/([^{}]+)\{([^}]*)\}/g, function (m, sel, body) {
+        if (body.indexOf('--btn-') === -1) return m;
+        body = body.replace(/box-shadow\s*:\s*([^;]+)(;|$)/i, function (mm, v) {
+          return v.trim() === 'none' ? mm : 'filter:' + toFilterShadow(v) + ';box-shadow:none;';
+        });
+        return sel + '{' + body + '}';
+      });
+    }
+    function btnExtraCss(css, scope) {
+      var out = '';
+      String(css).replace(/([^{}]+)\{([^}]*)\}/g, function (m, sel, body) {
+        if (body.indexOf('--btn-') === -1) return m;
+        var sels = sel.trim().split(',').map(function (s) { return scope + ' ' + s.trim(); });
+        out += sels.map(function (s) { return ':where(' + s + ')'; }).join(',') + '{border-radius:var(--btn-radius,0);transition:filter .25s ease,background .25s ease,color .25s ease;}' +
+          sels.map(function (s) { return s + ':hover'; }).join(',') + '{filter:var(--btn-shadow,none);background:var(--btn-hover-fill,var(--btn-fill,transparent));}';
+        return m;
+      });
+      return out;
+    }
     function normBtn(css) {
       return String(css)
         .replace(/border(-color)?\s*:\s*([\d.]+px\s+solid\s+)?var\(--c-button(?:,[^)]*)?\)/gi, function (m, c) {
@@ -135,6 +157,25 @@
 
     function dropBodyBg(style) {
       ['background', 'background-color', 'background-image'].forEach(function (p) { style.removeProperty(p); });
+    }
+    function toFilterShadow(v) {
+      v = String(v || '').trim();
+      if (!v || v === 'none') return 'none';
+      if (/^drop-shadow\(/i.test(v)) return v;
+      var col = /(rgba?\([^)]*\)|#[0-9a-fA-F]{3,8})/.exec(v);
+      var rest = v.replace(col ? col[1] : '', '');
+      var nums = (rest.match(/-?[\d.]+(?:px)?/g) || []).slice(0, 3).map(function (n) { return parseFloat(n) + 'px'; });
+      while (nums.length < 3) nums.push('0px');
+      return 'drop-shadow(' + nums.join(' ') + ' ' + (col ? col[1] : 'rgba(0,0,0,.3)') + ')';
+    }
+    // Old designs used a box-shadow on buttons (it can't show through a see-through button).
+    // Convert it to a drop-shadow filter that follows the outline and text.
+    function migrateBtnShadow(style) {
+      var bs = style.getPropertyValue('box-shadow');
+      if (bs && bs !== 'none' && !style.getPropertyValue('filter')) {
+        style.setProperty('filter', toFilterShadow(bs));
+        style.setProperty('box-shadow', 'none');
+      }
     }
     function scopeRules(rules, scope, fonts) {
       var out = '';
@@ -149,10 +190,6 @@
           });
           if (/^(html|body)$/i.test(r.selectorText.trim())) dropBodyBg(r.style);
           out += sels.join(',') + '{' + r.style.cssText + '}';
-          if (r.cssText.indexOf('--btn-fill') !== -1) { // button: radius, transition and the hover shadow
-            out += sels.join(',') + '{border-radius:var(--btn-radius,0);transition:box-shadow .25s ease,background .25s ease,color .25s ease;}' +
-              sels.map(function (s) { return s + ':hover'; }).join(',') + '{box-shadow:var(--btn-shadow,none);background:var(--btn-hover-fill,var(--btn-fill,transparent));}';
-          }
         } else if (r.type === 5) { // @font-face must be global
           fonts.push(r.cssText);
         } else if (r.type === 4) { // @media
@@ -163,7 +200,8 @@
       }
       return out;
     }
-    function scopeCss(css, scope, fonts) {
+    function scopeCss(css, scope, fonts) { return scopeCssCore(css, scope, fonts) + btnExtraCss(css, scope); }
+    function scopeCssCore(css, scope, fonts) {
       var rules;
       try {
         var sheet = new CSSStyleSheet();
@@ -351,8 +389,8 @@
                   'border': (colors.btn_border_width || '2px') + ' solid ' + (colors.btn_border || '#000000'),
                   'border-radius': colors.btn_radius || '0px',
                   'font-family': '"Inter", sans-serif', 'font-weight': '600', 'letter-spacing': '0.1em',
-                  'transition': 'box-shadow .25s ease, background .25s ease',
-                  ':hover': { 'background-color': colors.btn_hover_fill || colors.btn_fill || 'transparent', 'box-shadow': colors.btn_shadow || '0 6px 16px rgba(0,0,0,0.28)', 'color': colors.btn_text || '#000000' },
+                  'transition': 'filter .25s ease, background .25s ease',
+                  ':hover': { 'background-color': colors.btn_hover_fill || colors.btn_fill || 'transparent', 'filter': toFilterShadow(colors.btn_shadow || 'drop-shadow(0 6px 16px rgba(0,0,0,0.28))'), 'color': colors.btn_text || '#000000' },
                   ':focus': { 'background-color': colors.btn_hover_fill || colors.btn_fill || 'transparent', 'color': colors.btn_text || '#000000' }
                 }
               } } }
