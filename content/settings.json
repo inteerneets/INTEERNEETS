@@ -11,7 +11,14 @@
     "text": "#ffffff",
     "highlight": "#e53935",
     "button": "#e53935",
-    "button_text": "#ffffff"
+    "button_text": "#ffffff",
+    "btn_fill": "transparent",
+    "btn_text": "#000000",
+    "btn_border": "#000000",
+    "btn_border_width": "2px",
+    "btn_radius": "0px",
+    "btn_hover_fill": "",
+    "btn_shadow": "0 6px 16px rgba(0,0,0,0.28)"
   },
   "site_bg_color": "#0a0a0a",
   "site_bg_shading": false,
