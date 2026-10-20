@@ -864,6 +864,15 @@ function applyPageBg() {
   tag.textContent = css + '}body{background:transparent !important;}';
 }
 editor.on('canvas:frame:load', applyPageBg);
+// Safety net: if anything ever removes the background style from the canvas, put it back
+let pageBgWatch = null;
+editor.on('canvas:frame:load', () => {
+  const doc = editor.Canvas.getDocument();
+  if (!doc) return;
+  if (pageBgWatch) pageBgWatch.disconnect();
+  pageBgWatch = new MutationObserver(() => { if (!doc.getElementById('page-bg')) applyPageBg(); });
+  pageBgWatch.observe(doc.head, { childList: true });
+});
 
 // A page's background is controlled only by the Page BG button. Remove any background that
 // older designs painted on the page itself (var(--c-bg) full-page sections, html/body rules).

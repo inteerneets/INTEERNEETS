@@ -607,3 +607,12 @@ a.tb-btn:hover { color: #ddd; border-color: #555; }
 .top-bar-right .tb-btn { padding-left: 9px; padding-right: 9px; }
 .page-btn.error-tab { margin-left: 6px; }
 
+
+/* Toolbars: give the font / size / color widgets their own room so they never sit on top of B / I / U */
+.gjs-toolbar-item__q-font { width: 140px !important; }
+.gjs-toolbar-item select.tb-font { width: 128px; max-width: none; }
+.gjs-rte-action:has(select.rte-font) { width: 122px !important; }
+.gjs-rte-action:has(select.rte-size) { width: 76px !important; }
+.gjs-rte-action:has(input.rte-color) { width: 40px !important; }
+.gjs-rte-toolbar select.rte-font { width: 112px; }
+.gjs-rte-toolbar select.rte-size { width: 66px; }
