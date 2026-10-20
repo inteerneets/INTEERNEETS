@@ -16,6 +16,12 @@
     #bg { position: fixed; inset: 0; z-index: 0; background-color: var(--c-bg); background-repeat: no-repeat; background-position: center; background-size: cover; }
     #bg .ov { position: absolute; inset: 0; background: #000; opacity: 0; }
     #err { position: relative; z-index: 1; min-height: 100vh; }
+    /* Presentation site: no text selection and no I-beam cursor (links/buttons keep their pointer) */
+    html, body, body * { -webkit-user-select: none; user-select: none; cursor: default; -webkit-tap-highlight-color: transparent; }
+    a, a *, button, button *, [role="button"], select, label, summary { cursor: pointer; }
+    input, textarea { -webkit-user-select: text; user-select: text; cursor: text; }
+    img { -webkit-user-drag: none; user-drag: none; }
+
   </style>
   <style id="page-fonts"></style>
 </head>

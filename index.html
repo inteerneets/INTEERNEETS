@@ -54,6 +54,12 @@
     /* Pages */
     #pages { position: relative; z-index: 5; }
     .site-page { position: relative; min-height: 100vh; }
+    /* Presentation site: no text selection and no I-beam cursor (links/buttons keep their pointer) */
+    html, body, body * { -webkit-user-select: none; user-select: none; cursor: default; -webkit-tap-highlight-color: transparent; }
+    a, a *, button, button *, [role="button"], select, label, summary { cursor: pointer; }
+    input, textarea { -webkit-user-select: text; user-select: text; cursor: text; }
+    img { -webkit-user-drag: none; user-drag: none; }
+
   </style>
   <style id="page-fonts"></style>
 </head>
