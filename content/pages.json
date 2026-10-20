@@ -7,6 +7,10 @@
     {
       "id": "shop",
       "title": "Shop"
+    },
+    {
+      "id": "video-archive",
+      "title": "VIDEO ARCHIVE"
     }
   ]
 }
