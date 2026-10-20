@@ -1107,12 +1107,13 @@ async function uploadFiles(files) {
   if (!files || !files.length) return;
   for (const file of Array.from(files)) {
     try {
-      const data = await new Promise((resolve, reject) => {
+      let data = await new Promise((resolve, reject) => {
         const r = new FileReader();
         r.onload = () => resolve(r.result);
         r.onerror = reject;
         r.readAsDataURL(file);
       });
+      data = await shrinkIfBig(file, data);
       const res = await apiFetch('/api/upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1126,9 +1127,8 @@ async function uploadFiles(files) {
       } else if (IS_LIVE) {
         // On the live site the picture only exists after Cloudflare redeploys (about a minute).
         // Wait until it is really available so the picker never shows a broken thumbnail.
-        showToast('Image uploaded \u2014 publishing it to the live site (about a minute)\u2026');
-        const ok = await waitForUrl(json.url, 240000);
-        if (!ok) { showToast('Still publishing \u2014 reopen the picture picker in a minute'); continue; }
+        const ok = await waitForUrl(json.url, 30000);
+        if (!ok) { showToast('Uploaded \u2014 reopen the picture picker in a moment'); continue; }
         if (!editor.AssetManager.getAll().some((a) => a.get('src') === json.url)) editor.AssetManager.add(json.url);
         showToast('Image ready \u2014 pick it in the picture picker');
       } else {
@@ -1150,7 +1150,7 @@ async function waitForUrl(url, maxMs) {
       const r = await fetch(`${url}?t=${Date.now()}`, { method: 'HEAD', cache: 'no-store' });
       if (r.ok && /^image\//i.test(r.headers.get('content-type') || '')) return true;
     } catch (_) { /* keep waiting */ }
-    await new Promise((r) => setTimeout(r, 4000));
+    await new Promise((r) => setTimeout(r, 600));
   }
   return false;
 }
@@ -2127,4 +2127,23 @@ function migrateBtnShadow(style) {
     style.setProperty('filter', toFilterShadow(bs));
     style.setProperty('box-shadow', 'none');
   }
+}
+
+// Big JPEG photos are scaled down (max 2560px wide, good quality) before upload so they send much faster.
+function shrinkIfBig(file, dataUrl) {
+  if (!/^image\/jpeg$/i.test(file.type) || file.size < 1200 * 1024) return Promise.resolve(dataUrl);
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, 2560 / img.width);
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * scale);
+      c.height = Math.round(img.height * scale);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      const out = c.toDataURL('image/jpeg', 0.88);
+      resolve(out.length < dataUrl.length ? out : dataUrl);
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
 }

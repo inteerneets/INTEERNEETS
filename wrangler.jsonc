@@ -8,7 +8,7 @@
   "assets": {
     "directory": ".",
     "binding": "ASSETS",
-    "run_worker_first": ["/api/*"],
+    "run_worker_first": ["/api/*", "/images/uploads/*", "/fonts/*"],
     "not_found_handling": "404-page"
   }
 }

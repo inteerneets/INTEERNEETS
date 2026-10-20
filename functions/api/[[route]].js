@@ -187,8 +187,9 @@ async function handle(context) {
       const dir = isFont ? 'fonts' : 'images/uploads';
       const data = String(body.data || '');
       const base64 = data.includes(',') ? data.split(',')[1] : data;
-      // Normal commit (no [skip ci]) so Cloudflare redeploys and serves the new file
-      await commitFile(`${dir}/${filename}`, base64, `Editor: upload ${filename}`);
+      // [skip ci]: no rebuild needed - the Worker serves uploads straight from GitHub (see serveFromGithub),
+      // so the file is usable right away. A later normal deploy bundles it as a static file too.
+      await commitFile(`${dir}/${filename}`, base64, `Editor: upload ${filename} [skip ci]`);
       return json(200, { success: true, url: `/${dir}/${filename}` });
     }
 
@@ -196,4 +197,34 @@ async function handle(context) {
   } catch (e) {
     return json(500, { success: false, error: e.message });
   }
+}
+
+// GET /images/uploads/<file> and /fonts/<file> that are not part of the deployed static files yet:
+// read them from GitHub (available a second after the upload) and cache them at the edge.
+const MIME = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp', svg: 'image/svg+xml', avif: 'image/avif',
+  woff: 'font/woff', woff2: 'font/woff2', ttf: 'font/ttf', otf: 'font/otf' };
+export async function serveFromGithub(context) {
+  const { request, waitUntil } = context;
+  const env = context.env;
+  const url = new URL(request.url);
+  let path;
+  try { path = decodeURIComponent(url.pathname).replace(/^\/+/, ''); } catch { return new Response('Not found', { status: 404 }); }
+  if (!/^(images\/uploads|fonts)\/[^/]+$/.test(path) || path.includes('..') || !env.GITHUB_TOKEN) return new Response('Not found', { status: 404 });
+  const cache = caches.default;
+  const key = new Request(url.origin + url.pathname);
+  const hit = await cache.match(key);
+  if (hit) return hit;
+  const repo = env.GITHUB_REPO || 'inteerneets/INTEERNEETS';
+  const branch = env.GITHUB_BRANCH || 'main';
+  const res = await fetch(`https://api.github.com/repos/${repo}/contents/${path.split('/').map(encodeURIComponent).join('/')}?ref=${branch}`, {
+    headers: { Authorization: `Bearer ${String(env.GITHUB_TOKEN).trim()}`, Accept: 'application/vnd.github.raw+json', 'User-Agent': 'inteerneets-editor' },
+  });
+  if (!res.ok) return new Response('Not found', { status: 404 });
+  const ext = path.split('.').pop().toLowerCase();
+  const out = new Response(await res.arrayBuffer(), {
+    status: 200,
+    headers: { 'Content-Type': MIME[ext] || 'application/octet-stream', 'Cache-Control': 'public, max-age=300' },
+  });
+  waitUntil(cache.put(key, out.clone()));
+  return out;
 }

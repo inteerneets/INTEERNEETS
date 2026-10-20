@@ -561,10 +561,15 @@
         window.addEventListener('blur', gone, { once: true });
         document.addEventListener('visibilitychange', gone, { once: true });
         window.location.href = a.getAttribute('href');
+        // Show the helper fast; if a mail app opens afterwards (window loses focus) it hides itself again
         setTimeout(function () {
-          window.removeEventListener('blur', gone);
-          if (!left && !document.hidden) showFallback(to, su, body);
-        }, 1200);
+          if (!left && !document.hidden) {
+            showFallback(to, su, body);
+            var hide = function () { closePanel(); window.removeEventListener('blur', hide); };
+            window.addEventListener('blur', hide, { once: true });
+            setTimeout(function () { window.removeEventListener('blur', hide); }, 6000);
+          }
+        }, 250);
       });
     })();
   
