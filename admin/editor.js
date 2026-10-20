@@ -1612,3 +1612,61 @@ function setupSnapping() {
     clearGuides();
   });
 }
+
+
+// ???????????????????????????????????????????????????????????????
+// PHONE FIT ? in Mobile/Tablet preview, text that is too wide for the screen
+// (e.g. a big heading) is shrunk just enough to fit. Preview only, never saved.
+// ???????????????????????????????????????????????????????????????
+
+// ?? Phone fit: text that is too wide for a narrow screen (e.g. a huge heading) is shrunk
+// just enough to fit. Runtime only: nothing is saved, and desktop is left untouched.
+function fitTextToWidth(root) {
+  var win = root.ownerDocument.defaultView;
+  var els = root.querySelectorAll('h1,h2,h3,h4,h5,h6,p,a,span,li,button,div');
+  Array.prototype.forEach.call(els, function (el) {
+    if (el.hasAttribute('data-fit-size')) { el.style.fontSize = el.getAttribute('data-fit-size'); el.removeAttribute('data-fit-size'); }
+  });
+  if (win.innerWidth > 700) return;
+  Array.prototype.forEach.call(els, function (el) {
+    if (!el.textContent.trim() || el.children.length > 2) return;
+        if (el.closest && el.closest('[contenteditable="true"]')) return;
+    if (el.clientWidth <= 0) return;
+    var avail = function () {
+      var p = el.parentElement, w = win.innerWidth;
+      if (p) { var cs = win.getComputedStyle(p); w = Math.min(w, p.clientWidth - parseFloat(cs.paddingLeft || 0) - parseFloat(cs.paddingRight || 0)); }
+      return w;
+    };
+    var tooWide = function () { return el.scrollWidth > avail() + 1 || el.getBoundingClientRect().width > avail() + 1; };
+    if (!tooWide()) return;
+    var fs = parseFloat(win.getComputedStyle(el).fontSize), n = 0;
+    el.setAttribute('data-fit-size', el.style.fontSize || '');
+    while (tooWide() && fs > 12 && n++ < 40) { fs *= 0.94; el.style.fontSize = fs + 'px'; }
+  });
+}
+
+(function setupPhoneFit() {
+  let t;
+  const run = () => {
+    clearTimeout(t);
+    t = setTimeout(() => {
+      const doc = editor.Canvas.getDocument();
+      if (doc && doc.body) fitTextToWidth(doc.body);
+    }, 120);
+  };
+  editor.on('canvas:frame:load', () => {
+    const win = editor.Canvas.getWindow();
+    if (win) win.addEventListener('resize', run);
+    run();
+  });
+  editor.on('change:device', () => { run(); setTimeout(run, 500); setTimeout(run, 1200); });
+  // The preview width changes when you switch Desktop / Tablet / Mobile: re-fit whenever it does
+  let lastW = 0;
+  setInterval(() => {
+    const win = editor.Canvas.getWindow();
+    if (win && win.innerWidth !== lastW) { lastW = win.innerWidth; run(); }
+  }, 500);
+  editor.on('component:update', run);
+  editor.on('component:add', run);
+  editor.on('load', run);
+})();
