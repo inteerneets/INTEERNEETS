@@ -19,7 +19,7 @@
   <script src="https://unpkg.com/grapesjs-blocks-basic@1.0.2/dist/index.js"></script>
 
   <!-- Editor theme -->
-  <link rel="stylesheet" href="editor.css?v=20261020i" />
+  <link rel="stylesheet" href="editor.css?v=20261020j" />
 </head>
 <body>
 
@@ -84,7 +84,8 @@
         <label>Twitter URL</label>
         <input type="url" id="set-twitter" placeholder="https://twitter.com/..." />
 
-        <label class="check-row"><input type="checkbox" id="set-show-nav" checked /> Show the page menu bar at the top of the site</label>
+        <label class="check-row">Loading screen stays at least <input type="number" id="set-loading-min" min="0" max="10" step="0.5" value="0" style="width:64px" /> seconds (0 = only as long as the site needs)</label>
+      <label class="check-row"><input type="checkbox" id="set-show-nav" checked /> Show the page menu bar at the top of the site</label>
         <label class="check-row"><input type="checkbox" id="set-bg-shading" /> Add dark shading overlay (off = pure flat color)</label>
       </div>
 
@@ -213,6 +214,6 @@
   <div id="toast" class="toast hidden"></div>
 
   <!-- ─── Editor logic ─── -->
-  <script src="editor.js?v=20261020i"></script>
+  <script src="editor.js?v=20261020j"></script>
 </body>
 </html>

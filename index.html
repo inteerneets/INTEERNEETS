@@ -26,7 +26,9 @@
       transition: opacity 0.4s ease;
     }
     #loading-screen.fade { opacity: 0; pointer-events: none; }
-    #loading-screen span { font-family: 'Playfair Display', serif; color: #e53935; font-size: 1.5rem; letter-spacing: 0.1em; }
+    #ld-root { position: relative; width: 100%; height: 100%; overflow: auto; display: flex; align-items: center; justify-content: center; }
+    #ld-root:not(.ready) { visibility: hidden; }
+    #ld-default { font-family: 'Playfair Display', serif; color: #e53935; font-size: 1.5rem; letter-spacing: 0.1em; }
 
     /* Page backgrounds: stacked full-screen layers that cross-fade as you scroll */
     #bg-stack { position: fixed; inset: 0; z-index: 0; overflow: hidden; }
@@ -67,7 +69,7 @@
   <style id="page-fonts"></style>
 </head>
 <body>
-  <div id="loading-screen"><span>Loading...</span></div>
+  <div id="loading-screen"><div id="ld-root"><span id="ld-default">Loading...</span></div></div>
   <div id="bg-stack"></div>
   <div id="shade"></div>
   <nav id="nav"></nav>
@@ -94,10 +96,15 @@
         .catch(stat);
     }
 
+    var LOADER_T0 = Date.now();
     function hideLoader() {
       var l = document.getElementById('loading-screen');
-      l.classList.add('fade');
-      setTimeout(function () { l.style.display = 'none'; }, 400);
+      var minMs = (Number(settings.loading_min_seconds) || 0) * 1000;
+      var wait = Math.max(0, minMs - (Date.now() - LOADER_T0));
+      setTimeout(function () {
+        l.classList.add('fade');
+        setTimeout(function () { l.style.display = 'none'; }, 400);
+      }, wait);
     }
 
     // ── Theme colors from Site Colors (exact flat colors; shading only if enabled) ──
@@ -356,6 +363,44 @@
     }
 
     // ── Start ──
+    // ?? Loading screen: designed in the editor (Loading Page tab). The last design is remembered
+    // in this browser so returning visitors see it instantly; the newest one is fetched every visit.
+    var LD_KEY = 'inteerneets-loading-design';
+    function paintLoader(d) {
+      var root = document.getElementById('ld-root');
+      var screen = document.getElementById('loading-screen');
+      if (d && d.html) {
+        root.innerHTML = stripBg(d.html);
+        var old = document.getElementById('ld-style'); if (old) old.remove();
+        if (d.css) {
+          var fonts = [], st = document.createElement('style');
+          st.id = 'ld-style';
+          st.textContent = scopeCss(stripBg(d.css), '#ld-root', fonts);
+          document.head.appendChild(st);
+          if (fonts.length) { var fs = document.createElement('style'); fs.textContent = fonts.join('\n'); document.head.appendChild(fs); }
+        }
+        var bg = d.bg || {};
+        if (bg.color) screen.style.backgroundColor = bg.color;
+        if (bg.image) {
+          screen.style.backgroundImage = 'url("' + bg.image + '")';
+          var mode = bg.mode || 'cover';
+          if (mode === 'tile') { screen.style.backgroundRepeat = 'repeat'; screen.style.backgroundSize = (bg.tile_size || 256) + 'px'; }
+          else { screen.style.backgroundRepeat = 'no-repeat'; screen.style.backgroundSize = mode === 'stretch' ? '100% 100%' : mode; }
+          screen.style.backgroundPosition = bg.position || 'center center';
+        }
+      }
+      root.classList.add('ready');
+    }
+    try { var cachedLd = JSON.parse(localStorage.getItem(LD_KEY) || 'null'); if (cachedLd) paintLoader(cachedLd); } catch (e) {}
+    setTimeout(function () { document.getElementById('ld-root').classList.add('ready'); }, 1200);
+    getContent('page-loading.json').then(function (d) {
+      try { localStorage.setItem(LD_KEY, JSON.stringify(d)); } catch (e) {}
+      paintLoader(d);
+    }).catch(function () {
+      try { localStorage.removeItem(LD_KEY); } catch (e) {}
+      document.getElementById('ld-root').classList.add('ready');
+    });
+
     Promise.all([
       getContent('pages.json').then(function (j) { return (j && j.pages && j.pages.length) ? j.pages : DEFAULT_PAGES; }).catch(function () { return DEFAULT_PAGES; }),
       getContent('settings.json').catch(function () { return {}; })

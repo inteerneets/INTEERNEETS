@@ -581,8 +581,12 @@ function slugify(s) {
 // The Error page (shown for any unknown address) is a special page: it has its own
 // tab, is not part of the site menu and cannot be deleted.
 const ERROR_PAGE = { id: '404', title: 'Error Page' };
+// The Loading page is the screen visitors see while the site loads (same idea, own tab)
+const LOADING_PAGE = { id: 'loading', title: 'Loading Page' };
+const SPECIAL_PAGES = [ERROR_PAGE, LOADING_PAGE];
 function pageTitle(id) {
-  if (id === ERROR_PAGE.id) return ERROR_PAGE.title;
+  const sp = SPECIAL_PAGES.find((s) => s.id === id);
+  if (sp) return sp.title;
   const p = pages.find((x) => x.id === id);
   return p ? p.title : id;
 }
@@ -639,14 +643,16 @@ window.addEventListener('beforeunload', (e) => {
 function renderTabs() {
   const box = byId('page-tabs');
   box.innerHTML = '';
-  [...pages, ERROR_PAGE].forEach((p) => {
-    const isError = p.id === ERROR_PAGE.id;
+  [...pages, ...SPECIAL_PAGES].forEach((p) => {
+    const isError = SPECIAL_PAGES.some((s) => s.id === p.id);
     const b = document.createElement('button');
     b.className = 'page-btn' + (p.id === currentPage ? ' active' : '') + (isError ? ' error-tab' : '');
     b.dataset.page = p.id;
-    b.title = isError
-      ? 'Design the page visitors see when they open an address that does not exist (404)'
-      : 'Click to edit this page. Double-click to rename.';
+    b.title = p.id === LOADING_PAGE.id
+      ? 'Design the loading screen visitors see while the site loads'
+      : isError
+        ? 'Design the page visitors see when they open an address that does not exist (404)'
+        : 'Click to edit this page. Double-click to rename.';
     b.appendChild(document.createTextNode(p.title));
     if (dirty.has(p.id)) {
       const dot = document.createElement('span');
@@ -681,7 +687,7 @@ function addPage() {
   let id = slugify(name) || 'page';
   const base = id;
   let n = 2;
-  while (pages.some((p) => p.id === id) || id === ERROR_PAGE.id) id = `${base}-${n++}`;
+  while (pages.some((p) => p.id === id) || SPECIAL_PAGES.some((s) => s.id === id)) id = `${base}-${n++}`;
   pages.push({ id, title: name.trim() });
   newPages.add(id);
   pagesDirty = true;
@@ -790,6 +796,14 @@ function defaultPageHtml(title) {
 // Default template: set the CSS FIRST, then the components. Calling setStyle()
 // after setComponents() would wipe the rules GrapesJS derives from inline styles.
 function applyDefaultTemplate(page) {
+  if (page === LOADING_PAGE.id) {
+    editor.setStyle('');
+    editor.setComponents(`
+<section style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:40px 20px;">
+  <h1 style="font-family:'Playfair Display',serif;font-size:2rem;letter-spacing:.12em;margin:0;color:var(--c-highlight,#e53935);">Loading...</h1>
+</section>`);
+    return;
+  }
   if (page === ERROR_PAGE.id) {
     editor.setStyle('');
     editor.setComponents(`
@@ -981,6 +995,7 @@ async function loadSettings() {
     try { s = await fetchContent('settings.json'); } catch (e) { if (e.message !== 'nf') throw e; }
     const set = (id, v) => { if (v) byId(id).value = v; };
     set('set-email', s.contact_email);
+    set('set-loading-min', s.loading_min_seconds);
     set('set-shopify-domain', s.shopify_domain);
     set('set-shopify-token', s.shopify_storefront_token);
     set('set-product-ids', Array.isArray(s.shopify_product_ids) ? s.shopify_product_ids.join('\n') : s.shopify_product_ids);
@@ -1001,6 +1016,7 @@ function collectSettings() {
   const val = (id) => byId(id).value.trim();
   return {
     contact_email:            val('set-email'),
+    loading_min_seconds:      Number(val('set-loading-min')) || 0,
     shopify_domain:           val('set-shopify-domain'),
     shopify_storefront_token: val('set-shopify-token'),
     shopify_product_ids:      val('set-product-ids').split(/\r?\n/).map((x) => x.trim()).filter(Boolean),
