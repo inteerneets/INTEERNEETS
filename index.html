@@ -225,17 +225,24 @@
       document.getElementById('page-fonts').textContent = fonts.join('\n');
       if (pages.length > 1 && settings.show_nav !== false) nav.style.display = 'flex';
 
-      // Backgrounds blend smoothly while you scroll: the next page's background fades in
-      // over the previous one across one screen of scrolling (a gradient between pages).
+      // Backgrounds bleed into each other while you scroll: the next page's background rises
+      // from the bottom of the screen with a soft gradient edge over the previous one (colors
+      // and pictures alike), until at the next page it is simply that background. Scrolling back
+      // up plays the exact same thing in reverse (it is driven by scroll position).
       function ease(t) { return t * t * (3 - 2 * t); }
       function blend() {
         var vh = window.innerHeight, center = window.scrollY + vh * 0.5;
+        var soft = vh * 0.7;                                  // height of the soft gradient edge
         layers.forEach(function (l, i) {
           l.style.zIndex = i;
-          if (i === 0) { l.style.opacity = 1; return; }
-          var B = sections[i].getBoundingClientRect().top + window.scrollY; // where page i starts
-          var p = (center - (B - vh * 0.5)) / vh;                            // 0 -> 1 across one screen
-          l.style.opacity = ease(Math.max(0, Math.min(1, p)));
+          l.style.opacity = 1;
+          if (i === 0) { l.style.webkitMaskImage = l.style.maskImage = 'none'; return; }
+          var B = sections[i].getBoundingClientRect().top + window.scrollY;   // where page i starts
+          var p = ease(Math.max(0, Math.min(1, (center - (B - vh * 0.5)) / vh)));  // 0 -> 1 across one screen
+          var y0 = vh - p * (vh + soft);                       // fully hidden above this line
+          var m = 'linear-gradient(to bottom, transparent ' + y0.toFixed(1) + 'px, #000 ' + (y0 + soft).toFixed(1) + 'px)';
+          l.style.webkitMaskImage = m;
+          l.style.maskImage = m;
         });
       }
 

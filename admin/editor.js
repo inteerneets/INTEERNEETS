@@ -207,6 +207,19 @@ const editor = grapesjs.init({
               { value: 'capitalize', name: 'Capitalize' },
             ],
           },
+          {
+            // Photoshop-style drop shadow for text: + adds a shadow, X/Y = distance, Blur = softness.
+            // Color accepts transparency, e.g. rgba(0,0,0,0.6) for a 60% black shadow. Stack several for glows.
+            property: 'text-shadow',
+            type: 'stack',
+            label: 'Text Shadow',
+            properties: [
+              { property: 'text-shadow-h',    label: 'X (right)',  default: '2px', units: ['px'], min: -100, max: 100 },
+              { property: 'text-shadow-v',    label: 'Y (down)',   default: '2px', units: ['px'], min: -100, max: 100 },
+              { property: 'text-shadow-blur', label: 'Blur',       default: '4px', units: ['px'], min: 0,    max: 100 },
+              { type: 'color', property: 'text-shadow-color', label: 'Color / opacity', default: 'rgba(0,0,0,0.75)' },
+            ],
+          },
         ],
       },
       {
