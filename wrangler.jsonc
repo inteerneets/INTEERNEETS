@@ -2,6 +2,8 @@
   // Cloudflare Workers (static assets + API). Worker name must match the one in the dashboard.
   "name": "inteerneets",
   "main": "worker.js",
+  // Keep GITHUB_TOKEN / ADMIN_PASSWORD that are set in the Cloudflare dashboard on every deploy
+  "keep_vars": true,
   "compatibility_date": "2025-01-01",
   "assets": {
     "directory": ".",

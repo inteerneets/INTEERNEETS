@@ -43,7 +43,7 @@ export async function onRequest(context) {
   const { request, env, waitUntil } = context;
 
   if (!env.GITHUB_TOKEN || !env.ADMIN_PASSWORD) {
-    return json(500, { success: false, error: 'Server not configured: set GITHUB_TOKEN and ADMIN_PASSWORD in Cloudflare Pages.' });
+    return json(500, { success: false, error: 'Server not configured: set GITHUB_TOKEN and ADMIN_PASSWORD in Cloudflare (Settings > Variables and Secrets) and redeploy.' });
   }
 
   const REPO = env.GITHUB_REPO || 'inteerneets/INTEERNEETS';
