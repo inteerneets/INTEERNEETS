@@ -40,7 +40,21 @@ function toB64(str) {
 const b64 = (obj) => toB64(JSON.stringify(obj, null, 2));
 
 export async function onRequest(context) {
-  const { request, env, waitUntil } = context;
+  try {
+    return await handle(context);
+  } catch (e) {
+    return json(500, { success: false, error: `Unexpected error: ${e && e.message ? e.message : e}` });
+  }
+}
+
+async function handle(context) {
+  const { request, waitUntil } = context;
+  // Trim stray spaces/newlines that sneak in when pasting secrets (they break HTTP headers)
+  const env = {
+    ...context.env,
+    GITHUB_TOKEN: String(context.env.GITHUB_TOKEN || '').trim(),
+    ADMIN_PASSWORD: String(context.env.ADMIN_PASSWORD || '').trim(),
+  };
 
   if (!env.GITHUB_TOKEN || !env.ADMIN_PASSWORD) {
     return json(500, { success: false, error: 'Server not configured: set GITHUB_TOKEN and ADMIN_PASSWORD in Cloudflare (Settings > Variables and Secrets) and redeploy.' });
@@ -133,7 +147,7 @@ export async function onRequest(context) {
 
   // ── Password-protected write routes ──
   const given = request.headers.get('x-admin-password');
-  if (given !== env.ADMIN_PASSWORD) return json(401, { success: false, error: 'Wrong password' });
+  if (String(given || '').trim() !== env.ADMIN_PASSWORD) return json(401, { success: false, error: 'Wrong password' });
 
   let body;
   try { body = JSON.parse((await request.text()) || '{}'); } catch { return json(400, { success: false, error: 'Bad JSON' }); }
