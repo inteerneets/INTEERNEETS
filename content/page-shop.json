@@ -67,33 +67,6 @@
           "color": "#555",
           "font-family": "'Inter',sans-serif"
         }
-      },
-      {
-        "selectors": [
-          "#issvf"
-        ],
-        "style": {
-          "padding": "60px 20px",
-          "text-align": "center"
-        }
-      },
-      {
-        "selectors": [
-          "#iib02"
-        ],
-        "style": {
-          "display": "inline-block",
-          "padding": "14px 36px",
-          "background": "var(--c-button,#e53935)",
-          "border": "2px solid var(--c-button,#e53935)",
-          "color": "var(--c-button-text,#ffffff)",
-          "text-decoration": "none",
-          "font-family": "'Inter',sans-serif",
-          "font-size": "0.9rem",
-          "font-weight": "600",
-          "letter-spacing": "3px",
-          "text-transform": "uppercase"
-        }
       }
     ],
     "pages": [
@@ -103,6 +76,9 @@
             "component": {
               "type": "wrapper",
               "stylable": true,
+              "attributes": {
+                "id": "ibuj"
+              },
               "components": [
                 {
                   "tagName": "section",
@@ -113,6 +89,16 @@
                     {
                       "tagName": "h2",
                       "type": "text",
+                      "resizable": {
+                        "tl": 1,
+                        "tr": 1,
+                        "bl": 1,
+                        "br": 1,
+                        "cl": 1,
+                        "cr": 1,
+                        "tc": 0,
+                        "bc": 0
+                      },
                       "attributes": {
                         "id": "i2np8"
                       },
@@ -129,6 +115,16 @@
                     },
                     {
                       "type": "text",
+                      "resizable": {
+                        "tl": 1,
+                        "tr": 1,
+                        "bl": 1,
+                        "br": 1,
+                        "cl": 1,
+                        "cr": 1,
+                        "tc": 0,
+                        "bc": 0
+                      },
                       "attributes": {
                         "data-shopify-section": "merch",
                         "id": "ikfav"
@@ -137,27 +133,6 @@
                         {
                           "type": "textnode",
                           "content": "\n    Shopify products will load here\n  "
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "tagName": "section",
-                  "attributes": {
-                    "id": "issvf"
-                  },
-                  "components": [
-                    {
-                      "type": "link",
-                      "attributes": {
-                        "href": "mailto:inteerneets@gmail.com",
-                        "id": "iib02"
-                      },
-                      "components": [
-                        {
-                          "type": "textnode",
-                          "content": "EMAIL US"
                         }
                       ]
                     }
@@ -180,8 +155,8 @@
     ],
     "symbols": []
   },
-  "html": "<body><section id=\"i236j\"><h2 id=\"i2np8\">Shop<br/></h2><div data-shopify-section=\"merch\" id=\"ikfav\">\n    Shopify products will load here\n  </div></section><section id=\"issvf\"><a href=\"mailto:inteerneets@gmail.com\" id=\"iib02\">EMAIL US</a></section></body>",
-  "css": "* { box-sizing: border-box; } body {margin: 0;}body{margin-top:0px;margin-right:0px;margin-bottom:0px;margin-left:0px;padding-top:0px;padding-right:0px;padding-bottom:0px;padding-left:0px;}*{box-sizing:border-box;}#i236j{padding:60px 20px;color:var(--c-text,#ffffff);}#i2np8{font-family:'Playfair Display',serif;font-size:2rem;text-align:center;margin:0 0 40px 0;color:var(--c-text,#ffffff);box-shadow:    ;opacity:1;}#ikfav{min-height:200px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#555;font-family:'Inter',sans-serif;}#issvf{padding:60px 20px;text-align:center;}#iib02{display:inline-block;padding:14px 36px;background:var(--c-button,#e53935);border:2px solid var(--c-button,#e53935);color:var(--c-button-text,#ffffff);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:600;letter-spacing:3px;text-transform:uppercase;}",
+  "html": "<body id=\"ibuj\"><section id=\"i236j\"><h2 id=\"i2np8\">Shop<br/></h2><div data-shopify-section=\"merch\" id=\"ikfav\">\n    Shopify products will load here\n  </div></section></body>",
+  "css": "@font-face{font-family:'Inter 18pt Bold';src:url('/fonts/Inter_18pt-Bold.ttf') format('truetype');font-display:swap;}\n@font-face{font-family:'Inter 18pt Regular';src:url('/fonts/Inter_18pt-Regular.ttf') format('truetype');font-display:swap;}\n* { box-sizing: border-box; } body {margin: 0;}body{margin-top:0px;margin-right:0px;margin-bottom:0px;margin-left:0px;padding-top:0px;padding-right:0px;padding-bottom:0px;padding-left:0px;}*{box-sizing:border-box;}#i236j{padding:60px 20px;color:var(--c-text,#ffffff);}#i2np8{font-family:'Playfair Display',serif;font-size:2rem;text-align:center;margin:0 0 40px 0;color:var(--c-text,#ffffff);box-shadow:    ;opacity:1;}#ikfav{min-height:200px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#555;font-family:'Inter',sans-serif;}",
   "bg": {
     "color": "#ff0000",
     "image": "",
