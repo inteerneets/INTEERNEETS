@@ -1,0 +1,110 @@
+{
+  "projectData": {
+    "assets": [
+      {
+        "type": "image",
+        "src": "/images/uploads/inteerneets_logo.png",
+        "unitDim": "px",
+        "height": 0,
+        "width": 0
+      },
+      {
+        "type": "image",
+        "src": "/images/uploads/photo_2026-09-25_14-45-21.jpg",
+        "unitDim": "px",
+        "height": 0,
+        "width": 0
+      },
+      {
+        "type": "image",
+        "src": "/images/uploads/1444658-hi-res-wallpaper-2560-x-1440-2560x1440-720p.jpg",
+        "unitDim": "px",
+        "height": 0,
+        "width": 0
+      }
+    ],
+    "styles": [
+      {
+        "selectors": [
+          "#i1o4"
+        ],
+        "style": {
+          "display": "flex",
+          "flex-direction": "column",
+          "align-items": "center",
+          "justify-content": "center",
+          "min-height": "100vh",
+          "text-align": "center",
+          "padding": "40px 20px"
+        }
+      },
+      {
+        "selectors": [
+          "#i2ah"
+        ],
+        "style": {
+          "font-family": "Impact, sans-serif",
+          "font-size": "2rem",
+          "letter-spacing": ".12em",
+          "margin": "0",
+          "color": "var(--c-highlight,#e53935)"
+        }
+      }
+    ],
+    "pages": [
+      {
+        "frames": [
+          {
+            "component": {
+              "type": "wrapper",
+              "stylable": true,
+              "components": [
+                {
+                  "tagName": "section",
+                  "attributes": {
+                    "id": "i1o4"
+                  },
+                  "components": [
+                    {
+                      "tagName": "h1",
+                      "type": "text",
+                      "attributes": {
+                        "id": "i2ah"
+                      },
+                      "components": [
+                        {
+                          "type": "textnode",
+                          "content": "Loading..."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "head": {
+                "type": "head"
+              },
+              "docEl": {
+                "tagName": "html"
+              }
+            },
+            "id": "RaP4JNlkdSHZGOr6"
+          }
+        ],
+        "type": "main",
+        "id": "4iDdu4rXqOb4iTco"
+      }
+    ],
+    "symbols": []
+  },
+  "html": "<body><section id=\"i1o4\"><h1 id=\"i2ah\">Loading...</h1></section></body>",
+  "css": "* { box-sizing: border-box; } body {margin: 0;}#i1o4{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:40px 20px;}#i2ah{font-family:Impact, sans-serif;font-size:2rem;letter-spacing:.12em;margin:0;color:var(--c-highlight,#e53935);}",
+  "bg": {
+    "color": "#000000",
+    "image": "",
+    "mode": "cover",
+    "tile_size": 256,
+    "position": "center center",
+    "overlay": 0
+  }
+}
