@@ -630,3 +630,16 @@ a.tb-btn:hover { color: #ddd; border-color: #555; }
 /* Panels taller than the window scroll so Save is always reachable */
 .colors-panel { max-height: calc(100vh - 70px); overflow-y: auto; }
 
+
+/* Button editor + text shadow popup */
+.bp-wide { width: 100%; max-width: 180px; background: #1a1a1a; color: #ddd; border: 1px solid #444; border-radius: 4px; padding: 5px 7px; font-size: 12px; }
+.btn-panel .swatch-row label:first-child { min-width: 112px; }
+.shadow-presets { display: flex; gap: 6px; flex-wrap: wrap; margin: 4px 0 10px; }
+.shadow-presets button { background: #222; color: #ddd; border: 1px solid #444; border-radius: 4px; padding: 4px 9px; font-size: 11px; cursor: pointer; }
+.shadow-presets button:hover { border-color: #e53935; color: #fff; }
+.shadow-pop { position: fixed; z-index: 10050; width: 280px; background: #1a1a1a; border: 1px solid #444; border-radius: 8px; padding: 14px 16px; box-shadow: 0 10px 30px rgba(0,0,0,.6); }
+.shadow-pop.hidden { display: none; }
+.shadow-pop input[type=range] { flex: 1; }
+
+.gjs-toolbar-item__q-btn { width: auto !important; min-width: 62px; padding: 0 6px !important; }
+

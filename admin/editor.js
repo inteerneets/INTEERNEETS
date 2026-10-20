@@ -1798,3 +1798,193 @@ editor.on('component:add', refreshBtnCssSoon);
   byId('btn-radius').addEventListener('input', (e) => set({ btn_radius: (Number(e.target.value) || 0) + 'px' }));
   byId('btn-shadow').addEventListener('input', (e) => set({ btn_shadow: e.target.value.trim() }));
 })();
+﻿
+// ═══════════════════════════════════════════════════════════════
+// CENTER HORIZONTALLY · TEXT SHADOW POPUP · BUTTON EDITOR
+// ═══════════════════════════════════════════════════════════════
+
+// Clicking the font dropdown inside the element toolbar used to do nothing: GrapesJS cancels the
+// mouse-down on toolbar items (so the dropdown never opened). Let the dropdown handle its own clicks.
+['mousedown', 'pointerdown', 'touchstart', 'click'].forEach((t) => {
+  document.addEventListener(t, (e) => {
+    const el = e.target;
+    if (el && el.closest && el.closest('select.tb-font, select.rte-font, select.rte-size, input.rte-color')) e.stopPropagation();
+  }, true);
+});
+let lastPointer = { x: 400, y: 200 };
+document.addEventListener('mousedown', (e) => { lastPointer = { x: e.clientX, y: e.clientY }; }, true);
+
+// ── Center horizontally ──
+function centerHorizontally(c) {
+  c = c || editor.getSelected();
+  if (!c || c === editor.getWrapper()) { showToast('Select something first, then click Center'); return; }
+  const el = c.getEl();
+  if (!el) return;
+  const cs = el.ownerDocument.defaultView.getComputedStyle(el);
+  if (cs.position === 'absolute' || cs.position === 'fixed') {
+    const host = el.offsetParent;
+    const pw = host && host !== el.ownerDocument.body ? host.clientWidth : el.ownerDocument.documentElement.clientWidth;
+    c.addStyle({ left: Math.round((pw - el.offsetWidth) / 2) + 'px', right: 'auto', transform: 'none' });
+  } else {
+    const patch = { 'margin-left': 'auto', 'margin-right': 'auto', 'max-width': '100%' };
+    if (cs.display === 'inline') patch.display = 'block';
+    if (cs.width && !c.getStyle().width) patch.width = 'fit-content';
+    if (c.is('text') || (c.get('tagName') || '').toLowerCase() === 'a') patch['text-align'] = 'center';
+    c.addStyle(patch);
+  }
+  showToast('Centered');
+}
+
+function isButtonLike(c) {
+  const t = c && (c.get('tagName') || '').toLowerCase();
+  return t === 'a' || t === 'button';
+}
+
+// Add "Center" (and "Button" for links/buttons) to the little toolbar above a selected element
+function ensureExtraTools(c) {
+  if (!c || c === editor.getWrapper()) return;
+  const tb = c.get('toolbar') || [];
+  const add = [];
+  if (!tb.some((t) => t.id === 'q-center')) {
+    add.push({ id: 'q-center', label: '<span class="tb-fmt" style="font-size:15px">\u2194</span>',
+      attributes: { title: 'Center horizontally on the page' }, command: () => centerHorizontally(c) });
+  }
+  if (isButtonLike(c) && !tb.some((t) => t.id === 'q-btn')) {
+    add.push({ id: 'q-btn', label: '<span class="tb-fmt" style="font-size:11px">Button\u270E</span>',
+      attributes: { title: 'Edit this button: text, font, colors, outline, shadow' }, command: () => openButtonPanel() });
+  }
+  if (add.length) c.set('toolbar', [...add, ...tb]);
+}
+editor.on('component:add', ensureExtraTools);
+editor.on('component:selected', ensureExtraTools);
+editor.getWrapper().find('*').forEach(ensureExtraTools);
+byId('btn-center').addEventListener('click', () => centerHorizontally());
+
+// ── Text shadow popup (Photoshop-style drop shadow for the selected text) ──
+const hexToRgba = (hex, a) => {
+  const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex || '');
+  return m ? `rgba(${parseInt(m[1], 16)},${parseInt(m[2], 16)},${parseInt(m[3], 16)},${a})` : hex;
+};
+const rgbToHex = (rgb) => {
+  const m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(rgb || '');
+  return m ? '#' + [m[1], m[2], m[3]].map((n) => Number(n).toString(16).padStart(2, '0')).join('') : '#000000';
+};
+let shadowPopTarget = null;
+function openShadowPop(c) {
+  c = c || editor.getSelected();
+  if (!c) { showToast('Select some text first'); return; }
+  shadowPopTarget = c;
+  const pop = byId('shadow-pop');
+  // read the current shadow (first layer) if there is one
+  const el = c.getEl();
+  const cur = el ? el.ownerDocument.defaultView.getComputedStyle(el).textShadow : 'none';
+  const m = /(rgba?\([^)]*\))\s+(-?[\d.]+)px\s+(-?[\d.]+)px\s+(-?[\d.]+)px/.exec(cur || '');
+  const rgba = m ? m[1] : 'rgba(0,0,0,0.6)';
+  const alpha = (/rgba\([^)]*,\s*([\d.]+)\)/.exec(rgba) || [])[1];
+  byId('sh-x').value = m ? m[2] : 2;
+  byId('sh-y').value = m ? m[3] : 2;
+  byId('sh-blur').value = m ? m[4] : 4;
+  byId('sh-opacity').value = Math.round((alpha === undefined ? 0.6 : Number(alpha)) * 100);
+  byId('sh-color').value = rgbToHex(rgba);
+  pop.style.left = Math.max(8, Math.min(window.innerWidth - 300, lastPointer.x - 20)) + 'px';
+  pop.style.top = Math.max(60, Math.min(window.innerHeight - 260, lastPointer.y + 24)) + 'px';
+  pop.classList.remove('hidden');
+}
+function applyShadowPop() {
+  if (!shadowPopTarget) return;
+  const v = `${byId('sh-x').value || 0}px ${byId('sh-y').value || 0}px ${byId('sh-blur').value || 0}px ${hexToRgba(byId('sh-color').value, (Number(byId('sh-opacity').value) || 0) / 100)}`;
+  shadowPopTarget.addStyle({ 'text-shadow': v });
+}
+['sh-x', 'sh-y', 'sh-blur', 'sh-opacity', 'sh-color'].forEach((id) => byId(id).addEventListener('input', applyShadowPop));
+byId('sh-none').addEventListener('click', () => { if (shadowPopTarget) shadowPopTarget.addStyle({ 'text-shadow': 'none' }); byId('shadow-pop').classList.add('hidden'); });
+byId('sh-close').addEventListener('click', () => byId('shadow-pop').classList.add('hidden'));
+byId('sh-presets').querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
+  const [x, y, bl, op] = b.dataset.v.split(',').map(Number);
+  byId('sh-x').value = x; byId('sh-y').value = y; byId('sh-blur').value = bl; byId('sh-opacity').value = op;
+  applyShadowPop();
+}));
+editor.on('component:deselected', () => byId('shadow-pop').classList.add('hidden'));
+
+// shadow item on the element toolbar of text, and in the rich-text bar while typing
+(function addShadowTools() {
+  const prev = ensureTextToolbar;
+  ensureTextToolbar = function (c) {
+    prev(c);
+    if (!isTextual(c)) return;
+    const tb = c.get('toolbar') || [];
+    if (tb.some((t) => t.id === 'q-shadow')) return;
+    const i = tb.findIndex((t) => t.id === 'q-lg');
+    const item = { id: 'q-shadow', label: '<span class="tb-fmt" style="color:#fff;text-shadow:1px 2px 2px #e53935">S</span>',
+      attributes: { title: 'Text shadow (drop shadow)' }, command: () => openShadowPop(c) };
+    tb.splice(i >= 0 ? i + 1 : 1, 0, item);
+    c.set('toolbar', [...tb]);
+  };
+  const rte = editor.RichTextEditor;
+  rte.add('rte-shadow', {
+    name: 'rte-shadow',
+    icon: '<span class="tb-fmt" style="color:#fff;text-shadow:1px 2px 2px #e53935;font-size:14px">S</span>',
+    attributes: { title: 'Text shadow (drop shadow) for this text' },
+    result: () => openShadowPop(editor.getSelected()),
+  });
+})();
+
+// ── Button editor panel ──
+const BP_FONT = byId('bp-font');
+function openButtonPanel() {
+  byId('colors-panel').classList.add('hidden');
+  byId('pagebg-panel').classList.add('hidden');
+  byId('button-panel').classList.remove('hidden');
+  syncButtonPanel();
+}
+function syncButtonPanel() {
+  const c = editor.getSelected();
+  const ok = isButtonLike(c);
+  byId('bp-hint').style.display = ok ? 'none' : 'block';
+  byId('bp-body').style.display = ok ? 'block' : 'none';
+  if (!ok) return;
+  const el = c.getEl();
+  const cs = el.ownerDocument.defaultView.getComputedStyle(el);
+  byId('bp-text').value = el.textContent.trim();
+  byId('bp-link').value = (c.getAttributes().href || '');
+  BP_FONT.innerHTML = fontOptionsHtml('');
+  BP_FONT.value = matchFontOption(cs.fontFamily);
+  byId('bp-size').value = parseFloat(cs.fontSize) || 14;
+  byId('bp-weight').value = String(Math.round((parseInt(cs.fontWeight, 10) || 400) / 100) * 100);
+  byId('bp-spacing').value = parseFloat(cs.letterSpacing) || 0;
+  byId('bp-color').value = rgbToHex(cs.color);
+  const transparent = !cs.backgroundColor || /rgba\(0,\s*0,\s*0,\s*0\)|transparent/.test(cs.backgroundColor);
+  byId('bp-nofill').checked = transparent;
+  byId('bp-fill').value = transparent ? '#ffffff' : rgbToHex(cs.backgroundColor);
+  byId('bp-bwidth').value = parseFloat(cs.borderTopWidth) || 0;
+  byId('bp-bcolor').value = rgbToHex(cs.borderTopColor);
+  byId('bp-radius').value = parseFloat(cs.borderTopLeftRadius) || 0;
+  byId('bp-shadow').value = cs.boxShadow && cs.boxShadow !== 'none' ? cs.boxShadow : '';
+  byId('bp-hshadow').value = (cs.getPropertyValue('--btn-shadow') || '').trim() || siteColors.btn_shadow || '';
+}
+const bpSel = () => { const c = editor.getSelected(); return isButtonLike(c) ? c : null; };
+const bpApply = (patch) => { const c = bpSel(); if (c) c.addStyle(patch); };
+byId('btn-button').addEventListener('click', () => {
+  const p = byId('button-panel');
+  if (p.classList.contains('hidden')) openButtonPanel(); else p.classList.add('hidden');
+});
+byId('bp-close').addEventListener('click', () => byId('button-panel').classList.add('hidden'));
+editor.on('component:selected', () => { if (!byId('button-panel').classList.contains('hidden')) syncButtonPanel(); });
+byId('bp-text').addEventListener('input', (e) => { const c = bpSel(); if (c) { c.components(escapeHtml(e.target.value)); markDirty(currentPage); } });
+byId('bp-link').addEventListener('input', (e) => { const c = bpSel(); if (c) c.addAttributes({ href: e.target.value.trim() }); });
+BP_FONT.addEventListener('change', (e) => { if (e.target.value) bpApply({ 'font-family': e.target.value }); });
+byId('bp-size').addEventListener('input', (e) => bpApply({ 'font-size': (Number(e.target.value) || 14) + 'px' }));
+byId('bp-weight').addEventListener('change', (e) => bpApply({ 'font-weight': e.target.value }));
+byId('bp-spacing').addEventListener('input', (e) => bpApply({ 'letter-spacing': (Number(e.target.value) || 0) + 'px' }));
+byId('bp-color').addEventListener('input', (e) => bpApply({ color: e.target.value, '--btn-text': e.target.value }));
+byId('bp-fill').addEventListener('input', (e) => { byId('bp-nofill').checked = false; bpApply({ '--btn-fill': e.target.value, background: 'var(--btn-fill)' }); });
+byId('bp-nofill').addEventListener('change', (e) => bpApply({ '--btn-fill': e.target.checked ? 'transparent' : byId('bp-fill').value, background: 'var(--btn-fill)' }));
+const bpBorder = () => bpApply({ border: `${Number(byId('bp-bwidth').value) || 0}px solid ${byId('bp-bcolor').value}` });
+byId('bp-bwidth').addEventListener('input', bpBorder);
+byId('bp-bcolor').addEventListener('input', bpBorder);
+byId('bp-radius').addEventListener('input', (e) => bpApply({ 'border-radius': (Number(e.target.value) || 0) + 'px', '--btn-radius': (Number(e.target.value) || 0) + 'px' }));
+byId('bp-shadow').addEventListener('input', (e) => bpApply({ 'box-shadow': e.target.value.trim() || 'none' }));
+byId('bp-hshadow').addEventListener('input', (e) => bpApply({ '--btn-shadow': e.target.value.trim() || 'none' }));
+document.querySelectorAll('#bp-presets button').forEach((b) => b.addEventListener('click', () => {
+  byId('bp-shadow').value = b.dataset.v === 'none' ? '' : b.dataset.v;
+  bpApply({ 'box-shadow': b.dataset.v });
+}));
