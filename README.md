@@ -27,13 +27,15 @@ Double-click `RUN WEBSITE.bat` (needs Node.js) → site at http://localhost:8000
 | Error page | The dashed **⚠ Error Page** tab designs what visitors see for any address that doesn't exist (404). Not in the menu, can't be deleted |
 | Shopify | Settings → domain, storefront token, product IDs (one per line, resizable box). Use the Shopify Products block |
 
-## Deploy (Cloudflare Pages – free)
-1. Cloudflare dashboard → Workers & Pages → Create → Pages → Connect to Git → pick the `INTEERNEETS` repo, branch `main`.
-2. Build settings: framework **None**, build command **empty**, output directory **/** (or `.`). Save and deploy.
-3. Project → Settings → Variables and Secrets (Production): add `GITHUB_TOKEN` and `ADMIN_PASSWORD` (type Secret). Optional: `GITHUB_REPO`, `GITHUB_BRANCH`. Then redeploy once.
-4. Open `https://<project>.pages.dev/admin/`, edit, Save – the site updates within seconds.
+## Deploy (Cloudflare Workers – free)
+The repo contains `wrangler.jsonc` + `worker.js`, so a Cloudflare Worker connected to this GitHub repo deploys the site and the API together (this is what `*.workers.dev` sites use).
+1. Cloudflare → Workers & Pages → your Worker (named `inteerneets`) → Settings → Build: connected to the repo, branch `main`. Build command empty; deploy command `npx wrangler deploy`.
+2. Settings → Variables and Secrets: add `GITHUB_TOKEN` and `ADMIN_PASSWORD` (type Secret). Optional: `GITHUB_REPO`, `GITHUB_BRANCH`. Redeploy after adding.
+3. Open `https://inteerneets.inteerneets.workers.dev/admin/`, edit, Save – the site updates within seconds.
+4. Check the API: `/api/assets` must return JSON (`{"images":[...],"fonts":[...]}`).
 
 Content saves are commits tagged `[skip ci]` (no rebuild); uploads trigger a normal rebuild.
+(Cloudflare *Pages* also works: it uses `functions/api/[[route]].js` directly.)
 
 ## Notes
 - `.html` shortcut files in the parent `INTEERNEETS` folder are personal shortcuts – leave them alone.

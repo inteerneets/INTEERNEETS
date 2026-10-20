@@ -39,5 +39,5 @@ Headless Edge (puppeteer-core) tests live in the Antigravity scratch folder (`br
 
 ## Known / to do on first deploy
 - `content/page-shop.json` doesn't exist yet → Shop shows the placeholder and the console logs one 404. Open the Shop tab in `/admin/`, design it, Save.
-- Hosting moved from Netlify to Cloudflare Pages because Netlify paused production deploys (out of credits; deploys showed "Skipped"). Setup steps are in README. The function logic was unit-tested with a mocked GitHub API but not against real Cloudflare - after the first deploy: open /admin/, edit, Save, reload the main site, visit a bogus URL to see the Error page.
+- Hosting moved from Netlify to Cloudflare because Netlify paused production deploys (out of credits). The user's site is a Cloudflare **Worker** (inteerneets.inteerneets.workers.dev), not Pages, so `functions/` alone is ignored there: `wrangler.jsonc` + `worker.js` route `/api/*` to `functions/api/[[route]].js` and serve everything else as static assets (`.assetsignore` hides source files). Verified locally with `wrangler dev`. If Save fails, open `/api/assets`: JSON = function OK (then check token/password/Variables), 404 = Worker not redeployed from this repo.
 - Files use CRLF line endings; when scripting edits normalise `\r\n` first.
