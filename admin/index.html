@@ -19,7 +19,7 @@
   <script src="https://unpkg.com/grapesjs-blocks-basic@1.0.2/dist/index.js"></script>
 
   <!-- Editor theme -->
-  <link rel="stylesheet" href="editor.css?v=20261020l" />
+  <link rel="stylesheet" href="editor.css?v=20261020m" />
 </head>
 <body>
 
@@ -153,7 +153,8 @@
     <p id="bp-hint" class="colors-hint">Click a button on the page first, then edit it here.</p>
     <div id="bp-body">
       <div class="swatch-row"><label for="bp-text">Text</label><input type="text" id="bp-text" class="bp-wide" /></div>
-      <div class="swatch-row"><label for="bp-link">Link</label><input type="text" id="bp-link" class="bp-wide" placeholder="mailto:you@mail.com or https://..." /></div>
+      <div class="swatch-row"><label for="bp-goto">Go to</label><select id="bp-goto" class="pbg-select"></select></div>
+      <div class="swatch-row"><label for="bp-link">Address</label><input type="text" id="bp-link" class="bp-wide" placeholder="mailto:you@mail.com or https://..." /></div>
       <div class="swatch-row"><label for="bp-font">Font</label><select id="bp-font" class="pbg-select"></select></div>
       <div class="swatch-row"><label for="bp-size">Size (px)</label><input type="number" id="bp-size" class="pbg-num" min="8" max="120" /></div>
       <div class="swatch-row"><label for="bp-weight">Weight</label><select id="bp-weight" class="pbg-select"><option value="300">Light</option><option value="400">Regular</option><option value="500">Medium</option><option value="600">Semi Bold</option><option value="700">Bold</option><option value="800">Extra Bold</option></select></div>
@@ -214,6 +215,6 @@
   <div id="toast" class="toast hidden"></div>
 
   <!-- ─── Editor logic ─── -->
-  <script src="editor.js?v=20261020l"></script>
+  <script src="editor.js?v=20261020m"></script>
 </body>
 </html>

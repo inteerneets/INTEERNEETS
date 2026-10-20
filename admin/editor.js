@@ -472,6 +472,12 @@ bm.add('email-us-button', {
   content: `<a href="mailto:inteerneets@gmail.com" style="display:inline-block;padding:14px 36px;background:var(--btn-fill,transparent);border:var(--btn-border-width,2px) solid var(--btn-border,#000000);color:var(--btn-text,#000000);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:600;letter-spacing:3px;text-transform:uppercase;">EMAIL US</a>`,
 });
 
+bm.add('goto-button', {
+  label: 'Go-To Button',
+  category: 'Studio',
+  content: `<a href="#shop" style="display:inline-block;padding:14px 36px;background:var(--btn-fill,transparent);border:var(--btn-border-width,2px) solid var(--btn-border,#000000);color:var(--btn-text,#000000);text-decoration:none;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:600;letter-spacing:3px;text-transform:uppercase;">GO TO SHOP</a>`,
+});
+
 bm.add('divider', {
   label: 'Divider',
   category: 'Studio',
@@ -2034,7 +2040,13 @@ function syncButtonPanel() {
   const el = c.getEl();
   const cs = el.ownerDocument.defaultView.getComputedStyle(el);
   byId('bp-text').value = el.textContent.trim();
-  byId('bp-link').value = (c.getAttributes().href || '');
+  const href = c.getAttributes().href || '';
+  byId('bp-link').value = href;
+  const goto = byId('bp-goto');
+  goto.innerHTML = '<option value="">Choose where it goes...</option>' +
+    pages.map((p) => `<option value="#${escapeHtml(p.id)}">Page: ${escapeHtml(p.title)}</option>`).join('') +
+    '<option value="__custom">Other address (type below)</option>';
+  goto.value = pages.some((p) => '#' + p.id === href) ? href : (href ? '__custom' : '');
   BP_FONT.innerHTML = fontOptionsHtml('');
   BP_FONT.value = matchFontOption(cs.fontFamily);
   byId('bp-size').value = parseFloat(cs.fontSize) || 14;
@@ -2059,7 +2071,20 @@ byId('btn-button').addEventListener('click', () => {
 byId('bp-close').addEventListener('click', () => byId('button-panel').classList.add('hidden'));
 editor.on('component:selected', () => { if (!byId('button-panel').classList.contains('hidden')) syncButtonPanel(); });
 byId('bp-text').addEventListener('input', (e) => { const c = bpSel(); if (c) { c.components(escapeHtml(e.target.value)); markDirty(currentPage); } });
-byId('bp-link').addEventListener('input', (e) => { const c = bpSel(); if (c) c.addAttributes({ href: e.target.value.trim() }); });
+byId('bp-link').addEventListener('input', (e) => {
+  const c = bpSel();
+  if (c) c.addAttributes({ href: e.target.value.trim() });
+  byId('bp-goto').value = pages.some((p) => '#' + p.id === e.target.value.trim()) ? e.target.value.trim() : (e.target.value.trim() ? '__custom' : '');
+});
+byId('bp-goto').addEventListener('change', (e) => {
+  const c = bpSel();
+  if (!c) return;
+  if (e.target.value === '__custom') { byId('bp-link').focus(); return; }
+  if (!e.target.value) return;
+  c.addAttributes({ href: e.target.value });
+  byId('bp-link').value = e.target.value;
+  markDirty(currentPage);
+});
 BP_FONT.addEventListener('change', (e) => { if (e.target.value) bpApply({ 'font-family': e.target.value }); });
 byId('bp-size').addEventListener('input', (e) => bpApply({ 'font-size': (Number(e.target.value) || 14) + 'px' }));
 byId('bp-weight').addEventListener('change', (e) => bpApply({ 'font-weight': e.target.value }));
