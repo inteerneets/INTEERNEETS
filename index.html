@@ -78,8 +78,8 @@
       border: 1px solid rgba(255,255,255,.42);
       -webkit-backdrop-filter: blur(10px) saturate(1.7); backdrop-filter: blur(10px) saturate(1.7);
       box-shadow: inset 0 1px 1px rgba(255,255,255,.55), inset 0 0 8px rgba(255,255,255,.18), 0 4px 18px rgba(0,0,0,.28);
-      opacity: .45; pointer-events: auto; cursor: grab !important; touch-action: none;
-      transition: opacity .35s ease, width .2s ease, right .2s ease, background .2s ease;
+      opacity: 0; pointer-events: auto; cursor: grab !important; touch-action: none;
+      transition: opacity .5s ease, width .2s ease, right .2s ease, background .2s ease;
     }
     #gscroll.active .gs-thumb, #gscroll .gs-thumb:hover, #gscroll.drag .gs-thumb { opacity: 1; }
     #gscroll .gs-thumb:hover, #gscroll.drag .gs-thumb { width: 12px; right: 4px; }
@@ -597,10 +597,12 @@
       function pulse() {
         wrap.classList.add('active');
         clearTimeout(idle);
-        idle = setTimeout(function () { if (!dragging) wrap.classList.remove('active'); }, 1100);
+        idle = setTimeout(function () { if (!dragging) wrap.classList.remove('active'); }, 900);
       }
       window.addEventListener('scroll', function () { request(); pulse(); }, { passive: true });
       window.addEventListener('resize', request);
+      // moving the mouse to the right edge brings the bar back so it can be grabbed
+      document.addEventListener('mousemove', function (e) { if (e.clientX > window.innerWidth - 40) pulse(); }, { passive: true });
       new MutationObserver(request).observe(document.body, { childList: true, subtree: true });
       window.addEventListener('load', request);
       thumb.addEventListener('pointerdown', function (e) {
@@ -617,7 +619,7 @@
         }
         thumb.addEventListener('pointermove', move); thumb.addEventListener('pointerup', up); thumb.addEventListener('pointercancel', up);
       });
-      draw(); pulse();
+      draw();
     })();
   </script>
 </body>
