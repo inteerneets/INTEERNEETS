@@ -5,5 +5,15 @@
   "shopify_product_ids": [],
   "social_instagram": "",
   "social_tiktok": "",
-  "social_twitter": ""
+  "social_twitter": "",
+  "site_colors": {
+    "bg": "#0a0a0a",
+    "text": "#ffffff",
+    "highlight": "#e53935",
+    "button": "#e53935",
+    "button_text": "#ffffff"
+  },
+  "site_bg_color": "#0a0a0a",
+  "site_bg_shading": false,
+  "show_nav": true
 }
