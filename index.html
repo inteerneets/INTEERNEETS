@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="page-title">Coming Soon</title>
+  <meta name="description" content="Coming Soon — Creative Studio">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="/css/style.css">
+
+  <!-- Feather Icons (lightweight icon set) -->
+  <script src="https://unpkg.com/feather-icons"></script>
+
+  <!-- Netlify Identity Widget (for CMS login) -->
+  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+</head>
+<body>
+
+  <!-- ============================================================
+       NAVIGATION
+       ============================================================ -->
+  <nav class="nav" id="nav">
+    <div class="container nav__inner">
+      <!-- Logo / Studio Name (loaded from CMS) -->
+      <a href="/" class="nav__logo" id="nav-logo">Studio</a>
+
+      <!-- Navigation Links -->
+      <ul class="nav__links" id="nav-links">
+        <li><a href="/" class="active">Home</a></li>
+        <li id="nav-shop-link"><a href="/shop.html">Shop</a></li>
+      </ul>
+
+      <!-- Mobile Hamburger -->
+      <button class="nav__hamburger" id="nav-hamburger" aria-label="Open menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ============================================================
+       HERO — COMING SOON
+       ============================================================ -->
+  <section class="hero" id="hero">
+    <!-- Background Image (set dynamically from CMS content) -->
+    <div class="hero__bg" id="hero-bg"></div>
+
+    <div class="hero__content">
+      <h1 class="hero__heading" id="hero-heading">Coming Soon</h1>
+      <p class="hero__subtitle" id="hero-subtitle">We're working on something special. Stay tuned.</p>
+
+      <!-- Call to Action (optional — shows if configured in CMS) -->
+      <a href="#" class="hero__cta" id="hero-cta" style="display: none;">Follow Us</a>
+
+      <!-- Social Links -->
+      <div class="hero__socials" id="hero-socials">
+        <!-- Populated by JavaScript from settings.json -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SCRIPTS
+       ============================================================ -->
+  <script src="/js/main.js"></script>
+  <script>
+    // Initialize the home page
+    document.addEventListener('DOMContentLoaded', function() {
+      initSite('home');
+    });
+  </script>
+
+  <!-- Netlify Identity redirect (handles login callback) -->
+  <script>
+    if (window.netlifyIdentity) {
+      window.netlifyIdentity.on("init", function(user) {
+        if (!user) {
+          window.netlifyIdentity.on("login", function() {
+            document.location.href = "/admin/";
+          });
+        }
+      });
+    }
+  </script>
+
+</body>
+</html>

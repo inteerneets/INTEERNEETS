@@ -1,0 +1,16 @@
+{
+  "studio_name": "Your Studio",
+  "tagline": "Creative Studio",
+  "logo_image": "",
+  "primary_color": "#c9a96e",
+  "background_color": "#0a0a0a",
+  "text_color": "#f5f5f5",
+  "card_color": "#141414",
+  "nav_show_shop": true,
+  "social_instagram": "",
+  "social_twitter": "",
+  "social_tiktok": "",
+  "social_email": "",
+  "shopify_domain": "",
+  "shopify_storefront_token": ""
+}

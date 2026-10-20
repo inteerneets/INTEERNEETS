@@ -1,0 +1,12 @@
+# Netlify configuration
+# This tells Netlify how to deploy your site.
+
+[build]
+  # No build command needed — this is a plain HTML site
+  publish = "."
+
+# Redirect /admin to /admin/ (trailing slash required for Decap CMS)
+[[redirects]]
+  from = "/admin"
+  to = "/admin/"
+  status = 301

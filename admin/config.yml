@@ -1,0 +1,256 @@
+# =============================================================
+# DECAP CMS CONFIGURATION
+# This file defines what you can edit in the admin panel.
+# =============================================================
+
+# --- Backend: uses Netlify's Git Gateway to save changes to GitHub ---
+backend:
+  name: git-gateway
+  branch: main
+
+# --- Where uploaded images are stored ---
+media_folder: "images/uploads"
+public_folder: "/images/uploads"
+
+# =============================================================
+# COLLECTIONS — These are the sections you'll see in the admin
+# =============================================================
+collections:
+
+  # ---------------------------------------------------------
+  # SITE SETTINGS
+  # Studio name, colors, logo, social links, Shopify config
+  # ---------------------------------------------------------
+  - name: "settings"
+    label: "⚙️ Site Settings"
+    description: "Change your studio name, colors, logo, and social links"
+    files:
+      - name: "general"
+        label: "General Settings"
+        file: "content/settings.json"
+        fields:
+          - label: "Studio Name"
+            name: "studio_name"
+            widget: "string"
+            hint: "Your studio's name — appears in the navigation and page titles"
+
+          - label: "Tagline"
+            name: "tagline"
+            widget: "string"
+            hint: "A short tagline (e.g., 'Creative Studio' or 'Art & Design')"
+            required: false
+
+          - label: "Logo Image"
+            name: "logo_image"
+            widget: "image"
+            hint: "Upload your logo (optional — if empty, the studio name is shown as text)"
+            required: false
+
+          - label: "Primary / Accent Color"
+            name: "primary_color"
+            widget: "color"
+            default: "#c9a96e"
+            hint: "The main accent color for buttons, links, and highlights"
+
+          - label: "Background Color"
+            name: "background_color"
+            widget: "color"
+            default: "#0a0a0a"
+            hint: "The page background color"
+
+          - label: "Text Color"
+            name: "text_color"
+            widget: "color"
+            default: "#f5f5f5"
+            hint: "The main text color"
+
+          - label: "Card Background Color"
+            name: "card_color"
+            widget: "color"
+            default: "#141414"
+            hint: "Background color for product cards and content boxes"
+
+          - label: "Show Shop Link in Navigation"
+            name: "nav_show_shop"
+            widget: "boolean"
+            default: true
+            hint: "Turn this off to hide the Shop link (useful while you're still setting up)"
+
+          - label: "Instagram URL"
+            name: "social_instagram"
+            widget: "string"
+            hint: "Full URL (e.g., https://instagram.com/yourstudio)"
+            required: false
+
+          - label: "Twitter / X URL"
+            name: "social_twitter"
+            widget: "string"
+            required: false
+
+          - label: "TikTok URL"
+            name: "social_tiktok"
+            widget: "string"
+            required: false
+
+          - label: "Contact Email"
+            name: "social_email"
+            widget: "string"
+            hint: "Email address for contact (e.g., hello@yourstudio.com)"
+            required: false
+
+          - label: "Shopify Domain"
+            name: "shopify_domain"
+            widget: "string"
+            hint: "Your Shopify store domain (e.g., your-store.myshopify.com). Leave empty if not using Shopify yet."
+            required: false
+
+          - label: "Shopify Storefront Access Token"
+            name: "shopify_storefront_token"
+            widget: "string"
+            hint: "Get this from Shopify Admin → Apps → Develop apps → Storefront API. Leave empty if not using Shopify yet."
+            required: false
+
+  # ---------------------------------------------------------
+  # HOME PAGE
+  # The "Coming Soon" landing page content
+  # ---------------------------------------------------------
+  - name: "pages"
+    label: "📄 Pages"
+    description: "Edit your page content"
+    files:
+      - name: "home"
+        label: "Home Page (Coming Soon)"
+        file: "content/home.json"
+        fields:
+          - label: "Main Heading"
+            name: "heading"
+            widget: "string"
+            default: "Coming Soon"
+            hint: "The big text in the center of the page"
+
+          - label: "Subtitle"
+            name: "subtitle"
+            widget: "text"
+            hint: "The smaller text below the heading"
+
+          - label: "Background Image"
+            name: "background_image"
+            widget: "image"
+            hint: "Upload a background image for the home page (optional — if empty, shows solid color)"
+            required: false
+
+          - label: "Show Email Signup"
+            name: "show_email_signup"
+            widget: "boolean"
+            default: false
+            required: false
+
+          - label: "Button Text"
+            name: "cta_text"
+            widget: "string"
+            hint: "Text for the button below the subtitle (leave empty to hide the button)"
+            required: false
+
+          - label: "Button Link"
+            name: "cta_link"
+            widget: "string"
+            hint: "Where the button links to (e.g., your Instagram URL)"
+            required: false
+
+  # ---------------------------------------------------------
+  # SHOP PAGE
+  # In-person items + print-on-demand config
+  # ---------------------------------------------------------
+  - name: "shop"
+    label: "🛍️ Shop"
+    description: "Manage your shop products and settings"
+    files:
+      - name: "shop_content"
+        label: "Shop Page"
+        file: "content/shop.json"
+        fields:
+          - label: "Shop Page Title"
+            name: "hero_title"
+            widget: "string"
+            default: "Shop"
+
+          - label: "Shop Page Subtitle"
+            name: "hero_subtitle"
+            widget: "string"
+
+          - label: "In-Person Section Title"
+            name: "in_person_section_title"
+            widget: "string"
+            default: "Original Works"
+
+          - label: "In-Person Section Subtitle"
+            name: "in_person_section_subtitle"
+            widget: "string"
+
+          - label: "Merch Section Title"
+            name: "pod_section_title"
+            widget: "string"
+            default: "Merchandise"
+
+          - label: "Merch Section Subtitle"
+            name: "pod_section_subtitle"
+            widget: "string"
+
+          - label: "Inquiry Form Heading"
+            name: "inquiry_form_heading"
+            widget: "string"
+            default: "Inquire About This Piece"
+
+          - label: "Inquiry Form Success Message"
+            name: "inquiry_form_success"
+            widget: "string"
+            default: "Thanks! We'll get back to you shortly."
+
+          # --- In-Person Items (the ticket system products) ---
+          - label: "In-Person Items"
+            name: "in_person_items"
+            widget: "list"
+            hint: "Add items you sell in person. Customers will submit an inquiry form to purchase."
+            summary: "{{fields.title}} — {{fields.price}}"
+            fields:
+              - label: "Title"
+                name: "title"
+                widget: "string"
+
+              - label: "Description"
+                name: "description"
+                widget: "text"
+
+              - label: "Price"
+                name: "price"
+                widget: "string"
+                hint: "Include the currency symbol (e.g., $250, €200)"
+
+              - label: "Image"
+                name: "image"
+                widget: "image"
+                required: false
+                hint: "Upload a photo of the item"
+
+              - label: "Available"
+                name: "available"
+                widget: "boolean"
+                default: true
+                hint: "Turn off when the item is sold"
+
+          # --- Print on Demand Products (Shopify) ---
+          - label: "Print-on-Demand Products (Shopify)"
+            name: "pod_products"
+            widget: "list"
+            hint: "Add Shopify product IDs for your print-on-demand merchandise. Get the ID from your Shopify admin."
+            summary: "{{fields.label}}"
+            fields:
+              - label: "Label (for your reference)"
+                name: "label"
+                widget: "string"
+                hint: "Just a name so you remember what this product is"
+
+              - label: "Shopify Product ID"
+                name: "shopify_product_id"
+                widget: "string"
+                hint: "The numeric product ID from Shopify (find it in the product URL in Shopify admin)"
