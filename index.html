@@ -62,7 +62,10 @@
       display: none; align-items: center; justify-content: center; gap: 6px;
       background: rgba(0,0,0,.28); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
       overflow-x: auto; white-space: nowrap; padding: 0 12px;
+      transition: transform .4s cubic-bezier(.4,0,.2,1), opacity .4s ease;
     }
+    /* Menu bar: fully visible on the first page, tucked away when scrolled down */
+    #nav.nav-hide { transform: translateY(-100%); opacity: 0; pointer-events: none; }
     #nav a {
       color: var(--c-text); text-decoration: none; font-size: .78rem; font-weight: 600;
       letter-spacing: .18em; text-transform: uppercase; padding: 8px 16px; border-radius: 4px;
@@ -352,6 +355,23 @@
 
       // Active page (menu highlight) = the one under the upper-middle of the screen
       var current = -1, ticking = false;
+      // The menu shows on the first page, hides while you are further down, and comes back when the
+      // mouse is at the top of the screen (or hovering the menu) or when you scroll back to the first page.
+      var mouseTop = false, navHover = false, lastY = window.scrollY, upIntent = false;
+      function setNav() { nav.classList.toggle('nav-hide', current > 0 && !mouseTop && !navHover && !upIntent); }
+      nav.addEventListener('mouseenter', function () { navHover = true; setNav(); });
+      nav.addEventListener('mouseleave', function () { navHover = false; setNav(); });
+      document.addEventListener('mousemove', function (e) {
+        var near = e.clientY < (nav.classList.contains('nav-hide') ? 48 : 84);
+        if (near !== mouseTop) { mouseTop = near; setNav(); }
+      }, { passive: true });
+      document.documentElement.addEventListener('mouseleave', function () { mouseTop = false; setNav(); });
+      // touch screens have no mouse: scrolling up a little brings the menu back
+      if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) {
+        window.addEventListener('scroll', function () {
+          var y = window.scrollY; upIntent = y < lastY - 6 ? true : (y > lastY + 6 ? false : upIntent); lastY = y; setNav();
+        }, { passive: true });
+      }
       function update() {
         ticking = false;
         blend();
@@ -365,6 +385,7 @@
         var prev = current;
         current = idx;
         links.forEach(function (a, i) { a.classList.toggle('active', i === idx); });
+        setNav();
         if (prev >= 0 && history.replaceState) history.replaceState(null, '', '#' + pages[idx].id);
       }
       function onScroll() { if (!ticking) { ticking = true; requestAnimationFrame(update); } }
