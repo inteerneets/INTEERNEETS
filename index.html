@@ -413,10 +413,11 @@
       var sections = document.querySelectorAll('[data-shopify-section]');
       if (!sections.length) return;
       var colors = settings.site_colors || {};
+      var cleanDomain = String(settings.shopify_domain).trim().replace(/^https?:\/\//i, '').replace(/\/.*$/, '');
       loadShopifySdk(function () {
         var client = ShopifyBuy.buildClient({
-          domain: settings.shopify_domain,
-          storefrontAccessToken: settings.shopify_storefront_token
+          domain: cleanDomain,
+          storefrontAccessToken: String(settings.shopify_storefront_token).trim()
         });
         var ui = ShopifyBuy.UI.init(client);
         sections.forEach(function (section) {
@@ -429,10 +430,13 @@
           section.style.gap = '24px';
           section.style.border = 'none';
           ids.forEach(function (productId) {
+            var s = String(productId || '').trim();
+            if (!s) return;
+            var numMatch = s.match(/(?:\/products\/|Product\/|^)(\d+)(?:[/?#].*)?$/);
+            var handleMatch = !numMatch && s.match(/\/products\/([^/?#]+)/);
             var node = document.createElement('div');
             section.appendChild(node);
-            ui.createComponent('product', {
-              id: productId,
+            var compCfg = {
               node: node,
               moneyFormat: '%24%7B%7Bamount%7D%7D',
               options: { product: { styles: {
@@ -450,7 +454,11 @@
                   ':focus': { 'background-color': colors.btn_hover_fill || colors.btn_fill || 'transparent', 'color': colors.btn_text || '#000000' }
                 }
               } } }
-            });
+            };
+            if (numMatch) compCfg.id = numMatch[1];
+            else if (handleMatch) compCfg.handle = decodeURIComponent(handleMatch[1]);
+            else compCfg.handle = s;
+            ui.createComponent('product', compCfg);
           });
         });
       });
