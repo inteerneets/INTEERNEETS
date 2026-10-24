@@ -67,7 +67,7 @@
           "align-items": "center",
           "justify-content": "center",
           "color": "#555",
-          "font-family": "'Inter',sans-serif"
+          "font-family": "'Inter 18pt Bold', sans-serif"
         }
       },
       {
@@ -202,7 +202,7 @@
     "symbols": []
   },
   "html": "<body id=\"ibuj\"><section id=\"i236j\"><h2 id=\"i2np8\"><span id=\"ixnaw\">+INTEERNEETS SHOP+</span><br/></h2><div data-shopify-section=\"merch\" id=\"ikfav\"><br/></div></section><div id=\"i12qy\"></div></body>",
-  "css": "@font-face{font-family:'Inter 18pt Bold';src:url('/fonts/Inter_18pt-Bold.ttf') format('truetype');font-display:swap;}\n@font-face{font-family:'Inter 18pt Regular';src:url('/fonts/Inter_18pt-Regular.ttf') format('truetype');font-display:swap;}\n* { box-sizing: border-box; } body {margin: 0;}body{margin-top:0px;margin-right:0px;margin-bottom:0px;margin-left:0px;padding-top:0px;padding-right:0px;padding-bottom:0px;padding-left:0px;}*{box-sizing:border-box;}#i236j{padding:60px 20px;color:var(--c-text,#ffffff);}#i2np8{font-family:'Inter 18pt Regular', sans-serif;font-size:2rem;text-align:center;margin:0 0 40px 0;color:var(--c-text,#ffffff);box-shadow:    ;opacity:1;}#ikfav{min-height:200px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#555;font-family:'Inter',sans-serif;}#ixnaw{font-family:'Inter 18pt Regular', sans-serif;}#i12qy{left:1291px;top:579px;position:absolute;width:1305.5999755859375px;height:0px;}",
+  "css": "@font-face{font-family:'Inter 18pt Bold';src:url('/fonts/Inter_18pt-Bold.ttf') format('truetype');font-display:swap;}\n@font-face{font-family:'Inter 18pt Regular';src:url('/fonts/Inter_18pt-Regular.ttf') format('truetype');font-display:swap;}\n* { box-sizing: border-box; } body {margin: 0;}body{margin-top:0px;margin-right:0px;margin-bottom:0px;margin-left:0px;padding-top:0px;padding-right:0px;padding-bottom:0px;padding-left:0px;}*{box-sizing:border-box;}#i236j{padding:60px 20px;color:var(--c-text,#ffffff);}#i2np8{font-family:'Inter 18pt Regular', sans-serif;font-size:2rem;text-align:center;margin:0 0 40px 0;color:var(--c-text,#ffffff);box-shadow:    ;opacity:1;}#ikfav{min-height:200px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#555;font-family:'Inter 18pt Bold', sans-serif;}#ixnaw{font-family:'Inter 18pt Regular', sans-serif;}#i12qy{left:1291px;top:579px;position:absolute;width:1305.5999755859375px;height:0px;}",
   "bg": {
     "color": "#ff0000",
     "image": "",
