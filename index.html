@@ -84,27 +84,13 @@
     img { -webkit-user-drag: none; user-drag: none; }
 
 
-    /* Glass scrollbar: the browser's bar is hidden and replaced by a see-through, blurred "glass" pill */
-    @media (pointer: fine) {
-      html { scrollbar-width: none; -ms-overflow-style: none; }
-      html::-webkit-scrollbar { display: none; width: 0; height: 0; }
-    }
-    #gscroll { position: fixed; top: 0; right: 0; bottom: 0; width: 26px; z-index: 9000; pointer-events: none; }
-    #gscroll .gs-thumb {
-      position: absolute; right: 6px; width: 8px; top: 0; height: 60px; border-radius: 999px;
-      background: linear-gradient(180deg, rgba(255,255,255,.34), rgba(255,255,255,.12));
-      border: 1px solid rgba(255,255,255,.42);
-      -webkit-backdrop-filter: blur(10px) saturate(1.7); backdrop-filter: blur(10px) saturate(1.7);
-      box-shadow: inset 0 1px 1px rgba(255,255,255,.55), inset 0 0 8px rgba(255,255,255,.18), 0 4px 18px rgba(0,0,0,.28);
-      opacity: 0; pointer-events: auto; cursor: grab !important; touch-action: none;
-      transition: opacity .5s ease, width .2s ease, right .2s ease, background .2s ease;
-    }
-    #gscroll.active .gs-thumb, #gscroll .gs-thumb:hover, #gscroll.drag .gs-thumb { opacity: 1; }
-    #gscroll .gs-thumb:hover, #gscroll.drag .gs-thumb { width: 12px; right: 4px; }
-    #gscroll.drag .gs-thumb { cursor: grabbing !important; }
-    #gscroll.off { display: none; }
+    /* Glass scrollbar: see glass-scroll.js (used on every page and on the product page) */
+    body.prod-open #nav.nav-hide { transform: none; opacity: 1; pointer-events: auto; }   /* the menu stays on the product page */
+    body.prod-open > .gscroll { display: none; }
+
   </style>
   <style id="page-fonts"></style>
+  <script src="/glass-scroll.js?v=20261024d"></script>
 </head>
 <body>
   <div id="loading-screen"><div id="ld-root"><div id="ld-default"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div></div>
@@ -336,6 +322,7 @@
         a.href = '#' + p.id;
         a.addEventListener('click', function (e) {
           e.preventDefault();
+          closeProduct();
           sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
         nav.appendChild(a);
@@ -438,59 +425,107 @@
     // ── Shopify (products from Site Settings render into [data-shopify-section] blocks) ──
     // The product page: one design (Product Page tab in the editor) shown full screen for the clicked product,
     // with arrows to move between products. Closes with the X, Esc, or the arrows' neighbours.
-    var productDesign, productOverlay;
+    // The product page: one design per product (falls back to the "template" design from the Product Page
+    // tab), shown over the shop with the site menu on top, the glass scrollbar and arrows between products.
+    var productDesigns = {}, productOverlay = null, productGlass = null, productResize = null;
+    function productSlug(key) { return String(key).toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 32); }
     function productKeys() { return InteerShop.visibleKeys(settings); }
+    function loadProductDesign(key) {
+      if (key in productDesigns) return Promise.resolve(productDesigns[key]);
+      return getContent('page-product-' + productSlug(key) + '.json').catch(function () { return null; }).then(function (d) {
+        if (d) return d;
+        if (productDesigns.__tpl !== undefined) return productDesigns.__tpl;
+        return getContent('page-product.json').catch(function () { return null; }).then(function (tpl) { productDesigns.__tpl = tpl; return tpl; });
+      }).then(function (d) { productDesigns[key] = d; return d; });
+    }
+    // same scaling as the pages: the design is a fixed-size stage scaled to the screen
+    function stageFit(g) {
+      var vw = document.documentElement.clientWidth, vh = window.innerHeight;
+      var H = Math.max(g.inner.offsetHeight, g.inner.scrollHeight);
+      var single = H <= g.rh + 2;
+      var s = vw / g.rw;
+      if (single) s = Math.min(s, vh / g.rh);
+      var hs = H * s, secH = single ? Math.max(vh, hs) : hs;
+      g.sec.style.height = secH.toFixed(2) + 'px';
+      var x = (vw - g.rw * s) / 2, y = single ? (secH - hs) / 2 : 0;
+      g.inner.style.transform = 'translate(' + x.toFixed(2) + 'px,' + y.toFixed(2) + 'px) scale(' + s.toFixed(5) + ')';
+    }
     function openProduct(key) {
       var keys = productKeys();
       if (!keys.length) return;
-      var go = function (design) {
+      loadProductDesign(key).then(function (design) {
         closeProduct();
         var ov = document.createElement('div');
         ov.id = 'prod-overlay';
-        ov.style.cssText = 'position:fixed;inset:0;z-index:9000;overflow:auto;background:#000;';
+        ov.style.cssText = 'position:fixed;inset:0;z-index:50;overflow-y:auto;overflow-x:hidden;background:#000;';
         var bgl = document.createElement('div');
         bgl.className = 'bg-layer';
-        bgl.style.cssText = 'position:absolute;inset:0;opacity:1;';
+        bgl.style.cssText = 'position:fixed;inset:0;opacity:1;';
         applyBgLayer(bgl, (design && design.bg) || { color: '#f80000' });
         ov.appendChild(bgl);
+        var wrap = document.createElement('div');
+        wrap.style.cssText = 'position:relative;width:100%;';
         var root = document.createElement('div');
         root.id = 'prod-root';
-        root.style.cssText = 'position:relative;min-height:100%;';
-        var html = design && design.html ? stripBg(design.html) : '<section style="min-height:100vh;padding:90px 5vw 60px;color:#fff;box-sizing:border-box;"><div data-shopify-product-page="1" style="max-width:1100px;margin:0 auto;"></div></section>';
-        root.innerHTML = html;
+        var narrow = document.documentElement.clientWidth < 700;
+        var rw = (design && design.refW) || DEF_REF_W, rh = (design && design.refH) || DEF_REF_H;
+        root.className = 'stage';
+        root.style.cssText = narrow ? 'position:relative;width:100%;--vw:1vw;--vh:1vh;'
+          : 'position:absolute;left:0;top:0;width:' + rw + 'px;transform-origin:0 0;--vw:' + (rw / 100) + 'px;--vh:' + (rh / 100) + 'px;';
+        root.innerHTML = unitFix(design && design.html ? stripBg(design.html) : '<section style="min-height:100vh;padding:90px 5vw 60px;color:#fff;box-sizing:border-box;"><div data-shopify-product-page="1" style="max-width:1100px;margin:0 auto;"></div></section>');
         if (design && design.css) {
           var fonts = [], st = document.createElement('style');
-          st.textContent = scopeCss(stripBg(design.css), '#prod-root', fonts);
+          st.textContent = unitFix(scopeCss(stripBg(design.css), '#prod-root', fonts));
           root.appendChild(st);
           if (fonts.length) { var fs2 = document.createElement('style'); fs2.textContent = fonts.join('\n'); root.appendChild(fs2); }
         }
-        ov.appendChild(root);
+        wrap.appendChild(root);
+        ov.appendChild(wrap);
         function ctl(txt, css, fn, title) {
           var b = document.createElement('button');
           b.type = 'button'; b.textContent = txt; b.title = title;
-          b.style.cssText = 'position:fixed;z-index:9001;cursor:pointer;background:#000;color:#ff0000;border:2px solid #ff0000;font:700 18px Inter,sans-serif;width:44px;height:44px;line-height:1;' + css;
+          b.style.cssText = 'position:fixed;z-index:60;cursor:pointer;background:#000;color:#ff0000;border:2px solid #ff0000;font:700 18px Inter,sans-serif;width:44px;height:44px;line-height:1;' + css;
           b.addEventListener('click', fn);
           ov.appendChild(b);
         }
         var i = keys.indexOf(key);
-        ctl('\u2715', 'top:16px;left:16px;', closeProduct, 'Close');
+        var prev = keys[(i - 1 + keys.length) % keys.length], next = keys[(i + 1) % keys.length];
+        ctl('\u2715', 'top:72px;left:16px;', closeProduct, 'Close (Esc)');
         if (keys.length > 1) {
-          ctl('\u25C0', 'top:50%;left:16px;margin-top:-22px;', function () { openProduct(keys[(i - 1 + keys.length) % keys.length]); }, 'Previous product');
-          ctl('\u25B6', 'top:50%;right:16px;margin-top:-22px;', function () { openProduct(keys[(i + 1) % keys.length]); }, 'Next product');
+          ctl('\u25C0', 'top:72px;left:68px;', function () { openProduct(prev); }, 'Previous product (left arrow key)');
+          ctl('\u25B6', 'top:72px;left:120px;', function () { openProduct(next); }, 'Next product (right arrow key)');
         }
         document.body.appendChild(ov);
+        document.body.classList.add('prod-open');
         document.documentElement.style.overflow = 'hidden';
         productOverlay = ov;
+        productOverlay.__keys = { prev: prev, next: next };
+        if (!narrow) {
+          var g = { sec: wrap, inner: root, rw: rw, rh: rh };
+          stageFit(g);
+          productResize = function () { stageFit(g); if (productGlass) productGlass.redraw(); };
+          window.addEventListener('resize', productResize);
+          if (window.ResizeObserver) new ResizeObserver(productResize).observe(root);
+        }
+        productGlass = glassScroll({ el: ov, host: ov });
         var holder = root.querySelector('[data-shopify-product-page]');
         if (holder) InteerShop.renderProductPage(document, holder, settings, key, { toFilterShadow: toFilterShadow });
-      };
-      if (productDesign !== undefined) return go(productDesign);
-      getContent('page-product.json').then(function (d) { productDesign = d; go(d); }).catch(function () { productDesign = null; go(null); });
+      });
     }
     function closeProduct() {
-      if (productOverlay) { productOverlay.remove(); productOverlay = null; document.documentElement.style.overflow = ''; }
+      if (!productOverlay) return;
+      if (productResize) { window.removeEventListener('resize', productResize); productResize = null; }
+      if (productGlass) { productGlass.destroy(); productGlass = null; }
+      productOverlay.remove(); productOverlay = null;
+      document.body.classList.remove('prod-open');
+      document.documentElement.style.overflow = '';
     }
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeProduct(); });
+    document.addEventListener('keydown', function (e) {
+      if (!productOverlay) return;
+      if (e.key === 'Escape') closeProduct();
+      else if (e.key === 'ArrowRight' && productOverlay.__keys) openProduct(productOverlay.__keys.next);
+      else if (e.key === 'ArrowLeft' && productOverlay.__keys) openProduct(productOverlay.__keys.prev);
+    });
 
     function initShopify() {
       if (!settings.shopify_domain || !settings.shopify_storefront_token) return;
@@ -498,7 +533,7 @@
       var go = function () { InteerShop.render(document, settings, { toFilterShadow: toFilterShadow, onOpenProduct: openProduct }); };
       if (window.InteerShop) return go();
       var s = document.createElement('script');
-      s.src = '/shopify-shop.js?v=20261024c';
+      s.src = '/shopify-shop.js?v=20261024d';
       s.onload = go;
       document.head.appendChild(s);
     }
@@ -658,53 +693,7 @@
     })();
   
     // ?? Glass scrollbar (desktop / mouse only) ??
-    (function () {
-      if (!window.matchMedia || !window.matchMedia('(pointer: fine)').matches) return;
-      var wrap = document.createElement('div');
-      wrap.id = 'gscroll';
-      wrap.innerHTML = '<div class="gs-thumb"></div>';
-      document.body.appendChild(wrap);
-      var thumb = wrap.firstChild, idle, ticking = false, dragging = false;
-      function metrics() {
-        var doc = document.documentElement, vh = window.innerHeight, h = Math.max(doc.scrollHeight, document.body.scrollHeight);
-        var th = Math.max(54, Math.round(vh * vh / h));
-        return { vh: vh, h: h, th: th, range: Math.max(1, vh - th - 12), max: Math.max(1, h - vh) };
-      }
-      function draw() {
-        ticking = false;
-        var m = metrics();
-        wrap.classList.toggle('off', m.h <= m.vh + 2);
-        thumb.style.height = m.th + 'px';
-        thumb.style.top = (6 + (window.scrollY / m.max) * m.range) + 'px';
-      }
-      function request() { if (!ticking) { ticking = true; requestAnimationFrame(draw); } }
-      function pulse() {
-        wrap.classList.add('active');
-        clearTimeout(idle);
-        idle = setTimeout(function () { if (!dragging) wrap.classList.remove('active'); }, 900);
-      }
-      window.addEventListener('scroll', function () { request(); pulse(); }, { passive: true });
-      window.addEventListener('resize', request);
-      // moving the mouse to the right edge brings the bar back so it can be grabbed
-      document.addEventListener('mousemove', function (e) { if (e.clientX > window.innerWidth - 40) pulse(); }, { passive: true });
-      new MutationObserver(request).observe(document.body, { childList: true, subtree: true });
-      window.addEventListener('load', request);
-      thumb.addEventListener('pointerdown', function (e) {
-        e.preventDefault();
-        var m = metrics(), startY = e.clientY, startScroll = window.scrollY;
-        dragging = true; wrap.classList.add('drag', 'active');
-        document.documentElement.style.scrollBehavior = 'auto';
-        thumb.setPointerCapture(e.pointerId);
-        function move(ev) { window.scrollTo(0, startScroll + (ev.clientY - startY) * (m.max / m.range)); }
-        function up() {
-          dragging = false; wrap.classList.remove('drag'); pulse();
-          document.documentElement.style.scrollBehavior = '';
-          thumb.removeEventListener('pointermove', move); thumb.removeEventListener('pointerup', up); thumb.removeEventListener('pointercancel', up);
-        }
-        thumb.addEventListener('pointermove', move); thumb.addEventListener('pointerup', up); thumb.addEventListener('pointercancel', up);
-      });
-      draw();
-    })();
+    glassScroll();
   </script>
 </body>
 </html>

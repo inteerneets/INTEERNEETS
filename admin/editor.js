@@ -608,7 +608,11 @@ const LOADING_PAGE = { id: 'loading', title: 'Loading Page' };
 // The Product page is the design visitors see when they open a product (one design, every product)
 const PRODUCT_PAGE = { id: 'product', title: 'Product Page' };
 const SPECIAL_PAGES = [ERROR_PAGE, LOADING_PAGE, PRODUCT_PAGE];
+// Each product can have its own page design: page id product-<slug> (the plain product page is the template)
+function isProductPageId(id) { return id === PRODUCT_PAGE.id || String(id).indexOf(PRODUCT_PAGE.id + '-') === 0; }
+function shopSlug(key) { return String(key).toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 32); }
 function pageTitle(id) {
+  if (id !== PRODUCT_PAGE.id && isProductPageId(id)) { const slug = id.slice(PRODUCT_PAGE.id.length + 1); return 'Product: ' + ((window.__shopNames || {})[slug] || slug); }
   const sp = SPECIAL_PAGES.find((s) => s.id === id);
   if (sp) return sp.title;
   const p = pages.find((x) => x.id === id);
@@ -689,7 +693,7 @@ function renderTabsCore() {
   [...pages, ...SPECIAL_PAGES].forEach((p) => {
     const isError = SPECIAL_PAGES.some((s) => s.id === p.id);
     const b = document.createElement('button');
-    b.className = 'page-btn' + (p.id === currentPage ? ' active' : '') + (isError ? ' error-tab' : '');
+    b.className = 'page-btn' + ((p.id === currentPage || (p.id === PRODUCT_PAGE.id && isProductPageId(currentPage))) ? ' active' : '') + (isError ? ' error-tab' : '');
     b.dataset.page = p.id;
     b.title = p.id === PRODUCT_PAGE.id
       ? 'Design the page that opens when a visitor clicks a product (use the arrows to preview each product)'
@@ -850,7 +854,7 @@ function applyDefaultTemplate(page) {
 </section>`);
     return;
   }
-  if (page === PRODUCT_PAGE.id) {
+  if (isProductPageId(page)) {
     editor.setStyle('');
     editor.setComponents(`
 <section style="min-height:100vh;padding:90px 5vw 60px;color:var(--c-text,#ffffff);box-sizing:border-box;">
@@ -884,10 +888,15 @@ async function loadPage(id) {
   if (!data) {
     try { data = await fetchContent(`page-${id}.json`); } catch (_) { data = null; }
   }
+  let fromTemplate = false;
+  if (!data && id !== PRODUCT_PAGE.id && isProductPageId(id)) {
+    // a product without its own design starts as a copy of the template
+    try { data = await fetchContent(`page-${PRODUCT_PAGE.id}.json`); fromTemplate = !!data; } catch (_) { data = null; }
+  }
 
   if (data && data.projectData) {
     editor.loadProjectData(data.projectData);
-    showToast(`Loaded ${pageTitle(id)}`);
+    showToast(fromTemplate ? `${pageTitle(id)} starts from the template: change anything, then Save` : `Loaded ${pageTitle(id)}`);
   } else {
     applyDefaultTemplate(id);
     showToast(`New ${pageTitle(id)} page — design it, then Save`);
@@ -895,7 +904,7 @@ async function loadPage(id) {
   stripThemeBg();
   normalizeEditorBtn();
   pageRef[id] = (data && data.refW) ? { w: data.refW, h: data.refH || 808 } : null;
-  pageBg[id] = (data && data.bg) || (id === PRODUCT_PAGE.id ? Object.assign({}, DEFAULT_BG, { color: '#f80000' }) : null);
+  pageBg[id] = (data && data.bg) || (isProductPageId(id) ? Object.assign({}, DEFAULT_BG, { color: '#f80000' }) : null);
   applyPageBg();
   applyColorsToCanvas();
   editor.UndoManager.clear();
@@ -2468,6 +2477,8 @@ async function shopFetchProducts() {
   }
   shopProducts = keys.map((k) => {
     const n = map[k];
+    window.__shopNames = window.__shopNames || {};
+    if (n) window.__shopNames[shopSlug(k)] = n.title;
     return {
       key: k, title: n ? n.title : k,
       image: n && n.featuredImage ? n.featuredImage.url + (n.featuredImage.url.includes('?') ? '&' : '?') + 'width=140' : '',
@@ -2501,11 +2512,12 @@ function shopRender(force) {
       onBuilt: (section) => { if (shopPreviewOn && shopSel && section.__ish) section.__ish.setCat(shopSel); },
     });
   }
+  const pk = shopPageProductKey();
   pps.forEach((el) => {
-    if (!force && el.__shopFor === shopCurrent && el.querySelector('.shop-card')) return;
-    el.__shopFor = shopCurrent;
-    if (!shopCurrent) return;
-    InteerShop.renderProductPage(doc, el, st, shopCurrent, { toFilterShadow });
+    if (!force && el.__shopFor === pk && el.querySelector('.shop-card')) return;
+    el.__shopFor = pk;
+    if (!pk) return;
+    InteerShop.renderProductPage(doc, el, st, pk, { toFilterShadow });
   });
 }
 function shopRenderSoon(force) {
@@ -2532,36 +2544,51 @@ async function shopAfterSettings() {
   shopRenderSoon(true);
 }
 
-// ── Product page: switcher in the top bar (◀ product ▶) ──
+// Product pages: arrows + a menu (Template or one product) in the top bar. Every product can have its own design.
+function shopPageProductKey() {
+  if (currentPage !== PRODUCT_PAGE.id && isProductPageId(currentPage)) {
+    const slug = currentPage.slice(PRODUCT_PAGE.id.length + 1);
+    const p = shopProducts.find((x) => shopSlug(x.key) === slug);
+    return p ? p.key : '';
+  }
+  return shopCurrent;
+}
 (function buildProdSwitch() {
   const wrap = document.createElement('div');
   wrap.id = 'prod-switch';
-  wrap.innerHTML = '<button type="button" class="tb-btn" id="ps-prev" title="Previous product">&#9664;</button><select id="ps-sel" title="Pick the product to preview"></select><button type="button" class="tb-btn" id="ps-next" title="Next product">&#9654;</button>';
+  wrap.innerHTML = '<button type="button" class="tb-btn" id="ps-prev" title="Previous product page">&#9664;</button><select id="ps-sel" title="Pick which product page to edit"></select><button type="button" class="tb-btn" id="ps-next" title="Next product page">&#9654;</button><button type="button" class="tb-btn" id="ps-reset" title="Throw away this product\'s own design and use the template again">&#8634; Use template</button>';
   byId('btn-add-page').parentNode.appendChild(wrap);
-  const go = (key) => {
-    shopCurrent = key;
-    sessionStorage.setItem('shopCurrentProduct', key);
-    byId('ps-sel').value = key;
-    shopRender(true);
+  const ids = () => [PRODUCT_PAGE.id, ...shopProducts.map((p) => PRODUCT_PAGE.id + '-' + shopSlug(p.key))];
+  const go = (id) => {
+    const key = (shopProducts.find((p) => PRODUCT_PAGE.id + '-' + shopSlug(p.key) === id) || {}).key;
+    if (key) { shopCurrent = key; sessionStorage.setItem('shopCurrentProduct', key); }
+    switchPage(id);
   };
-  const step = (d) => {
-    const keys = shopProducts.map((p) => p.key);
-    if (!keys.length) return;
-    const i = keys.indexOf(shopCurrent);
-    go(keys[(i + d + keys.length) % keys.length]);
-  };
+  const step = (d) => { const a = ids(), i = Math.max(0, a.indexOf(currentPage)); go(a[(i + d + a.length) % a.length]); };
   byId('ps-prev').addEventListener('click', () => step(-1));
   byId('ps-next').addEventListener('click', () => step(1));
   byId('ps-sel').addEventListener('change', (e) => go(e.target.value));
+  byId('ps-reset').addEventListener('click', async () => {
+    if (currentPage === PRODUCT_PAGE.id || !isProductPageId(currentPage)) return;
+    if (!confirm('Use the template for this product again? Its own design is deleted.')) return;
+    const id = currentPage;
+    try { await apiFetch('/api/delete-page', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ page: id }) }); } catch (_) { /* never saved */ }
+    dirty.delete(id); delete drafts[id];
+    await loadPage(id);
+    showToast('Back to the template design');
+  });
 })();
 function shopSyncSwitch() {
   const wrap = byId('prod-switch');
   if (!wrap) return;
-  wrap.classList.toggle('on', currentPage === PRODUCT_PAGE.id);
+  wrap.classList.toggle('on', isProductPageId(currentPage));
   const sel = byId('ps-sel');
   sel.innerHTML = '';
-  shopProducts.forEach((p) => { const o = document.createElement('option'); o.value = p.key; o.textContent = p.title; sel.appendChild(o); });
-  if (shopCurrent) sel.value = shopCurrent;
+  const add = (v, n) => { const o = document.createElement('option'); o.value = v; o.textContent = n; sel.appendChild(o); };
+  add(PRODUCT_PAGE.id, '\u2605 Template (all products)');
+  shopProducts.forEach((p) => add(PRODUCT_PAGE.id + '-' + shopSlug(p.key), p.title));
+  sel.value = currentPage;
+  byId('ps-reset').style.display = currentPage === PRODUCT_PAGE.id ? 'none' : '';
 }
 
 function shopChanged() { markDirty(currentPage); shopRenderSoon(true); }
