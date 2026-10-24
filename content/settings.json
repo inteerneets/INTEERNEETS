@@ -35,7 +35,24 @@
   "site_bg_shading": false,
   "show_nav": true,
   "shopify_style": {},
-  "shop_categories": [],
+  "shop_categories": [
+    {
+      "id": "inteerneets",
+      "title": "INTEERNEETS",
+      "parent": "",
+      "product_ids": [
+        "15894861382009",
+        "15894861316473",
+        "15894861119865",
+        "15894861021561",
+        "15894860923257",
+        "15894860890489",
+        "15894860693881",
+        "15894860628345",
+        "15894860562809"
+      ]
+    }
+  ],
   "product_custom_images": {},
   "shop_opts": {},
   "product_badges": {},
