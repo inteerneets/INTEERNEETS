@@ -539,6 +539,16 @@ bm.add('social-links', {
     </div>`,
 });
 
+bm.add('login-box', {
+  label: 'Login box',
+  category: 'Studio',
+  content: `
+    <div style="display:flex;flex-direction:column;align-items:center;gap:14px;">
+      <input type="password" data-login-pw="1" placeholder="Password" style="width:280px;max-width:100%;background:#111;border:1px solid #e53935;color:#e53935;padding:12px 14px;font-size:15px;border-radius:6px;text-align:center;">
+      <button type="button" data-login-btn="1" style="width:280px;max-width:100%;background:#e53935;color:#000;border:0;padding:12px;font-weight:700;letter-spacing:.2em;border-radius:6px;">ENTER</button>
+      <div data-login-err="1" style="color:#e53935;font-size:12px;min-height:16px;"></div>
+    </div>`,
+});
 bm.add('shopify-category', {
   label: 'Shop Category',
   category: 'Studio',
@@ -610,7 +620,9 @@ const ERROR_PAGE = { id: '404', title: 'Error Page' };
 const LOADING_PAGE = { id: 'loading', title: 'Loading Page' };
 // The Product page is the design visitors see when they open a product (one design, every product)
 const PRODUCT_PAGE = { id: 'product', title: 'Product Page' };
-const SPECIAL_PAGES = [ERROR_PAGE, LOADING_PAGE, PRODUCT_PAGE];
+// The Login page is the password screen shown before the editor opens
+const LOGIN_PAGE = { id: 'login', title: 'Login Page' };
+const SPECIAL_PAGES = [ERROR_PAGE, LOADING_PAGE, PRODUCT_PAGE, LOGIN_PAGE];
 // Each product can have its own page design: page id product-<slug> (the plain product page is the template)
 function isProductPageId(id) { return id === PRODUCT_PAGE.id || String(id).indexOf(PRODUCT_PAGE.id + '-') === 0; }
 function shopSlug(key) { return String(key).toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 32); }
@@ -698,7 +710,9 @@ function renderTabsCore() {
     const b = document.createElement('button');
     b.className = 'page-btn' + ((p.id === currentPage || (p.id === PRODUCT_PAGE.id && isProductPageId(currentPage))) ? ' active' : '') + (isError ? ' error-tab' : '');
     b.dataset.page = p.id;
-    b.title = p.id === PRODUCT_PAGE.id
+    b.title = p.id === LOGIN_PAGE.id
+      ? 'Design the password screen shown before this editor opens'
+      : p.id === PRODUCT_PAGE.id
       ? 'Design the page that opens when a visitor clicks a product (use the arrows to preview each product)'
       : p.id === LOADING_PAGE.id
       ? 'Design the loading screen visitors see while the site loads'
@@ -857,6 +871,17 @@ function applyDefaultTemplate(page) {
 </section>`);
     return;
   }
+  if (page === LOGIN_PAGE.id) {
+    editor.setStyle('');
+    editor.setComponents(`
+<section style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px 20px;box-sizing:border-box;">
+  <div style="font-family:'Playfair Display',serif;font-size:28px;letter-spacing:.2em;color:#e53935;margin-bottom:8px;">INTEERNEETS</div>
+  <input type="password" data-login-pw="1" placeholder="Password" style="width:280px;max-width:100%;background:#111;border:1px solid #e53935;color:#e53935;padding:12px 14px;font-size:15px;border-radius:6px;text-align:center;letter-spacing:.1em;">
+  <button type="button" data-login-btn="1" style="width:280px;max-width:100%;background:#e53935;color:#000;border:0;padding:12px;font-weight:700;letter-spacing:.2em;border-radius:6px;cursor:pointer;">ENTER</button>
+  <div data-login-err="1" style="color:#e53935;font-size:12px;min-height:16px;"></div>
+</section>`);
+    return;
+  }
   if (isProductPageId(page)) {
     editor.setStyle('');
     editor.setComponents(`
@@ -907,7 +932,7 @@ async function loadPage(id) {
   stripThemeBg();
   normalizeEditorBtn();
   pageRef[id] = (data && data.refW) ? { w: data.refW, h: data.refH || 808 } : null;
-  pageBg[id] = (data && data.bg) || (isProductPageId(id) ? Object.assign({}, DEFAULT_BG, { color: '#f80000' }) : null);
+  pageBg[id] = (data && data.bg) || (isProductPageId(id) ? Object.assign({}, DEFAULT_BG, { color: '#f80000' }) : (id === LOGIN_PAGE.id ? Object.assign({}, DEFAULT_BG, { color: '#000000' }) : null));
   applyPageBg();
   applyColorsToCanvas();
   editor.UndoManager.clear();
@@ -1056,7 +1081,7 @@ byId('pbg-save').addEventListener('click', async () => {
 // SETTINGS
 // ═══════════════════════════════════════════════════════════════
 
-var shopStyle = {}, shopCats = [], shopImgs = {}, shopOptsData = {}, shopBadges = {}, shopHidden = {}, shopSiteFonts = [];   // Shop panel data (saved inside settings.json)
+var shopStyle = {}, shopCats = [], shopImgs = {}, shopOptsData = {}, shopBadges = {}, shopHidden = {}, shopSiteFonts = [], shopDescs = {};   // Shop panel data (saved inside settings.json)
 
 async function loadSettings() {
   try {
@@ -1082,6 +1107,7 @@ async function loadSettings() {
     shopBadges = Object.assign({}, s.product_badges || {});
     shopHidden = Object.assign({}, s.product_hidden || {});
     shopSiteFonts = Array.isArray(s.site_fonts) ? s.site_fonts : [];
+    shopDescs = Object.assign({}, s.product_descriptions || {});
     settingsLoaded = true; // only now is it safe to write settings back
     if (typeof shopAfterSettings === 'function') shopAfterSettings();
   } catch (_) {
@@ -1112,6 +1138,7 @@ function collectSettings() {
     product_badges:           shopBadges,
     product_hidden:           shopHidden,
     site_fonts:               shopFontsAll(),
+    product_descriptions:     shopDescs,
   };
 }
 
@@ -2423,6 +2450,25 @@ editor.on('component:selected', ensureExtraTools);
 // ═══════════════════════════════════════════════════════════════
 
 // ── Lock screen: /admin/ only opens with the admin password ──
+// CSS of the designed login page, limited to the lock screen
+function scopeLoginCss(css, scope) {
+  const sheet = new CSSStyleSheet();
+  try { sheet.replaceSync(css); } catch (_) { return ''; }
+  const map = (rules) => Array.from(rules).map((r) => {
+    if (r.type === 1) {
+      const sel = r.selectorText.split(',').map((x) => {
+        x = x.trim();
+        if (/^(html|body)$/i.test(x)) return scope;
+        if (/^(html|body)\s/i.test(x)) return scope + ' ' + x.replace(/^(html|body)\s+/i, '');
+        return scope + ' ' + x;
+      }).join(',');
+      return sel + '{' + r.style.cssText + '}';
+    }
+    if (r.type === 4) return '@media ' + r.media.mediaText + '{' + map(r.cssRules) + '}';
+    return r.cssText;   // @font-face, @keyframes ...
+  }).join('\n');
+  return map(sheet.cssRules);
+}
 (function lockGate() {
   const lock = byId('lock-screen');
   if (!lock) return;
@@ -2434,21 +2480,57 @@ editor.on('component:selected', ensureExtraTools);
     } catch (_) { return false; }
   };
   const unlock = () => lock.classList.add('hidden');
+  let pwEl = byId('lock-pw'), btnEl = byId('lock-btn'), errEl = byId('lock-err');
+  const wire = () => {
+    const submit = async () => {
+      const pw = pwEl.value.trim();
+      errEl.textContent = '';
+      if (!pw) return;
+      btnEl.disabled = true;
+      const ok = await check(pw);
+      btnEl.disabled = false;
+      if (ok) { sessionStorage.setItem('adminPassword', pw); unlock(); }
+      else { errEl.textContent = 'Wrong password'; pwEl.value = ''; pwEl.focus(); }
+    };
+    btnEl.addEventListener('click', (e) => { e.preventDefault(); submit(); });
+    pwEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); submit(); } });
+    byId('lock-form').addEventListener('submit', (e) => { e.preventDefault(); submit(); });
+    setTimeout(() => pwEl.focus(), 60);
+  };
   const saved = sessionStorage.getItem('adminPassword');
   if (saved) check(saved).then((ok) => { if (ok) unlock(); else sessionStorage.removeItem('adminPassword'); });
-  byId('lock-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const pw = byId('lock-pw').value.trim();
-    const err = byId('lock-err');
-    err.textContent = '';
-    if (!pw) return;
-    byId('lock-btn').disabled = true;
-    const ok = await check(pw);
-    byId('lock-btn').disabled = false;
-    if (ok) { sessionStorage.setItem('adminPassword', pw); unlock(); }
-    else { err.textContent = 'Wrong password'; byId('lock-pw').value = ''; byId('lock-pw').focus(); }
-  });
-  setTimeout(() => byId('lock-pw').focus(), 50);
+  // show the login page you designed (Login Page tab); the built-in box is the fallback
+  (async () => {
+    let d = null;
+    try { d = await Promise.race([fetchContent('page-login.json'), new Promise((_, rej) => setTimeout(() => rej(new Error('slow')), 2500))]); } catch (_) { d = null; }
+    if (d && d.html) {
+      const root = document.createElement('div');
+      root.id = 'lock-root';
+      root.innerHTML = d.html;
+      const pw = root.querySelector('[data-login-pw]'), btn = root.querySelector('[data-login-btn]');
+      if (pw && btn) {
+        let err = root.querySelector('[data-login-err]');
+        if (!err) { err = document.createElement('div'); err.style.cssText = 'color:#e53935;font-size:12px;text-align:center;'; root.appendChild(err); }
+        const st = document.createElement('style');
+        st.textContent = scopeLoginCss(d.css || '', '#lock-root');
+        root.appendChild(st);
+        const bg = d.bg || {};
+        if (bg.color) lock.style.backgroundColor = bg.color;
+        if (bg.image) {
+          lock.style.backgroundImage = 'url("' + bg.image + '")';
+          const mode = bg.mode || 'cover';
+          lock.style.backgroundRepeat = mode === 'tile' ? 'repeat' : 'no-repeat';
+          lock.style.backgroundSize = mode === 'tile' ? (bg.tile_size || 256) + 'px' : (mode === 'stretch' ? '100% 100%' : mode);
+          lock.style.backgroundPosition = bg.position || 'center center';
+        }
+        lock.appendChild(root);
+        lock.classList.add('designed');
+        pwEl = pw; btnEl = btn; errEl = err;
+      }
+    }
+    lock.classList.add('ready');
+    wire();
+  })();
 })();
 
 // ── Category blocks get a "Category name" setting ──
@@ -2497,7 +2579,7 @@ async function shopFetchProducts() {
     window.__shopNames = window.__shopNames || {};
     if (n) window.__shopNames[shopSlug(k)] = n.title;
     return {
-      key: k, title: n ? n.title : k,
+      key: k, title: n ? n.title : k, desc: n ? (n.description || '') : '',
       image: n && n.featuredImage ? n.featuredImage.url + (n.featuredImage.url.includes('?') ? '&' : '?') + 'width=140' : '',
       price: n ? InteerShop.money(n.priceRange.minVariantPrice.amount, n.priceRange.minVariantPrice.currencyCode) : '',
     };
@@ -2786,22 +2868,32 @@ function shopRefreshCounts() {
 }
 
 // ── Products tab ──
-async function shopUploadImage(key) {
+// ── Pictures (a list per product: first = main) and description ──
+const shopImgList = (key) => { const v = shopImgs[key]; return (Array.isArray(v) ? v : (v ? [v] : [])).filter(Boolean); };
+function shopSetImgs(key, arr) { if (arr && arr.length) shopImgs[key] = arr; else delete shopImgs[key]; }
+async function shopUploadOne(file) {
+  let data = await new Promise((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve(r.result); r.onerror = reject; r.readAsDataURL(file); });
+  data = await shrinkIfBig(file, data);
+  const res = await apiFetch('/api/upload', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ filename: file.name, type: file.type, data }) });
+  const j = await res.json();
+  if (!j.success) throw new Error(j.error || 'upload failed');
+  return j.url;
+}
+function shopAddImages(key) {
   const inp = document.createElement('input');
-  inp.type = 'file'; inp.accept = 'image/*';
+  inp.type = 'file'; inp.accept = 'image/*'; inp.multiple = true;
   inp.addEventListener('change', async () => {
-    const file = inp.files && inp.files[0];
-    if (!file) return;
+    const files = Array.from(inp.files || []);
+    if (!files.length) return;
     try {
-      showToast('Uploading picture…');
-      let data = await new Promise((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve(r.result); r.onerror = reject; r.readAsDataURL(file); });
-      data = await shrinkIfBig(file, data);
-      const res = await apiFetch('/api/upload', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ filename: file.name, type: file.type, data }) });
-      const j = await res.json();
-      if (!j.success) throw new Error(j.error || 'upload failed');
-      shopImgs[key] = j.url;
+      const list = shopImgList(key).slice();
+      for (let i = 0; i < files.length; i++) {
+        showToast(`Uploading picture ${i + 1} of ${files.length}\u2026`);
+        list.push(await shopUploadOne(files[i]));
+      }
+      shopSetImgs(key, list);
       shopDrawBody(); shopChanged();
-      showToast('Picture set — click Save to publish');
+      showToast('Pictures added \u2014 click Save to publish');
     } catch (err) { console.error(err); showToast('Upload failed'); }
   });
   inp.click();
@@ -2817,33 +2909,70 @@ function shopMoveProduct(key, d) {
   shopSyncSwitch(); shopDrawBody(); shopChanged();
 }
 const SHOP_BADGES = [['', 'Auto'], ['none', 'No badge'], ['New', 'New'], ['Sale', 'Sale'], ['Limited', 'Limited'], ['Best seller', 'Best seller'], ['Sold out', 'Sold out'], ['Coming soon', 'Coming soon']];
+let shopEditKey = '';
+
+// the "Edit" box under a product: description + pictures
+function shopEditBox(p) {
+  const box = shopEl('div', { class: 'shop-edit' });
+  box.appendChild(shopEl('div', { class: 'sh-title', text: 'Description' }));
+  const ta = shopEl('textarea', { class: 'shop-desc', rows: '6', placeholder: p.desc ? 'Shopify\'s text is shown until you write your own:\n' + p.desc.slice(0, 220) : 'Write a description for this product\u2026' });
+  ta.value = shopDescs[p.key] || '';
+  ta.addEventListener('input', () => { if (ta.value.trim()) shopDescs[p.key] = ta.value; else delete shopDescs[p.key]; shopChanged(); });
+  box.appendChild(ta);
+  box.appendChild(shopEl('div', { class: 'shop-row-btns' },
+    p.desc ? shopEl('button', { class: 'shop-mini', text: 'Copy Shopify\'s text', title: 'Start from the text in Shopify and edit it', onclick: () => { ta.value = p.desc; ta.dispatchEvent(new Event('input')); } }) : null,
+    shopEl('button', { class: 'shop-mini', text: 'Use Shopify\'s text', title: 'Remove your text', onclick: () => { ta.value = ''; ta.dispatchEvent(new Event('input')); } })));
+  box.appendChild(shopEl('div', { class: 'sh-title', text: 'Pictures (the first one is the main picture)' }));
+  const list = shopImgList(p.key);
+  const row = shopEl('div', { class: 'shop-thumbs' });
+  if (!list.length) row.appendChild(shopEl('div', { class: 'shop-thumb' }, shopEl('img', { src: p.image, alt: '' }), shopEl('span', { text: 'Shopify\'s' })));
+  list.forEach((u, i) => {
+    const mv = (d) => () => { const a = shopImgList(p.key).slice(); const j = i + d; if (j < 0 || j >= a.length) return; [a[i], a[j]] = [a[j], a[i]]; shopSetImgs(p.key, a); shopDrawBody(); shopChanged(); };
+    row.appendChild(shopEl('div', { class: 'shop-thumb' + (i === 0 ? ' main' : '') },
+      shopEl('img', { src: u, alt: '' }),
+      shopEl('span', { text: i === 0 ? 'Main' : '#' + (i + 1) }),
+      shopEl('div', { class: 'tb' },
+        shopEl('button', { class: 'shop-mini', text: '\u25C0', title: 'Move earlier', onclick: mv(-1) }),
+        shopEl('button', { class: 'shop-mini', text: '\u25B6', title: 'Move later', onclick: mv(1) }),
+        shopEl('button', { class: 'shop-mini', text: '\u2715', title: 'Remove this picture', onclick: () => { const a = shopImgList(p.key).slice(); a.splice(i, 1); shopSetImgs(p.key, a); shopDrawBody(); shopChanged(); } }))));
+  });
+  box.appendChild(row);
+  box.appendChild(shopEl('div', { class: 'shop-row-btns' },
+    shopEl('button', { class: 'tb-btn', text: '+ Add pictures', onclick: () => shopAddImages(p.key) }),
+    list.length ? shopEl('button', { class: 'tb-btn', text: 'Use Shopify\'s pictures', onclick: () => { shopSetImgs(p.key, []); shopDrawBody(); shopChanged(); } }) : null));
+  return box;
+}
+
 function shopDrawProducts(box) {
-  box.appendChild(shopEl('p', { class: 'colors-hint small', text: 'Order here = order in the shop. Upload your own picture (otherwise Shopify\'s is used), set a badge, or hide a product. Add or remove products in ⚙ Settings ▸ Product IDs.' }));
+  box.appendChild(shopEl('p', { class: 'colors-hint small', text: 'Order here = order in the shop. Click Edit to write your own description or change the pictures (otherwise Shopify\'s are used), set a badge, or hide a product. Add or remove products in \u2699 Settings \u25B8 Product IDs.' }));
   const q = shopEl('input', { type: 'search', class: 'hex wide shop-q', placeholder: 'Search products', style: 'width:100%' });
   box.appendChild(shopEl('div', { class: 'shop-row-btns' }, q));
   const listBox = shopEl('div', { class: 'shop-prods' });
   const draw = () => {
     listBox.innerHTML = '';
-    if (!shopProducts.length) { listBox.appendChild(shopEl('p', { class: 'colors-hint small', text: 'Add your Shopify domain, token and product IDs in ⚙ Settings first.' })); return; }
+    if (!shopProducts.length) { listBox.appendChild(shopEl('p', { class: 'colors-hint small', text: 'Add your Shopify domain, token and product IDs in \u2699 Settings first.' })); return; }
     const term = q.value.trim().toLowerCase();
-    shopProducts.forEach((p, idx) => {
+    shopProducts.forEach((p) => {
       if (term && !p.title.toLowerCase().includes(term)) return;
       const hidden = !!shopHidden[p.key];
+      const mine = shopImgList(p.key);
+      const open = shopEditKey === p.key;
       const badge = shopEl('select', { title: 'Badge shown on the card', onchange: (e) => { if (e.target.value) shopBadges[p.key] = e.target.value; else delete shopBadges[p.key]; shopChanged(); } },
         SHOP_BADGES.map(([v, n]) => shopEl('option', { value: v, text: n })));
       const known = SHOP_BADGES.some(([v]) => v === (shopBadges[p.key] || ''));
       if (!known) badge.appendChild(shopEl('option', { value: shopBadges[p.key], text: shopBadges[p.key] }));
       badge.value = shopBadges[p.key] || '';
+      const notes = [p.price, mine.length ? 'your pictures' : '', shopDescs[p.key] ? 'your text' : '', hidden ? 'hidden' : ''].filter(Boolean).join(' \u00B7 ');
       listBox.appendChild(shopEl('div', { class: 'shop-prod' + (hidden ? ' off' : '') },
-        shopEl('img', { src: shopImgs[p.key] || p.image, alt: '' }),
-        shopEl('div', { class: 'nm' }, shopEl('b', { text: p.title }), shopEl('span', { text: `${p.price}${shopImgs[p.key] ? ' · your picture' : ''}${hidden ? ' · hidden' : ''}` })),
+        shopEl('img', { src: mine[0] || p.image, alt: '' }),
+        shopEl('div', { class: 'nm' }, shopEl('b', { text: p.title }), shopEl('span', { text: notes })),
         badge,
         shopEl('div', { class: 'shop-btnrow' },
-          shopEl('button', { class: 'shop-mini', text: '↑', title: 'Move up', onclick: () => shopMoveProduct(p.key, -1) }),
-          shopEl('button', { class: 'shop-mini', text: '↓', title: 'Move down', onclick: () => shopMoveProduct(p.key, 1) }),
-          shopEl('button', { class: 'shop-mini', text: 'Picture', title: 'Upload your own picture for this product', onclick: () => shopUploadImage(p.key) }),
-          shopImgs[p.key] ? shopEl('button', { class: 'shop-mini', text: '↺', title: 'Go back to Shopify\'s picture', onclick: () => { delete shopImgs[p.key]; shopDrawBody(); shopChanged(); } }) : null,
+          shopEl('button', { class: 'shop-mini', text: '\u2191', title: 'Move up', onclick: () => shopMoveProduct(p.key, -1) }),
+          shopEl('button', { class: 'shop-mini', text: '\u2193', title: 'Move down', onclick: () => shopMoveProduct(p.key, 1) }),
+          shopEl('button', { class: 'shop-mini' + (open ? ' on' : ''), text: open ? 'Close' : 'Edit', title: 'Description and pictures', onclick: () => { shopEditKey = open ? '' : p.key; shopDrawBody(); } }),
           shopEl('button', { class: 'shop-mini', text: hidden ? 'Show' : 'Hide', title: hidden ? 'Show this product in the shop' : 'Hide this product from the shop', onclick: () => { if (hidden) delete shopHidden[p.key]; else shopHidden[p.key] = true; shopDrawBody(); shopChanged(); } }))));
+      if (open) listBox.appendChild(shopEditBox(p));
     });
   };
   q.addEventListener('input', draw);

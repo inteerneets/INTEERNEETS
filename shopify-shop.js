@@ -11,6 +11,7 @@
     title_font: 'Playfair Display', title_color: '#ffffff', title_size: 15, title_weight: '700', title_transform: 'uppercase',
     price_font: 'Inter', price_color: BLACK, price_size: 14,
     img_radius: 0,
+    desc_font: 'Inter', desc_color: '#ffffff', desc_size: 15,
     side_font: 'Inter', side_text: '#ffffff', side_size: 15, side_active: '#000000', side_bar: '#000000',
     card_bg: '#ffffff', card_radius: 14, badge_bg: BLACK, badge_text: RED, heart_bg: '#ffffff', heart_color: BLACK,
     bar_bg: BLACK, bar_text: RED, bar_border: BLACK, swatch_border: BLACK,
@@ -32,6 +33,9 @@
     { group: 'Price', fields: [
       { k: 'price_font', l: 'Font', t: 'font' }, { k: 'price_color', l: 'Color', t: 'color' },
       { k: 'price_size', l: 'Size (px)', t: 'num', min: 8, max: 60 } ] },
+    { group: 'Product page description', fields: [
+      { k: 'desc_font', l: 'Font', t: 'font' }, { k: 'desc_color', l: 'Color', t: 'color' },
+      { k: 'desc_size', l: 'Size (px)', t: 'num', min: 10, max: 40 } ] },
     { group: 'Categories sidebar', fields: [
       { k: 'side_font', l: 'Font', t: 'font' }, { k: 'side_size', l: 'Size (px)', t: 'num', min: 10, max: 40 },
       { k: 'side_text', l: 'Text color', t: 'color' }, { k: 'side_active', l: 'Selected text', t: 'color' },
@@ -199,54 +203,86 @@
     return win.ShopifyBuy.buildClient({ domain: domain, storefrontAccessToken: String(settings.shopify_storefront_token).trim() });
   }
 
-  // One product card: your own picture (if you uploaded one) or Shopify's own picture, then the SDK card.
+  // Your own pictures for a product: string (old) or list of urls; first = main picture
+  function customImgs(settings, key) {
+    var v = (settings.product_custom_images || {})[key];
+    return (Array.isArray(v) ? v : (v ? [v] : [])).filter(Boolean);
+  }
+  // Your own description wins over Shopify's
+  function descFor(settings, key, node) {
+    var d = (settings.product_descriptions || {})[key];
+    return (typeof d === 'string' && d.trim()) ? d : ((node && node.description) || '');
+  }
+  function pageCss(doc, s) {
+    var tag = doc.getElementById('ish-pg-css');
+    if (!tag) { tag = doc.createElement('style'); tag.id = 'ish-pg-css'; doc.head.appendChild(tag); }
+    tag.textContent =
+      '.pg{display:flex;flex-wrap:wrap;gap:36px;align-items:flex-start;width:100%;box-sizing:border-box;text-align:left;}' +
+      '.pg *{box-sizing:border-box;}' +
+      '.pg-gal{flex:1 1 360px;min-width:0;}' +
+      '.pg-info{flex:1 1 340px;min-width:0;}' +
+      '.pg-main{display:block;width:100%;aspect-ratio:1/1;object-fit:contain;background:' + s.card_bg + ';border-radius:' + px(s.img_radius, 0) + ';}' +
+      '.pg-thumbs{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}' +
+      '.pg-thumbs img{width:66px;height:66px;object-fit:cover;background:' + s.card_bg + ';border-radius:' + px(Math.min(parseFloat(s.img_radius) || 0, 10), 0) + ';cursor:pointer;border:2px solid transparent;opacity:.75;}' +
+      '.pg-thumbs img.on{border-color:' + s.side_bar + ';opacity:1;}' +
+      '.pg-desc{margin-top:22px;color:' + s.desc_color + ';font-family:' + ff(s.desc_font) + ';font-size:' + px(s.desc_size, 15) + ';line-height:1.65;white-space:pre-line;}';
+  }
+
+  // The product page body: picture gallery on the left, buy box (name, price, sizes, Add to cart) and description on the right
   function addProduct(doc, ui, parent, raw, settings, opt, extra) {
     var p = parseId(raw);
     if (!p) return;
-    var key = p.id || p.handle;
-    var custom = (settings.product_custom_images || {})[key];
+    var key = p.id || p.handle, data = extra && extra.data;
+    var s = merged(settings.shopify_style, settings.site_colors);
+    pageCss(doc, s);
     var wrap = doc.createElement('div');
-    wrap.className = 'shop-card';
+    wrap.className = 'shop-card pg';
     wrap.setAttribute('data-product-key', key);
     parent.appendChild(wrap);
+    var gal = doc.createElement('div'); gal.className = 'pg-gal';
+    var info = doc.createElement('div'); info.className = 'pg-info';
+    wrap.appendChild(gal); wrap.appendChild(info);
+
+    var imgs = customImgs(settings, key);
+    if (!imgs.length && data) imgs = ((data.images && data.images.nodes) || []).map(function (x) { return x.url; });
+    if (!imgs.length && data && data.featuredImage) imgs = [data.featuredImage.url];
+    if (imgs.length) {
+      var main = doc.createElement('img');
+      main.className = 'pg-main'; main.src = imgs[0]; main.alt = (data && data.title) || '';
+      gal.appendChild(main);
+      if (imgs.length > 1) {
+        var th = doc.createElement('div'); th.className = 'pg-thumbs';
+        imgs.forEach(function (u, i) {
+          var t = doc.createElement('img'); t.src = u; t.alt = ''; if (i === 0) t.className = 'on';
+          t.addEventListener('click', function () {
+            main.src = u;
+            Array.prototype.forEach.call(th.children, function (c) { c.className = c === t ? 'on' : ''; });
+          });
+          th.appendChild(t);
+        });
+        gal.appendChild(th);
+      }
+    }
+
     var po = Object.assign({}, opt.product);
-    var page = !!(extra && extra.page);
-    if (page) {
-      // Product page: everything (sizes / types / colors, quantity, Add to cart, description)
-      po.layout = doc.defaultView.innerWidth < 820 ? 'vertical' : 'horizontal';
-      po.width = '100%';   // the SDK limits the card to 280px unless told otherwise
-      // use the full width of the screen (the SDK's default card is only 280px wide on phones)
-      po.styles = Object.assign({}, po.styles, { product: Object.assign({}, po.styles.product, { 'max-width': '100%', 'margin-left': 'auto', 'margin-right': 'auto' }) });
-      po.contents = Object.assign({}, po.contents, { options: true, button: true, description: true });
-    } else {
-      // Shop grid: just picture, name and price; a click opens the product page
-      po.contents = Object.assign({}, po.contents, { options: false, button: false, buttonWithQuantity: false, quantity: false });
-    }
-    var img;
-    if (custom) {
-      po.contents = Object.assign({}, po.contents, { img: false, imgWithCarousel: false });
-      img = doc.createElement('img');
-      img.src = custom;
-      img.alt = '';
-      img.style.cssText = 'display:block;width:100%;height:auto;border-radius:' + px(merged(settings.shopify_style, settings.site_colors).img_radius, 0) + ';';
-      wrap.appendChild(img);
-    }
-    var openCb = extra && extra.onOpen;
-    if (openCb) {
-      var open = function () { openCb(key); };
-      if (img) { img.style.cursor = 'pointer'; img.addEventListener('click', open); }
-      po.DOMEvents = { 'click .shopify-buy__product-img-wrapper': open, 'click .shopify-buy__product__title': open, 'click .shopify-buy__product__price': open };
-      po.styles = Object.assign({}, po.styles, {
-        product: Object.assign({ cursor: 'pointer' }, po.styles.product),
-        title: Object.assign({ cursor: 'pointer' }, po.styles.title),
-        imgWrapper: { cursor: 'pointer' }
-      });
-    }
+    po.layout = 'vertical';
+    po.width = '100%';
+    po.contents = Object.assign({}, po.contents, { img: false, imgWithCarousel: false, description: false });
+    var left = { 'text-align': 'left' };
+    po.styles = Object.assign({}, po.styles, {
+      product: Object.assign({}, po.styles.product, { 'max-width': '100%', 'margin-left': '0', 'margin-right': '0', 'text-align': 'left' }),
+      title: Object.assign({}, po.styles.title, left),
+      prices: left,
+      price: Object.assign({}, po.styles.price, left)
+    });
     var node = doc.createElement('div');
-    wrap.appendChild(node);
+    info.appendChild(node);
     var cfg = { node: node, moneyFormat: '%24%7B%7Bamount%7D%7D', options: Object.assign({}, opt, { product: po }) };
     if (p.id) cfg.id = p.id; else cfg.handle = p.handle;
     ui.createComponent('product', cfg);
+
+    var d = descFor(settings, key, data);
+    if (d) { var dd = doc.createElement('div'); dd.className = 'pg-desc'; dd.textContent = d; info.appendChild(dd); }
   }
 
   var SHOP_API = '2024-10';
@@ -312,7 +348,7 @@
     var token = String(settings.shopify_storefront_token).trim();
     var nums = keys.filter(function (k) { return /^\d+$/.test(k); });
     var hs = keys.filter(function (k) { return !/^\d+$/.test(k); });
-    var frag = 'fragment F on Product{id title handle availableForSale productType tags createdAt featuredImage{url} images(first:2){nodes{url}} priceRange{minVariantPrice{amount currencyCode} maxVariantPrice{amount}} compareAtPriceRange{minVariantPrice{amount}} options{name values}}';
+    var frag = 'fragment F on Product{id title handle description availableForSale productType tags createdAt featuredImage{url} images(first:12){nodes{url}} priceRange{minVariantPrice{amount currencyCode} maxVariantPrice{amount}} compareAtPriceRange{minVariantPrice{amount}} options{name values}}';
     var q = 'query{' + (nums.length ? 'nodes(ids:[' + nums.map(function (n) { return '"gid://shopify/Product/' + n + '"'; }).join(',') + ']){... on Product{...F}}' : '') +
       hs.map(function (h, i) { return ' h' + i + ':productByHandle(handle:"' + h.replace(/"/g, '') + '"){...F}'; }).join('') + '}' + frag;
     var p = win.fetch('https://' + domain + '/api/' + SHOP_API + '/graphql.json', {
@@ -457,9 +493,9 @@
       var n = data[k];
       var shopImgs = (n.images && n.images.nodes || []).map(function (x) { return x.url; });
       if (!shopImgs.length && n.featuredImage) shopImgs.push(n.featuredImage.url);
-      var custom = (settings.product_custom_images || {})[k];
-      var main = custom || shopImgs[0] || '';
-      var alt = o.hover_image ? (custom ? shopImgs[0] : shopImgs[1]) : '';
+      var custom = customImgs(settings, k);
+      var main = custom[0] || shopImgs[0] || '';
+      var alt = o.hover_image ? (custom.length > 1 ? custom[1] : (custom.length ? '' : shopImgs[1])) : '';
       var b = badgeFor(k, n);
       var min = n.priceRange.minVariantPrice, max = n.priceRange.maxVariantPrice;
       var price = money(min.amount, min.currencyCode);
@@ -620,14 +656,16 @@
     if (!settings.shopify_domain || !settings.shopify_storefront_token || !productId) return;
     var win = doc.defaultView;
     loadSdk(win, function () {
-      container.innerHTML = '';
       container.style.display = 'block';
       container.style.border = 'none';
       var ui = win.__shopUI;
       if (!ui) { ui = win.ShopifyBuy.UI.init(clientFor(win, settings)); win.__shopUI = ui; }
       var opt = options(settings.shopify_style, settings.site_colors, opts.toFilterShadow, settings.site_fonts);
-      addProduct(doc, ui, container, productId, settings, opt, { page: true });
-      injectFontsSoon(doc, settings);
+      Promise.resolve(fetchShopData(settings, win)).then(function (map) {
+        container.innerHTML = '';
+        addProduct(doc, ui, container, productId, settings, opt, { data: map[productId] });
+        injectFontsSoon(doc, settings);
+      });
     });
   }
 
@@ -654,5 +692,5 @@
     return true;
   }
 
-  g.InteerShop = { FONTS: FONTS, DEFAULTS: DEFAULTS, SCHEMA: SCHEMA, merged: merged, options: options, render: render, renderProductPage: renderProductPage, previewCart: previewCart, parseId: parseId, keyOf: keyOf, visibleKeys: visibleKeys, catTree: catTree, catKeys: catKeys, fetchShopData: fetchShopData, shopOpts: shopOpts, OPT_DEFAULTS: OPT_DEFAULTS, money: money, fontList: fontList, fontFaceCss: fontFaceCss };
+  g.InteerShop = { FONTS: FONTS, DEFAULTS: DEFAULTS, SCHEMA: SCHEMA, merged: merged, options: options, render: render, renderProductPage: renderProductPage, previewCart: previewCart, parseId: parseId, keyOf: keyOf, visibleKeys: visibleKeys, catTree: catTree, catKeys: catKeys, fetchShopData: fetchShopData, shopOpts: shopOpts, OPT_DEFAULTS: OPT_DEFAULTS, money: money, fontList: fontList, fontFaceCss: fontFaceCss, customImgs: customImgs };
 })(window);

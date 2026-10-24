@@ -754,3 +754,19 @@ a.tb-btn:hover { color: #ddd; border-color: #555; }
 /* Save / Reset / Settings stay pinned at the right edge of the top bar */
 .top-bar-pinned { display:flex; align-items:center; gap:8px; flex:none; margin-left:10px; }
 .top-bar-right { min-width:0; flex:1 1 0; }
+
+/* ── product edit box (description + pictures) ── */
+.shop-edit { background:#111; border:1px solid #2f2f2f; border-radius:8px; padding:10px 12px 12px; margin:2px 0 10px; }
+.shop-edit .sh-title { margin-top:6px; }
+.shop-desc { width:100%; box-sizing:border-box; background:#0b0b0b; border:1px solid #333; border-radius:6px; color:#ddd; padding:8px 10px; font:13px/1.5 Inter,sans-serif; resize:vertical; }
+.shop-thumbs { display:flex; flex-wrap:wrap; gap:8px; margin:6px 0; }
+.shop-thumb { width:92px; background:#1a1a1a; border:1px solid #333; border-radius:6px; padding:4px; text-align:center; font-size:11px; color:#999; }
+.shop-thumb.main { border-color:#e53935; }
+.shop-thumb img { width:100%; height:80px; object-fit:cover; border-radius:4px; background:#222; display:block; }
+.shop-thumb .tb { display:flex; gap:2px; justify-content:center; margin-top:4px; }
+.shop-thumb .tb .shop-mini { padding:2px 5px; }
+.shop-mini.on { background:#e53935; border-color:#e53935; color:#fff; }
+/* login screen (designed in the Login Page tab) */
+.lock-screen:not(.ready) .lock-box { visibility:hidden; }
+.lock-screen.designed .lock-box { display:none; }
+#lock-root { position:absolute; inset:0; overflow:auto; }
