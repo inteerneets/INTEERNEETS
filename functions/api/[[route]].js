@@ -150,6 +150,9 @@ async function handle(context) {
   const given = request.headers.get('x-admin-password');
   if (String(given || '').trim() !== env.ADMIN_PASSWORD) return json(401, { success: false, error: 'Wrong password' });
 
+  // Used by the editor's lock screen: reaching this line means the password was right
+  if (route === 'check-auth') return json(200, { success: true });
+
   let body;
   try { body = JSON.parse((await request.text()) || '{}'); } catch { return json(400, { success: false, error: 'Bad JSON' }); }
 

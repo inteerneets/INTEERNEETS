@@ -536,6 +536,22 @@ bm.add('social-links', {
     </div>`,
 });
 
+bm.add('shopify-category', {
+  label: 'Shop Category',
+  category: 'Studio',
+  content: `
+    <div data-shopify-section="category" data-shopify-category="Category name" style="min-height:160px;border:2px dashed #333;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#555;font-family:'Inter',sans-serif;padding:40px;">
+      Products of one category load here (type its name in this block's settings)
+    </div>`,
+});
+bm.add('shopify-product-page', {
+  label: 'Product Details',
+  category: 'Studio',
+  content: `
+    <div data-shopify-product-page="1" style="max-width:1100px;margin:0 auto;min-height:320px;border:2px dashed #333;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#555;font-family:'Inter',sans-serif;padding:40px;">
+      The selected product shows here (use on the Product Page)
+    </div>`,
+});
 bm.add('shopify-products', {
   label: 'Shopify Products',
   category: 'Studio',
@@ -589,7 +605,9 @@ function slugify(s) {
 const ERROR_PAGE = { id: '404', title: 'Error Page' };
 // The Loading page is the screen visitors see while the site loads (same idea, own tab)
 const LOADING_PAGE = { id: 'loading', title: 'Loading Page' };
-const SPECIAL_PAGES = [ERROR_PAGE, LOADING_PAGE];
+// The Product page is the design visitors see when they open a product (one design, every product)
+const PRODUCT_PAGE = { id: 'product', title: 'Product Page' };
+const SPECIAL_PAGES = [ERROR_PAGE, LOADING_PAGE, PRODUCT_PAGE];
 function pageTitle(id) {
   const sp = SPECIAL_PAGES.find((s) => s.id === id);
   if (sp) return sp.title;
@@ -646,7 +664,8 @@ window.addEventListener('beforeunload', (e) => {
 });
 
 // ─── Tabs ───
-function renderTabs() {
+function renderTabs() { renderTabsCore(); if (typeof shopSyncSwitch === 'function') shopSyncSwitch(); }
+function renderTabsCore() {
   const box = byId('page-tabs');
   box.innerHTML = '';
   [...pages, ...SPECIAL_PAGES].forEach((p) => {
@@ -654,7 +673,9 @@ function renderTabs() {
     const b = document.createElement('button');
     b.className = 'page-btn' + (p.id === currentPage ? ' active' : '') + (isError ? ' error-tab' : '');
     b.dataset.page = p.id;
-    b.title = p.id === LOADING_PAGE.id
+    b.title = p.id === PRODUCT_PAGE.id
+      ? 'Design the page that opens when a visitor clicks a product (use the arrows to preview each product)'
+      : p.id === LOADING_PAGE.id
       ? 'Design the loading screen visitors see while the site loads'
       : isError
         ? 'Design the page visitors see when they open an address that does not exist (404)'
@@ -811,6 +832,14 @@ function applyDefaultTemplate(page) {
 </section>`);
     return;
   }
+  if (page === PRODUCT_PAGE.id) {
+    editor.setStyle('');
+    editor.setComponents(`
+<section style="min-height:100vh;padding:90px 5vw 60px;color:var(--c-text,#ffffff);box-sizing:border-box;">
+  <div data-shopify-product-page="1" style="max-width:1100px;margin:0 auto;min-height:320px;">The selected product shows here</div>
+</section>`);
+    return;
+  }
   if (page === ERROR_PAGE.id) {
     editor.setStyle('');
     editor.setComponents(`
@@ -847,7 +876,7 @@ async function loadPage(id) {
   }
   stripThemeBg();
   normalizeEditorBtn();
-  pageBg[id] = (data && data.bg) || null;
+  pageBg[id] = (data && data.bg) || (id === PRODUCT_PAGE.id ? Object.assign({}, DEFAULT_BG, { color: '#f80000' }) : null);
   applyPageBg();
   applyColorsToCanvas();
   editor.UndoManager.clear();
@@ -996,6 +1025,8 @@ byId('pbg-save').addEventListener('click', async () => {
 // SETTINGS
 // ═══════════════════════════════════════════════════════════════
 
+var shopStyle = {}, shopCats = [], shopImgs = {};   // Shop panel data (saved inside settings.json)
+
 async function loadSettings() {
   try {
     let s = {};
@@ -1013,7 +1044,11 @@ async function loadSettings() {
     else if (s.site_bg_color) setSiteColors({ bg: s.site_bg_color });
     byId('set-bg-shading').checked = !!s.site_bg_shading;
     byId('set-show-nav').checked = s.show_nav !== false;
+    shopStyle = Object.assign({}, s.shopify_style || {});
+    shopCats = Array.isArray(s.shop_categories) ? s.shop_categories : [];
+    shopImgs = Object.assign({}, s.product_custom_images || {});
     settingsLoaded = true; // only now is it safe to write settings back
+    if (typeof shopAfterSettings === 'function') shopAfterSettings();
   } catch (_) {
     // Could not read settings — never overwrite them with blanks
   }
@@ -1035,6 +1070,9 @@ function collectSettings() {
     site_bg_color:            siteColors.bg,
     site_bg_shading:          byId('set-bg-shading').checked,
     show_nav:                 byId('set-show-nav').checked,
+    shopify_style:            shopStyle,
+    shop_categories:          shopCats,
+    product_custom_images:    shopImgs,
   };
 }
 
@@ -1048,6 +1086,7 @@ async function saveSettings() {
     });
     if (res.ok) {
       showToast('Settings saved!');
+      if (typeof shopAfterSettings === 'function') shopAfterSettings();
       byId('settings-overlay').classList.add('hidden');
     } else {
       showToast('Failed to save settings');
@@ -2326,3 +2365,337 @@ byId('bi-fsslider').addEventListener('input', (ev) => { byId('bi-fontsize').valu
 })();
 editor.on('component:add', ensureExtraTools);
 editor.on('component:selected', ensureExtraTools);
+
+
+// ═══════════════════════════════════════════════════════════════
+// LOCK SCREEN · SHOP PANEL · CATEGORIES · PRODUCT PICTURES · PRODUCT PAGE
+// ═══════════════════════════════════════════════════════════════
+
+// ── Lock screen: /admin/ only opens with the admin password ──
+(function lockGate() {
+  const lock = byId('lock-screen');
+  if (!lock) return;
+  if (!IS_LIVE) { lock.classList.add('hidden'); return; }   // local testing needs no password
+  const check = async (pw) => {
+    try {
+      const r = await fetch('/api/check-auth', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-password': pw }, body: '{}' });
+      return r.ok;
+    } catch (_) { return false; }
+  };
+  const unlock = () => lock.classList.add('hidden');
+  const saved = sessionStorage.getItem('adminPassword');
+  if (saved) check(saved).then((ok) => { if (ok) unlock(); else sessionStorage.removeItem('adminPassword'); });
+  byId('lock-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const pw = byId('lock-pw').value.trim();
+    const err = byId('lock-err');
+    err.textContent = '';
+    if (!pw) return;
+    byId('lock-btn').disabled = true;
+    const ok = await check(pw);
+    byId('lock-btn').disabled = false;
+    if (ok) { sessionStorage.setItem('adminPassword', pw); unlock(); }
+    else { err.textContent = 'Wrong password'; byId('lock-pw').value = ''; byId('lock-pw').focus(); }
+  });
+  setTimeout(() => byId('lock-pw').focus(), 50);
+})();
+
+// ── Category blocks get a "Category name" setting ──
+editor.DomComponents.addType('shop-category', {
+  isComponent: (el) => (el.getAttribute && el.hasAttribute && el.hasAttribute('data-shopify-category')) ? { type: 'shop-category' } : undefined,
+  model: { defaults: { traits: [{ type: 'text', name: 'data-shopify-category', label: 'Category name' }] } },
+});
+editor.on('component:update:attributes', (c) => {
+  if (c && c.getAttributes && c.getAttributes()['data-shopify-category'] !== undefined) shopRenderSoon(true);
+});
+
+// ── State ──
+const SHOP_API_VERSION = '2024-10';
+let shopProducts = [];                       // [{ key, title, image }]
+let shopCurrent = sessionStorage.getItem('shopCurrentProduct') || '';
+let shopTimer = null;
+
+const shopKeys = () => (byId('set-product-ids').value || '').split(/\r?\n/).map((x) => InteerShop.keyOf(x)).filter(Boolean);
+
+async function shopFetchProducts() {
+  const keys = shopKeys();
+  const st = collectSettings();
+  const byKey = {};
+  const nums = keys.filter((k) => /^\d+$/.test(k));
+  if (st.shopify_domain && st.shopify_storefront_token && nums.length) {
+    try {
+      const domain = st.shopify_domain.replace(/^https?:\/\//i, '').replace(/\/.*$/, '');
+      const r = await fetch(`https://${domain}/api/${SHOP_API_VERSION}/graphql.json`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Shopify-Storefront-Access-Token': st.shopify_storefront_token },
+        body: JSON.stringify({
+          query: 'query($ids:[ID!]!){nodes(ids:$ids){... on Product{id title featuredImage{url}}}}',
+          variables: { ids: nums.map((n) => 'gid://shopify/Product/' + n) },
+        }),
+      });
+      const j = await r.json();
+      ((j.data && j.data.nodes) || []).forEach((n) => {
+        if (n && n.id) byKey[n.id.split('/').pop()] = { title: n.title, image: n.featuredImage ? n.featuredImage.url + (n.featuredImage.url.includes('?') ? '&' : '?') + 'width=120' : '' };
+      });
+    } catch (e) { console.warn('Could not read product names', e); }
+  }
+  shopProducts = keys.map((k) => ({ key: k, title: (byKey[k] && byKey[k].title) || k, image: (byKey[k] && byKey[k].image) || '' }));
+}
+
+// ── Drawing the products into the editor canvas ──
+function shopCanvasCss(doc) {
+  let tag = doc.getElementById('shop-canvas-css');
+  if (!tag) { tag = doc.createElement('style'); tag.id = 'shop-canvas-css'; doc.head.appendChild(tag); }
+  // clicks on a product select its block (so it can be moved / resized) instead of pressing the Shopify buttons
+  tag.textContent = '[data-shopify-section] iframe,[data-shopify-product-page] iframe{pointer-events:none!important}[data-shopify-section] .shop-card img,[data-shopify-product-page] .shop-card img{pointer-events:none}';
+}
+function shopRender(force) {
+  if (typeof InteerShop === 'undefined') return;
+  const doc = editor.Canvas.getDocument();
+  if (!doc || !doc.body) return;
+  const secs = Array.from(doc.querySelectorAll('[data-shopify-section]'));
+  const pps = Array.from(doc.querySelectorAll('[data-shopify-product-page]'));
+  if (!secs.length && !pps.length) return;
+  const st = collectSettings();
+  if (!st.shopify_domain || !st.shopify_storefront_token) return;
+  shopCanvasCss(doc);
+  const secNeed = secs.some((s) => !s.__shopTried);
+  if (secs.length && (force || secNeed)) {
+    secs.forEach((s) => { s.__shopTried = true; });
+    InteerShop.render(doc, st, { toFilterShadow });
+  }
+  pps.forEach((el) => {
+    if (!force && el.__shopFor === shopCurrent && el.querySelector('.shop-card')) return;
+    el.__shopFor = shopCurrent;
+    if (!shopCurrent) return;
+    InteerShop.renderProductPage(doc, el, st, shopCurrent, { toFilterShadow });
+  });
+}
+function shopRenderSoon(force) {
+  clearTimeout(shopTimer);
+  shopTimer = setTimeout(() => shopRender(force), force ? 300 : 250);
+}
+editor.on('canvas:frame:load', () => shopRenderSoon(true));
+editor.on('load', () => shopRenderSoon(true));
+editor.on('component:add', () => shopRenderSoon(false));
+editor.on('update', () => shopRenderSoon(false));
+byId('colors-panel').addEventListener('input', () => shopRenderSoon(true));   // site button colors feed the shop buttons
+
+async function shopAfterSettings() {
+  await shopFetchProducts();
+  const keys = shopProducts.map((p) => p.key);
+  if (!shopCurrent || !keys.includes(shopCurrent)) shopCurrent = keys[0] || '';
+  shopSyncSwitch();
+  shopPanelProducts();
+  shopRenderSoon(true);
+}
+
+// ── Product page: switcher in the top bar (◀ product ▶) ──
+(function buildProdSwitch() {
+  const wrap = document.createElement('div');
+  wrap.id = 'prod-switch';
+  wrap.innerHTML = '<button type="button" class="tb-btn" id="ps-prev" title="Previous product">&#9664;</button><select id="ps-sel" title="Pick the product to preview"></select><button type="button" class="tb-btn" id="ps-next" title="Next product">&#9654;</button>';
+  byId('btn-add-page').parentNode.appendChild(wrap);
+  const go = (key) => {
+    shopCurrent = key;
+    sessionStorage.setItem('shopCurrentProduct', key);
+    byId('ps-sel').value = key;
+    shopRender(true);
+  };
+  const step = (d) => {
+    const keys = shopProducts.map((p) => p.key);
+    if (!keys.length) return;
+    const i = keys.indexOf(shopCurrent);
+    go(keys[(i + d + keys.length) % keys.length]);
+  };
+  byId('ps-prev').addEventListener('click', () => step(-1));
+  byId('ps-next').addEventListener('click', () => step(1));
+  byId('ps-sel').addEventListener('change', (e) => go(e.target.value));
+})();
+function shopSyncSwitch() {
+  const wrap = byId('prod-switch');
+  if (!wrap) return;
+  wrap.classList.toggle('on', currentPage === PRODUCT_PAGE.id);
+  const sel = byId('ps-sel');
+  sel.innerHTML = '';
+  shopProducts.forEach((p) => { const o = document.createElement('option'); o.value = p.key; o.textContent = p.title; sel.appendChild(o); });
+  if (shopCurrent) sel.value = shopCurrent;
+}
+
+// ── Shop panel ──
+const toHex6 = (v) => (/^#[0-9a-f]{6}$/i.test(v || '') ? v : '#000000');
+function shopRow(f, eff) {
+  const row = document.createElement('div');
+  row.className = 'swatch-row';
+  const lab = document.createElement('label');
+  lab.textContent = f.l;
+  row.appendChild(lab);
+  const set = (v) => { shopStyle[f.k] = v; markDirty(currentPage); shopRenderSoon(true); };
+  const cur = eff[f.k];
+  let inp;
+  if (f.t === 'font') {
+    inp = document.createElement('select'); inp.className = 'pbg-select';
+    InteerShop.FONTS.forEach((n) => { const o = document.createElement('option'); o.value = n; o.textContent = n; inp.appendChild(o); });
+    inp.value = cur;
+    inp.addEventListener('change', () => set(inp.value));
+  } else if (f.t === 'weight') {
+    inp = document.createElement('select'); inp.className = 'pbg-select';
+    [['400', 'Regular'], ['500', 'Medium'], ['600', 'Semi Bold'], ['700', 'Bold'], ['800', 'Extra Bold']].forEach(([v, n]) => { const o = document.createElement('option'); o.value = v; o.textContent = n; inp.appendChild(o); });
+    inp.value = String(cur);
+    inp.addEventListener('change', () => set(inp.value));
+  } else if (f.t === 'select') {
+    inp = document.createElement('select'); inp.className = 'pbg-select';
+    f.o.forEach(([v, n]) => { const o = document.createElement('option'); o.value = v; o.textContent = n; inp.appendChild(o); });
+    inp.value = cur;
+    inp.addEventListener('change', () => set(inp.value));
+  } else if (f.t === 'num') {
+    inp = document.createElement('input'); inp.type = 'number'; inp.className = 'pbg-num';
+    inp.min = f.min; inp.max = f.max; inp.value = cur;
+    inp.addEventListener('input', () => { if (inp.value !== '') set(Number(inp.value)); });
+  } else if (f.t === 'text') {
+    inp = document.createElement('input'); inp.type = 'text'; inp.className = 'hex wide';
+    inp.value = cur;
+    inp.addEventListener('input', () => set(inp.value));
+  } else {   // color / colornone
+    inp = document.createElement('input'); inp.type = 'color';
+    inp.value = toHex6(cur);
+    inp.addEventListener('input', () => { if (none) none.checked = false; set(inp.value); });
+    var none = null;
+    if (f.t === 'colornone') {
+      const l = document.createElement('label'); l.className = 'mini-check';
+      none = document.createElement('input'); none.type = 'checkbox'; none.checked = cur === 'transparent';
+      l.appendChild(none); l.appendChild(document.createTextNode(' none'));
+      none.addEventListener('change', () => set(none.checked ? 'transparent' : inp.value));
+      row.appendChild(inp); row.appendChild(l);
+      return row;
+    }
+  }
+  row.appendChild(inp);
+  return row;
+}
+function shopPanelStyle() {
+  const box = byId('shop-style');
+  box.innerHTML = '';
+  const eff = InteerShop.merged(shopStyle, siteColors);
+  InteerShop.SCHEMA.forEach((g) => {
+    const t = document.createElement('div'); t.className = 'sh-title'; t.textContent = g.group; box.appendChild(t);
+    g.fields.forEach((f) => box.appendChild(shopRow(f, eff)));
+  });
+}
+
+function shopCatOf(key) { const c = shopCats.find((x) => (x.product_ids || []).map(InteerShop.keyOf).includes(key)); return c ? c.id : ''; }
+function shopChanged() { markDirty(currentPage); shopRenderSoon(true); }
+function shopPanelCats() {
+  const box = byId('shop-cats');
+  box.innerHTML = '';
+  shopCats.forEach((c, i) => {
+    const card = document.createElement('div'); card.className = 'shop-cat';
+    const head = document.createElement('div'); head.className = 'shop-cat-head';
+    const name = document.createElement('input'); name.type = 'text'; name.value = c.title; name.placeholder = 'Category name';
+    name.addEventListener('input', () => { c.title = name.value; shopChanged(); shopPanelProducts(); });
+    const up = document.createElement('button'); up.type = 'button'; up.className = 'shop-mini'; up.textContent = '↑'; up.title = 'Move up';
+    up.addEventListener('click', () => { if (i > 0) { [shopCats[i - 1], shopCats[i]] = [shopCats[i], shopCats[i - 1]]; shopPanelCats(); shopChanged(); } });
+    const del = document.createElement('button'); del.type = 'button'; del.className = 'shop-mini'; del.textContent = '✕'; del.title = 'Delete category (its products go to Other)';
+    del.addEventListener('click', () => { shopCats.splice(i, 1); shopPanelCats(); shopPanelProducts(); shopChanged(); });
+    head.appendChild(name); head.appendChild(up); head.appendChild(del);
+    card.appendChild(head);
+    box.appendChild(card);
+  });
+}
+function shopAddCategory() {
+  const name = prompt('Name of the new category (for example: Hoodies, Mugs, Prints):');
+  if (!name || !name.trim()) return;
+  let id = slugify(name) || 'cat';
+  const base = id; let n = 2;
+  while (shopCats.some((c) => c.id === id)) id = `${base}-${n++}`;
+  shopCats.push({ id, title: name.trim(), product_ids: [] });
+  shopPanelCats(); shopPanelProducts(); shopChanged();
+}
+function shopAssign(key, catId) {
+  shopCats.forEach((c) => { c.product_ids = (c.product_ids || []).filter((k) => InteerShop.keyOf(k) !== key); });
+  const c = shopCats.find((x) => x.id === catId);
+  if (c) c.product_ids.push(key);
+  shopChanged();
+}
+
+async function shopUploadImage(key) {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'image/*';
+  inp.addEventListener('change', async () => {
+    const file = inp.files && inp.files[0];
+    if (!file) return;
+    try {
+      showToast('Uploading picture…');
+      let data = await new Promise((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve(r.result); r.onerror = reject; r.readAsDataURL(file); });
+      data = await shrinkIfBig(file, data);
+      const res = await apiFetch('/api/upload', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ filename: file.name, type: file.type, data }) });
+      const j = await res.json();
+      if (!j.success) throw new Error(j.error || 'upload failed');
+      shopImgs[key] = j.url;
+      shopPanelProducts(); shopChanged();
+      showToast('Picture set — click Save to publish');
+    } catch (err) { console.error(err); showToast('Upload failed'); }
+  });
+  inp.click();
+}
+
+function shopPanelProducts() {
+  const box = byId('shop-prods');
+  if (!box) return;
+  box.innerHTML = '';
+  if (!shopProducts.length) { box.innerHTML = '<p class="colors-hint small">Add your Shopify domain, token and product IDs in ⚙ Settings first.</p>'; return; }
+  shopProducts.forEach((p) => {
+    const row = document.createElement('div'); row.className = 'shop-prod';
+    const img = document.createElement('img'); img.src = shopImgs[p.key] || p.image || ''; img.alt = '';
+    const nm = document.createElement('div'); nm.className = 'nm';
+    nm.innerHTML = '<b></b><span style="color:#888">' + (shopImgs[p.key] ? 'your picture' : "Shopify's picture") + '</span>';
+    nm.querySelector('b').textContent = p.title;
+    row.appendChild(img); row.appendChild(nm);
+    if (shopCats.length) {
+      const sel = document.createElement('select');
+      sel.title = 'Category';
+      const o0 = document.createElement('option'); o0.value = ''; o0.textContent = 'Other'; sel.appendChild(o0);
+      shopCats.forEach((c) => { const o = document.createElement('option'); o.value = c.id; o.textContent = c.title || '(no name)'; sel.appendChild(o); });
+      sel.value = shopCatOf(p.key);
+      sel.addEventListener('change', () => shopAssign(p.key, sel.value));
+      row.appendChild(sel);
+    }
+    const up = document.createElement('button'); up.type = 'button'; up.className = 'shop-mini'; up.textContent = 'Picture'; up.title = 'Upload your own picture for this product';
+    up.addEventListener('click', () => shopUploadImage(p.key));
+    row.appendChild(up);
+    if (shopImgs[p.key]) {
+      const rs = document.createElement('button'); rs.type = 'button'; rs.className = 'shop-mini'; rs.textContent = '↺'; rs.title = "Go back to Shopify's picture";
+      rs.addEventListener('click', () => { delete shopImgs[p.key]; shopPanelProducts(); shopChanged(); });
+      row.appendChild(rs);
+    }
+    box.appendChild(row);
+  });
+}
+
+(function buildShopPanel() {
+  const p = document.createElement('div');
+  p.id = 'shop-panel';
+  p.className = 'colors-panel btn-panel hidden';
+  p.innerHTML = '<div class="colors-head"><strong>Shop</strong><button id="shop-close" class="settings-close-btn">&times;</button></div>' +
+    '<p class="colors-hint">Fonts, colors and text for your products, sizing menu, cart button and cart. Changes show on the page right away; press <b>Save</b> in the top bar to publish.</p>' +
+    '<div class="shop-row-btns"><button id="shop-cart" class="tb-btn">Show cart</button><button id="shop-reset" class="tb-btn">Reset look</button><button id="shop-refresh" class="tb-btn">Refresh products</button></div>' +
+    '<div class="sh-title">Products &amp; pictures</div><p class="colors-hint small">Pick a category for each product and upload your own picture. Without one, Shopify\'s picture is used.</p><div id="shop-prods"></div>' +
+    '<div class="sh-title">Categories</div><p class="colors-hint small">A Shop block shows every category with its title. For one category only, drag a <b>Shop Category</b> block (Blocks ▸ Studio) and type the name in its settings.</p><div id="shop-cats"></div>' +
+    '<div class="shop-row-btns"><button id="shop-addcat" class="tb-btn">+ Add category</button></div>' +
+    '<div id="shop-style"></div>';
+  document.body.appendChild(p);
+  const closeAll = () => ['colors-panel', 'pagebg-panel', 'button-panel', 'image-panel'].forEach((id) => { const e = byId(id); if (e) e.classList.add('hidden'); });
+  byId('btn-shop').addEventListener('click', () => {
+    if (p.classList.contains('hidden')) { closeAll(); shopPanelStyle(); shopPanelCats(); shopPanelProducts(); p.classList.remove('hidden'); }
+    else p.classList.add('hidden');
+  });
+  byId('shop-close').addEventListener('click', () => p.classList.add('hidden'));
+  byId('shop-cart').addEventListener('click', () => {
+    const doc = editor.Canvas.getDocument();
+    if (!InteerShop.previewCart(doc)) showToast('Add a Shopify block to the page first (Blocks ▸ Studio ▸ Shopify Products)');
+  });
+  byId('shop-reset').addEventListener('click', () => { shopStyle = {}; shopPanelStyle(); shopChanged(); });
+  byId('shop-refresh').addEventListener('click', async () => { await shopFetchProducts(); shopSyncSwitch(); shopPanelProducts(); shopRender(true); });
+  byId('shop-addcat').addEventListener('click', shopAddCategory);
+  ['btn-colors', 'btn-pagebg', 'btn-button', 'btn-imgsize'].forEach((id) => { const b = byId(id); if (b) b.addEventListener('click', () => p.classList.add('hidden')); });
+})();

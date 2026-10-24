@@ -400,68 +400,71 @@
     }
 
     // ── Shopify (products from Site Settings render into [data-shopify-section] blocks) ──
-    function loadShopifySdk(cb) {
-      if (window.ShopifyBuy && window.ShopifyBuy.UI) return cb();
-      var s = document.createElement('script');
-      s.async = true;
-      s.src = 'https://sdks.shopifycdn.com/buy-button/latest/buy-button-storefront.min.js';
-      s.onload = cb;
-      document.head.appendChild(s);
+    // The product page: one design (Product Page tab in the editor) shown full screen for the clicked product,
+    // with arrows to move between products. Closes with the X, Esc, or the arrows' neighbours.
+    var productDesign, productOverlay;
+    function productKeys() { return (settings.shopify_product_ids || []).map(function (r) { return InteerShop.keyOf(r); }).filter(Boolean); }
+    function openProduct(key) {
+      var keys = productKeys();
+      if (!keys.length) return;
+      var go = function (design) {
+        closeProduct();
+        var ov = document.createElement('div');
+        ov.id = 'prod-overlay';
+        ov.style.cssText = 'position:fixed;inset:0;z-index:9000;overflow:auto;background:#000;';
+        var bgl = document.createElement('div');
+        bgl.className = 'bg-layer';
+        bgl.style.cssText = 'position:absolute;inset:0;opacity:1;';
+        applyBgLayer(bgl, (design && design.bg) || { color: '#f80000' });
+        ov.appendChild(bgl);
+        var root = document.createElement('div');
+        root.id = 'prod-root';
+        root.style.cssText = 'position:relative;min-height:100%;';
+        var html = design && design.html ? stripBg(design.html) : '<section style="min-height:100vh;padding:90px 5vw 60px;color:#fff;box-sizing:border-box;"><div data-shopify-product-page="1" style="max-width:1100px;margin:0 auto;"></div></section>';
+        root.innerHTML = html;
+        if (design && design.css) {
+          var fonts = [], st = document.createElement('style');
+          st.textContent = scopeCss(stripBg(design.css), '#prod-root', fonts);
+          root.appendChild(st);
+          if (fonts.length) { var fs2 = document.createElement('style'); fs2.textContent = fonts.join('\n'); root.appendChild(fs2); }
+        }
+        ov.appendChild(root);
+        function ctl(txt, css, fn, title) {
+          var b = document.createElement('button');
+          b.type = 'button'; b.textContent = txt; b.title = title;
+          b.style.cssText = 'position:fixed;z-index:9001;cursor:pointer;background:#000;color:#ff0000;border:2px solid #ff0000;font:700 18px Inter,sans-serif;width:44px;height:44px;line-height:1;' + css;
+          b.addEventListener('click', fn);
+          ov.appendChild(b);
+        }
+        var i = keys.indexOf(key);
+        ctl('\u2715', 'top:16px;left:16px;', closeProduct, 'Close');
+        if (keys.length > 1) {
+          ctl('\u25C0', 'top:50%;left:16px;margin-top:-22px;', function () { openProduct(keys[(i - 1 + keys.length) % keys.length]); }, 'Previous product');
+          ctl('\u25B6', 'top:50%;right:16px;margin-top:-22px;', function () { openProduct(keys[(i + 1) % keys.length]); }, 'Next product');
+        }
+        document.body.appendChild(ov);
+        document.documentElement.style.overflow = 'hidden';
+        productOverlay = ov;
+        var holder = root.querySelector('[data-shopify-product-page]');
+        if (holder) InteerShop.renderProductPage(document, holder, settings, key, { toFilterShadow: toFilterShadow });
+      };
+      if (productDesign !== undefined) return go(productDesign);
+      getContent('page-product.json').then(function (d) { productDesign = d; go(d); }).catch(function () { productDesign = null; go(null); });
     }
+    function closeProduct() {
+      if (productOverlay) { productOverlay.remove(); productOverlay = null; document.documentElement.style.overflow = ''; }
+    }
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeProduct(); });
+
     function initShopify() {
       if (!settings.shopify_domain || !settings.shopify_storefront_token) return;
-      var sections = document.querySelectorAll('[data-shopify-section]');
-      if (!sections.length) return;
-      var colors = settings.site_colors || {};
-      var cleanDomain = String(settings.shopify_domain).trim().replace(/^https?:\/\//i, '').replace(/\/.*$/, '');
-      loadShopifySdk(function () {
-        var client = ShopifyBuy.buildClient({
-          domain: cleanDomain,
-          storefrontAccessToken: String(settings.shopify_storefront_token).trim()
-        });
-        var ui = ShopifyBuy.UI.init(client);
-        sections.forEach(function (section) {
-          var own = section.getAttribute('data-shopify-product');
-          var ids = own ? [own] : (settings.shopify_product_ids || []);
-          if (!ids.length) return;
-          section.innerHTML = '';
-          section.style.display = 'grid';
-          section.style.gridTemplateColumns = 'repeat(auto-fit, minmax(240px, 1fr))';
-          section.style.gap = '24px';
-          section.style.border = 'none';
-          ids.forEach(function (productId) {
-            var s = String(productId || '').trim();
-            if (!s) return;
-            var numMatch = s.match(/(?:\/products\/|Product\/|^)(\d+)(?:[/?#].*)?$/);
-            var handleMatch = !numMatch && s.match(/\/products\/([^/?#]+)/);
-            var node = document.createElement('div');
-            section.appendChild(node);
-            var compCfg = {
-              node: node,
-              moneyFormat: '%24%7B%7Bamount%7D%7D',
-              options: { product: { styles: {
-                product: { '@media (min-width: 601px)': { 'max-width': '100%' } },
-                title: { 'font-family': '"Playfair Display", serif', 'color': colors.text || '#ffffff' },
-                price: { 'font-family': '"Inter", sans-serif', 'color': colors.highlight || '#e53935' },
-                button: {
-                  'background-color': colors.btn_fill || 'transparent',
-                  'color': colors.btn_text || '#000000',
-                  'border': (colors.btn_border_width || '2px') + ' solid ' + (colors.btn_border || '#000000'),
-                  'border-radius': colors.btn_radius || '0px',
-                  'font-family': '"Inter", sans-serif', 'font-weight': '600', 'letter-spacing': '0.1em',
-                  'transition': 'filter .25s ease, background .25s ease',
-                  ':hover': { 'background-color': colors.btn_hover_fill || colors.btn_fill || 'transparent', 'filter': toFilterShadow(colors.btn_shadow || 'drop-shadow(0 6px 16px rgba(0,0,0,0.28))'), 'color': colors.btn_text || '#000000' },
-                  ':focus': { 'background-color': colors.btn_hover_fill || colors.btn_fill || 'transparent', 'color': colors.btn_text || '#000000' }
-                }
-              } } }
-            };
-            if (numMatch) compCfg.id = numMatch[1];
-            else if (handleMatch) compCfg.handle = decodeURIComponent(handleMatch[1]);
-            else compCfg.handle = s;
-            ui.createComponent('product', compCfg);
-          });
-        });
-      });
+      if (!document.querySelector('[data-shopify-section]')) return;
+      var go = function () { InteerShop.render(document, settings, { toFilterShadow: toFilterShadow, onOpenProduct: openProduct }); };
+      if (window.InteerShop) return go();
+      var s = document.createElement('script');
+      s.src = '/shopify-shop.js?v=20261024a';
+      s.onload = go;
+      document.head.appendChild(s);
     }
 
     // ── Start ──
