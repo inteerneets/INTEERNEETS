@@ -34,7 +34,11 @@
   "site_bg_color": "#0a0a0a",
   "site_bg_shading": false,
   "show_nav": true,
-  "shopify_style": {},
+  "shopify_style": {
+    "side_font": "Inter",
+    "side_active": "#ffffff",
+    "side_text": "#000000"
+  },
   "shop_categories": [
     {
       "id": "inteerneets",
