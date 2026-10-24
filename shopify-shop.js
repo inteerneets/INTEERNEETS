@@ -192,8 +192,15 @@
     wrap.setAttribute('data-product-key', key);
     parent.appendChild(wrap);
     var po = Object.assign({}, opt.product);
-    if (extra && extra.layout) po.layout = extra.layout;
-    if (extra && extra.description) po.contents = Object.assign({}, po.contents, { description: true });
+    var page = !!(extra && extra.page);
+    if (page) {
+      // Product page: everything (sizes / types / colors, quantity, Add to cart, description)
+      po.layout = 'horizontal';
+      po.contents = Object.assign({}, po.contents, { options: true, button: true, description: true });
+    } else {
+      // Shop grid: just picture, name and price; a click opens the product page
+      po.contents = Object.assign({}, po.contents, { options: false, button: false, buttonWithQuantity: false, quantity: false });
+    }
     var img;
     if (custom) {
       po.contents = Object.assign({}, po.contents, { img: false, imgWithCarousel: false });
@@ -207,8 +214,9 @@
     if (openCb) {
       var open = function () { openCb(key); };
       if (img) { img.style.cursor = 'pointer'; img.addEventListener('click', open); }
-      po.DOMEvents = { 'click .shopify-buy__product__title': open, 'click .shopify-buy__product-img-wrapper': open };
+      po.DOMEvents = { 'click .shopify-buy__product-img-wrapper': open, 'click .shopify-buy__product__title': open, 'click .shopify-buy__product__price': open };
       po.styles = Object.assign({}, po.styles, {
+        product: Object.assign({ cursor: 'pointer' }, po.styles.product),
         title: Object.assign({ cursor: 'pointer' }, po.styles.title),
         imgWrapper: { cursor: 'pointer' }
       });
@@ -285,7 +293,7 @@
       var ui = win.__shopUI;
       if (!ui) { ui = win.ShopifyBuy.UI.init(clientFor(win, settings)); win.__shopUI = ui; }
       var opt = options(settings.shopify_style, settings.site_colors, opts.toFilterShadow);
-      addProduct(doc, ui, container, productId, settings, opt, { layout: 'horizontal', description: true });
+      addProduct(doc, ui, container, productId, settings, opt, { page: true });
     });
   }
 
