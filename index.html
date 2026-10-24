@@ -439,7 +439,7 @@
     // The product page: one design (Product Page tab in the editor) shown full screen for the clicked product,
     // with arrows to move between products. Closes with the X, Esc, or the arrows' neighbours.
     var productDesign, productOverlay;
-    function productKeys() { return (settings.shopify_product_ids || []).map(function (r) { return InteerShop.keyOf(r); }).filter(Boolean); }
+    function productKeys() { return InteerShop.visibleKeys(settings); }
     function openProduct(key) {
       var keys = productKeys();
       if (!keys.length) return;
@@ -498,7 +498,7 @@
       var go = function () { InteerShop.render(document, settings, { toFilterShadow: toFilterShadow, onOpenProduct: openProduct }); };
       if (window.InteerShop) return go();
       var s = document.createElement('script');
-      s.src = '/shopify-shop.js?v=20261024b';
+      s.src = '/shopify-shop.js?v=20261024c';
       s.onload = go;
       document.head.appendChild(s);
     }
