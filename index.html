@@ -288,12 +288,19 @@
       layer.appendChild(ov);
     }
 
+    // Reference stage size for pages saved before the editor stored it (the editor's usual canvas)
+    var DEF_REF_W = 1275, DEF_REF_H = 808;
+    // vh / vw inside a page mean the stage's own size, so they scale with everything else
+    function unitFix(s) {
+      return s ? s.replace(/(-?\d*\.?\d+)(vh|vw)\b/g, function (m, n, u) { return 'calc(' + n + ' * var(--' + u + '))'; }) : s;
+    }
+
     function buildSite(pages, designs) {
       var nav = document.getElementById('nav');
       var stack = document.getElementById('bg-stack');
       var main = document.getElementById('pages');
       var fonts = [];
-      var layers = [], sections = [], links = [];
+      var layers = [], sections = [], links = [], stages = [];
 
       pages.forEach(function (p, i) {
         var d = designs[i];
@@ -302,11 +309,17 @@
         sec.id = p.id;
         var inner = document.createElement('div');
         inner.id = 'pg-' + p.id;
-        inner.innerHTML = d ? stripBg(d.html || '') : fallbackHtml(p.title);
+        // Every page is a fixed-size "stage" (the editor's canvas size when it was saved) that is scaled
+        // as a whole to the visitor's screen, so pictures, text, buttons and positions all scale together.
+        var rw = (d && d.refW) || DEF_REF_W, rh = (d && d.refH) || DEF_REF_H;
+        inner.className = 'stage';
+        inner.style.cssText = 'position:absolute;left:0;top:0;width:' + rw + 'px;transform-origin:0 0;--vw:' + (rw / 100) + 'px;--vh:' + (rh / 100) + 'px;';
+        stages.push({ sec: sec, inner: inner, rw: rw, rh: rh });
+        inner.innerHTML = unitFix(d ? stripBg(d.html || '') : fallbackHtml(p.title));
         sec.appendChild(inner);
         if (d && d.css) {
           var st = document.createElement('style');
-          st.textContent = scopeCss(stripBg(d.css), '#pg-' + p.id, fonts);
+          st.textContent = unitFix(scopeCss(stripBg(d.css), '#pg-' + p.id, fonts));
           sec.appendChild(st);
         }
         main.appendChild(sec);
@@ -392,6 +405,29 @@
       window.addEventListener('scroll', onScroll, { passive: true });
       window.addEventListener('resize', onScroll);
       update();
+
+      // Scale every page stage to the screen (see the stage comment above)
+      function fitStage(g) {
+        var vw = document.documentElement.clientWidth, vh = window.innerHeight;
+        var H = Math.max(g.inner.offsetHeight, g.inner.scrollHeight);
+        var single = H <= g.rh + 2;                        // a one-screen page: fit it fully on the screen
+        var s = vw / g.rw;
+        if (single) s = Math.min(s, vh / g.rh);
+        var hs = H * s;
+        var secH = single ? Math.max(vh, hs) : hs;
+        g.sec.style.height = secH.toFixed(2) + 'px';
+        var x = (vw - g.rw * s) / 2, y = single ? (secH - hs) / 2 : 0;
+        g.inner.style.transform = 'translate(' + x.toFixed(2) + 'px,' + y.toFixed(2) + 'px) scale(' + s.toFixed(5) + ')';
+      }
+      var fitQueued = false;
+      function fitAll() { fitQueued = false; stages.forEach(fitStage); if (typeof onScroll === 'function') onScroll(); }
+      function fitSoon() { if (!fitQueued) { fitQueued = true; requestAnimationFrame(fitAll); } }
+      fitAll();
+      window.addEventListener('resize', fitSoon);
+      window.addEventListener('orientationchange', function () { setTimeout(fitSoon, 150); });
+      window.addEventListener('load', fitSoon);
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitSoon);
+      if (window.ResizeObserver) stages.forEach(function (g) { new ResizeObserver(fitSoon).observe(g.inner); });
 
       // Jump to #page from the URL (e.g. /#shop)
       var h = (location.hash || '').slice(1);
@@ -529,6 +565,7 @@
     // ?? Phone fit: text that is too wide for a narrow screen (e.g. a huge heading) is shrunk
     // just enough to fit. Runtime only: nothing is saved, and desktop is left untouched.
     function fitTextToWidth(root) {
+      return; // pages now scale as a whole (see fitStage), so text is no longer shrunk separately
       var win = root.ownerDocument.defaultView;
       var els = root.querySelectorAll('h1,h2,h3,h4,h5,h6,p,a,span,li,button,div');
       Array.prototype.forEach.call(els, function (el) {

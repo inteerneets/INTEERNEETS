@@ -643,9 +643,27 @@ function flushEditing() {
   } catch (_) { /* nothing is being edited */ }
 }
 
+// The size of the editor canvas when a page is saved = the "stage" size the live site scales from.
+// Only measured on the Desktop view; other device previews keep the last desktop size.
+var pageRef = {};
+function canvasRefSize() {
+  try {
+    const dev = editor.getDevice && editor.getDevice();
+    const f = editor.Canvas.getFrameEl();
+    const doc = f && f.contentDocument;
+    if ((!dev || /desktop/i.test(String(dev))) && doc && doc.documentElement.clientWidth > 300) {
+      return { w: doc.documentElement.clientWidth, h: f.clientHeight };
+    }
+  } catch (_) { /* fall through */ }
+  return pageRef[currentPage] || null;
+}
 function snapshot() {
   flushEditing();
+  const ref = canvasRefSize();
+  if (ref) pageRef[currentPage] = ref;
   return {
+    refW: ref ? ref.w : undefined,
+    refH: ref ? ref.h : undefined,
     projectData: editor.getProjectData(),
     html: editor.getHtml(),
     css: fontFaceCss() + editor.getCss(),
@@ -876,6 +894,7 @@ async function loadPage(id) {
   }
   stripThemeBg();
   normalizeEditorBtn();
+  pageRef[id] = (data && data.refW) ? { w: data.refW, h: data.refH || 808 } : null;
   pageBg[id] = (data && data.bg) || (id === PRODUCT_PAGE.id ? Object.assign({}, DEFAULT_BG, { color: '#f80000' }) : null);
   applyPageBg();
   applyColorsToCanvas();

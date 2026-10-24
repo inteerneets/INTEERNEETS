@@ -195,7 +195,7 @@
     var page = !!(extra && extra.page);
     if (page) {
       // Product page: everything (sizes / types / colors, quantity, Add to cart, description)
-      po.layout = 'horizontal';
+      po.layout = doc.defaultView.innerWidth < 700 ? 'vertical' : 'horizontal';
       po.contents = Object.assign({}, po.contents, { options: true, button: true, description: true });
     } else {
       // Shop grid: just picture, name and price; a click opens the product page
