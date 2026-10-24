@@ -107,7 +107,11 @@
     // ── Content loading ──
     // Live site: read straight from GitHub via the function (instant after Save).
     // Falls back to the deployed static file. Local: static file.
+    // Editor device preview (/?ep=1 inside the editor): use the editor's unsaved designs, otherwise the saved ones
+    var EP = null;
+    try { if (/[?&]ep=1/.test(location.search) && window.parent !== window) EP = window.parent.__epData || null; } catch (e) { EP = null; }
     function getContent(name) {
+      if (EP && Object.prototype.hasOwnProperty.call(EP, name)) return Promise.resolve(EP[name]);   // editor device preview feeds unsaved designs
       function stat() {
         return fetch('/content/' + name, { cache: 'no-store' }).then(function (r) {
           if (!r.ok) throw new Error('Not found');
@@ -281,6 +285,79 @@
       return s ? s.replace(/(-?\d*\.?\d+)(vh|vw)\b/g, function (m, n, u) { return 'calc(' + n + ' * var(--' + u + '))'; }) : s;
     }
 
+    // PHONES / SMALL SCREENS: instead of shrinking the whole desktop composition (unreadably small), the
+    // free-positioned elements are stacked in a column in the order they are on the page: pictures scale to
+    // the screen, text stays readable, buttons stay tappable. Wide screens keep the exact scaled stage.
+    var STACK_MAX = 820;
+    function stackMeasure(g) {
+      g.sec.style.height = '';
+      g.inner.style.cssText = 'position:absolute;left:0;top:0;width:' + g.rw + 'px;transform:none;transform-origin:0 0;--vw:' + (g.rw / 100) + 'px;--vh:' + (g.rh / 100) + 'px;';
+      var ir = g.inner.getBoundingClientRect(), items = [];
+      Array.prototype.forEach.call(g.inner.querySelectorAll('*'), function (el) {
+        if (el.closest('[data-shopify-section],.ish-root,style,script')) return;
+        if (getComputedStyle(el).position !== 'absolute') return;
+        var p = el.parentElement, nested = false;
+        while (p && p !== g.inner) { if (getComputedStyle(p).position === 'absolute') { nested = true; break; } p = p.parentElement; }
+        if (nested) return;
+        var r = el.getBoundingClientRect();
+        items.push({ el: el, parent: el.parentElement, top: r.top - ir.top, left: r.left - ir.left, w: r.width, h: r.height });
+      });
+      var groups = [];
+      items.forEach(function (it) {
+        var grp = groups.filter(function (x) { return x.parent === it.parent; })[0];
+        if (!grp) { grp = { parent: it.parent, items: [] }; groups.push(grp); }
+        grp.items.push(it);
+      });
+      groups.forEach(function (grp) {
+        grp.items.sort(function (a, b) { return a.top - b.top || a.left - b.left; });
+        var prevBottom = null;
+        grp.items.forEach(function (it, i) {
+          var cx = it.left + it.w / 2, off = (cx - g.rw / 2) / g.rw;
+          it.align = Math.abs(off) < 0.12 ? 'center' : (off < 0 ? 'flex-start' : 'flex-end');
+          it.mt = prevBottom === null ? 76 : Math.max(10, Math.min(42, (it.top - prevBottom) * 0.6));
+          it.order = i + 1;
+          prevBottom = it.top + it.h;
+        });
+      });
+      g.plan = groups;
+    }
+    function stackEnter(g) {
+      if (g.mode === 'stack') return;
+      if (!g.plan) stackMeasure(g);
+      g.plan.forEach(function (grp) {
+        var P = grp.parent;
+        if (P !== g.inner) {
+          P.setAttribute('data-stk-prev', P.getAttribute('style') || '');
+          ['display:flex', 'flex-direction:column', 'align-items:center', 'justify-content:flex-start', 'padding-left:16px', 'padding-right:16px'].forEach(function (d) { var k = d.split(':'); P.style.setProperty(k[0], k[1], 'important'); });
+        }
+        grp.items.forEach(function (it) {
+          var el = it.el, media = /^(IMG|VIDEO|IFRAME|CANVAS|SVG)$/i.test(el.tagName);
+          el.setAttribute('data-stk-prev', el.getAttribute('style') || '');
+          var set = function (k, v) { el.style.setProperty(k, v, 'important'); };
+          set('position', 'relative'); set('left', 'auto'); set('top', 'auto'); set('right', 'auto'); set('bottom', 'auto');
+          set('transform', 'none'); set('margin', it.mt + 'px 0 0 0'); set('order', String(it.order)); set('align-self', it.align);
+          set('max-width', '100%'); set('height', 'auto');
+          if (media) set('width', 'min(' + Math.round(it.w) + 'px, 100%)'); else { set('width', 'auto'); set('min-height', '0'); }
+        });
+      });
+      g.inner.style.cssText = 'position:relative;width:100%;transform:none;--vw:1vw;--vh:1vh;';
+      g.sec.style.height = '';
+      g.mode = 'stack';
+    }
+    function stackExit(g) {
+      if (g.mode !== 'stack') return;
+      g.plan.forEach(function (grp) {
+        [grp.parent].concat(grp.items.map(function (it) { return it.el; })).forEach(function (el) {
+          if (el === g.inner || !el.hasAttribute('data-stk-prev')) return;
+          var prev = el.getAttribute('data-stk-prev');
+          if (prev) el.setAttribute('style', prev); else el.removeAttribute('style');
+          el.removeAttribute('data-stk-prev');
+        });
+      });
+      g.inner.style.cssText = 'position:absolute;left:0;top:0;width:' + g.rw + 'px;transform-origin:0 0;--vw:' + (g.rw / 100) + 'px;--vh:' + (g.rh / 100) + 'px;';
+      g.mode = 'stage';
+    }
+
     function buildSite(pages, designs) {
       var nav = document.getElementById('nav');
       var stack = document.getElementById('bg-stack');
@@ -396,6 +473,8 @@
       // Scale every page stage to the screen (see the stage comment above)
       function fitStage(g) {
         var vw = document.documentElement.clientWidth, vh = window.innerHeight;
+        if (vw < STACK_MAX) { stackEnter(g); return; }
+        stackExit(g);
         var H = Math.max(g.inner.offsetHeight, g.inner.scrollHeight);
         var single = H <= g.rh + 2;                        // a one-screen page: fit it fully on the screen
         var s = vw / g.rw;
@@ -533,7 +612,7 @@
       var go = function () { InteerShop.render(document, settings, { toFilterShadow: toFilterShadow, onOpenProduct: openProduct }); };
       if (window.InteerShop) return go();
       var s = document.createElement('script');
-      s.src = '/shopify-shop.js?v=20261024d';
+      s.src = '/shopify-shop.js?v=20261024e';
       s.onload = go;
       document.head.appendChild(s);
     }
@@ -600,13 +679,12 @@
     // ?? Phone fit: text that is too wide for a narrow screen (e.g. a huge heading) is shrunk
     // just enough to fit. Runtime only: nothing is saved, and desktop is left untouched.
     function fitTextToWidth(root) {
-      return; // pages now scale as a whole (see fitStage), so text is no longer shrunk separately
       var win = root.ownerDocument.defaultView;
       var els = root.querySelectorAll('h1,h2,h3,h4,h5,h6,p,a,span,li,button,div');
       Array.prototype.forEach.call(els, function (el) {
         if (el.hasAttribute('data-fit-size')) { el.style.fontSize = el.getAttribute('data-fit-size'); el.removeAttribute('data-fit-size'); }
       });
-      if (win.innerWidth > 700) return;
+      if (win.innerWidth > STACK_MAX) return;
       Array.prototype.forEach.call(els, function (el) {
         if (!el.textContent.trim() || el.children.length > 2) return;
         if (el.closest && el.closest('[contenteditable="true"]')) return;

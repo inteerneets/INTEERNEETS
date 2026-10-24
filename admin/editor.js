@@ -133,6 +133,9 @@ const editor = grapesjs.init({
       { name: 'Desktop', width: '' },
       { name: 'Tablet', width: '768px', widthMedia: '992px' },
       { name: 'Mobile', width: '375px', widthMedia: '480px' },
+      { name: 'Phone landscape', width: '812px' },
+      { name: 'Laptop', width: '1366px' },
+      { name: 'Big screen', width: '1920px' },
     ],
   },
 
@@ -686,7 +689,7 @@ window.addEventListener('beforeunload', (e) => {
 });
 
 // ─── Tabs ───
-function renderTabs() { renderTabsCore(); if (typeof shopSyncSwitch === 'function') shopSyncSwitch(); }
+function renderTabs() { renderTabsCore(); if (typeof devSchedule === 'function') devSchedule(); if (typeof shopSyncSwitch === 'function') shopSyncSwitch(); }
 function renderTabsCore() {
   const box = byId('page-tabs');
   box.innerHTML = '';
@@ -2869,3 +2872,65 @@ function shopPanelDraw() { shopDrawBody(); }
   byId('shop-tabs').addEventListener('click', (e) => { const t = e.target.closest('button'); if (t) { shopTab = t.dataset.tab; shopDrawBody(); } });
   ['btn-colors', 'btn-pagebg', 'btn-button', 'btn-imgsize'].forEach((id) => { const b = byId(id); if (b) b.addEventListener('click', () => p.classList.add('hidden')); });
 })();
+
+// ???????????????????????????????????????????????????????????????
+// DEVICE PREVIEW: Tablet / Mobile / Laptop ... show the REAL live site at that screen size
+// (with your unsaved changes), so what you see here is exactly what visitors get.
+// ???????????????????????????????????????????????????????????????
+const DEVICE_SIZES = { Tablet: [768, 1024], Mobile: [375, 812], 'Phone landscape': [812, 375], Laptop: [1366, 768], 'Big screen': [1920, 1080] };
+let devTimer = null;
+function devName() {
+  try { const d = editor.Devices.get(editor.getDevice()); return d ? d.get('name') : 'Desktop'; } catch (_) { return 'Desktop'; }
+}
+function devActive() { return !!DEVICE_SIZES[devName()]; }
+function devData() {
+  flushEditing();
+  const d = { 'pages.json': { pages }, 'settings.json': collectSettings() };
+  Object.keys(drafts).forEach((id) => { d['page-' + id + '.json'] = drafts[id]; });
+  d['page-' + currentPage + '.json'] = snapshot();
+  return d;
+}
+function devOverlay() {
+  let o = byId('dev-preview');
+  if (o) return o;
+  o = document.createElement('div');
+  o.id = 'dev-preview';
+  o.innerHTML = '<div class="dp-bar"><span id="dp-label"></span><span class="dp-note">This is the live site at this size, so scaling is exactly what visitors see. Switch to Desktop to edit.</span><button type="button" class="tb-btn" id="dp-refresh">&#8635; Refresh</button><button type="button" class="tb-btn" id="dp-back">Back to Desktop</button></div><div class="dp-stage"><div class="dp-box" id="dp-box"><iframe id="dp-frame" title="Device preview"></iframe></div></div>';
+  editor.Canvas.getElement().appendChild(o);
+  byId('dp-refresh').addEventListener('click', () => devRefresh());
+  byId('dp-back').addEventListener('click', () => editor.setDevice('Desktop'));
+  window.addEventListener('resize', devLayout);
+  return o;
+}
+function devLayout() {
+  const o = byId('dev-preview');
+  if (!o || !devActive()) return;
+  const [w, h] = DEVICE_SIZES[devName()];
+  const stage = o.querySelector('.dp-stage');
+  const s = Math.min(1, (stage.clientWidth - 30) / w, (stage.clientHeight - 20) / h);
+  const box = byId('dp-box'), fr = byId('dp-frame');
+  fr.style.width = w + 'px'; fr.style.height = h + 'px';
+  fr.style.transform = 'scale(' + s + ')';
+  box.style.width = Math.round(w * s) + 'px'; box.style.height = Math.round(h * s) + 'px';
+  byId('dp-label').textContent = devName() + '  ' + w + ' \u00D7 ' + h + (s < 1 ? '  (shown at ' + Math.round(s * 100) + '%)' : '');
+}
+function devRefresh() {
+  if (!devActive()) return;
+  window.__epData = devData();
+  byId('dp-frame').src = '/?ep=1&t=' + Date.now();
+}
+function devSync() {
+  const o = devOverlay();
+  const on = devActive();
+  o.style.display = on ? 'flex' : 'none';
+  if (!on) { byId('dp-frame').src = 'about:blank'; return; }
+  devLayout();
+  devRefresh();
+}
+function devSchedule() {
+  if (typeof devActive !== 'function' || !byId('dev-preview') || !devActive()) return;
+  clearTimeout(devTimer);
+  devTimer = setTimeout(devRefresh, 900);
+}
+editor.on('change:device', () => setTimeout(devSync, 60));
+editor.on('update', devSchedule);

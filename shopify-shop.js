@@ -350,6 +350,15 @@
       '.ish-sw{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px;align-items:center;}' +
       '.ish-sw i{display:block;width:15px;height:15px;border-radius:3px;border:1px solid ' + s.swatch_border + ';}' +
       '.ish-sw span{font:600 11px ' + ff(s.price_font) + ';color:' + s.price_color + ';margin-left:2px;}' +
+      '.ish-narrow{flex-direction:column;gap:14px;}' +
+      '.ish-narrow .ish-side{flex:none;width:100%;display:flex;gap:8px;overflow-x:auto;padding:2px 0 8px;-webkit-overflow-scrolling:touch;}' +
+      '.ish-narrow .ish-side a{flex:none;white-space:nowrap;margin:0;padding:8px 16px;border:2px solid ' + s.side_text + ';border-radius:999px;font-size:' + px(s.side_size, 15) + ';}' +
+      '.ish-narrow .ish-side a.on{background:' + s.side_text + ';color:' + s.bar_bg + ';}' +
+      '.ish-narrow .ish-side a.on::before{display:none;}' +
+      '.ish-narrow .ish-side a em{display:none;}' +
+      '.ish-narrow .ish-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 12px;}' +
+      '.ish-narrow .ish-bar input{min-width:0;flex:1 1 100%;max-width:none;}' +
+      '.ish-narrow .ish-count{margin-left:0;}' +
       '.ish-empty{grid-column:1/-1;padding:50px 0;text-align:center;color:' + s.title_color + ';font:600 15px ' + ff(s.price_font) + ';opacity:.8;}';
   }
 
@@ -494,6 +503,10 @@
     });
     root.addEventListener('input', function (e) { if (e.target.hasAttribute && e.target.hasAttribute('data-q')) { state.q = e.target.value; renderGrid(); } });
     root.addEventListener('change', function (e) { if (e.target.hasAttribute && e.target.hasAttribute('data-sort')) { state.sort = e.target.value; renderGrid(); } });
+    // phones: sidebar becomes a row of chips and the grid 2 columns
+    function narrowCheck() { root.classList.toggle('ish-narrow', section.clientWidth < 760); }
+    narrowCheck();
+    if (win.ResizeObserver) new win.ResizeObserver(narrowCheck).observe(section);
     // lets the editor preview a category
     section.__ish = { setCat: function (id) { state.cat = id || ''; renderSide(); renderGrid(); } };
   }

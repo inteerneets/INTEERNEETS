@@ -739,3 +739,14 @@ a.tb-btn:hover { color: #ddd; border-color: #555; }
 
 .shop-q, #shop-panel input[type=search] { background:#111; border:1px solid #333; border-radius:6px; color:#ddd; padding:8px 10px; font-size:13px; width:100%; box-sizing:border-box; }
 #shop-panel input[type=text].hex { background:#111; border:1px solid #333; border-radius:6px; color:#ddd; padding:6px 8px; font-size:12px; }
+
+/* ?? Device preview (real live site at the chosen screen size) ?? */
+#dev-preview { position:absolute; inset:0; z-index:30; background:#0d0d0d; display:none; flex-direction:column; }
+#dev-preview .dp-bar { display:flex; gap:10px; align-items:center; padding:8px 14px; background:#161616; border-bottom:1px solid #2a2a2a; color:#ddd; font-size:13px; flex:none; }
+#dev-preview #dp-label { font-weight:700; color:#fff; }
+#dev-preview .dp-note { color:#888; font-size:12px; flex:1; }
+#dev-preview .dp-stage { flex:1; display:flex; align-items:flex-start; justify-content:center; padding:12px 0; overflow:auto; min-height:0; }
+#dev-preview .dp-box { position:relative; flex:none; border:1px solid #333; box-shadow:0 10px 40px rgba(0,0,0,.6); overflow:hidden; background:#000; }
+#dev-preview iframe { border:0; transform-origin:0 0; display:block; background:#000; }
+
+#shop-panel.hidden { display:none; }
