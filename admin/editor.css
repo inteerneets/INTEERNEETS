@@ -750,3 +750,7 @@ a.tb-btn:hover { color: #ddd; border-color: #555; }
 #dev-preview iframe { border:0; transform-origin:0 0; display:block; background:#000; }
 
 #shop-panel.hidden { display:none; }
+
+/* Save / Reset / Settings stay pinned at the right edge of the top bar */
+.top-bar-pinned { display:flex; align-items:center; gap:8px; flex:none; margin-left:10px; }
+.top-bar-right { min-width:0; flex:1 1 0; }

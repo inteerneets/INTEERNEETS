@@ -63,6 +63,28 @@
       { k: 'cart_btn_fill', l: 'Buttons', t: 'color' }, { k: 'cart_btn_text', l: 'Button text', t: 'color' } ] }
   ];
 
+  // Fonts you uploaded in the editor: [{ name, url }]
+  function fontFormat(url) { var e = String(url).split('.').pop().toLowerCase(); return { woff2: 'woff2', woff: 'woff', ttf: 'truetype', otf: 'opentype' }[e] || 'truetype'; }
+  function fontFaceCss(list) {
+    return (list || []).map(function (f) { return "@font-face{font-family:'" + f.name + "';src:url('" + f.url + "') format('" + fontFormat(f.url) + "');font-display:swap;}\n"; }).join('');
+  }
+  function fontList(list) { return FONTS.concat((list || []).map(function (f) { return f.name; })); }
+  // the cart / product page live in iframes: give them the uploaded fonts too
+  function injectFrameFonts(doc, settings) {
+    var css = fontFaceCss(settings.site_fonts);
+    if (!css) return;
+    Array.prototype.forEach.call(doc.querySelectorAll('iframe'), function (f) {
+      try {
+        var d = f.contentDocument;
+        if (!d || !d.head || d.getElementById('site-fonts')) return;
+        var s = d.createElement('style'); s.id = 'site-fonts'; s.textContent = css; d.head.appendChild(s);
+      } catch (e) { /* cross-origin frame */ }
+    });
+  }
+  function injectFontsSoon(doc, settings) {
+    [300, 900, 2000, 4500, 8000].forEach(function (t) { setTimeout(function () { injectFrameFonts(doc, settings); }, t); });
+  }
+
   function px(n, d) { n = parseFloat(n); return (isNaN(n) ? d : n) + 'px'; }
   function ff(n) { return SYSTEM.indexOf(n) >= 0 ? '"' + n + '"' : '"' + n + '", sans-serif'; }
 
@@ -76,9 +98,10 @@
     return Object.assign({}, DEFAULTS, site, style || {});
   }
 
-  function options(style, colors, toFilter) {
+  function options(style, colors, toFilter, siteFonts) {
     var s = merged(style, colors);
-    var fonts = [s.title_font, s.price_font, s.size_font, s.btn_font, s.cart_font].filter(function (f, i, a) { return f && SYSTEM.indexOf(f) < 0 && a.indexOf(f) === i; });
+    var mine = (siteFonts || []).map(function (f) { return f.name; });
+    var fonts = [s.title_font, s.price_font, s.size_font, s.btn_font, s.cart_font].filter(function (f, i, a) { return f && SYSTEM.indexOf(f) < 0 && mine.indexOf(f) < 0 && a.indexOf(f) === i; });
     var gf = fonts.map(function (f) { return f + ':400,500,600,700'; });
     var shadow = (colors && colors.btn_shadow) || 'drop-shadow(0 6px 16px rgba(0,0,0,0.28))';
     var hoverFilter = toFilter ? toFilter(shadow) : shadow;
@@ -190,7 +213,10 @@
     var page = !!(extra && extra.page);
     if (page) {
       // Product page: everything (sizes / types / colors, quantity, Add to cart, description)
-      po.layout = doc.defaultView.innerWidth < 700 ? 'vertical' : 'horizontal';
+      po.layout = doc.defaultView.innerWidth < 820 ? 'vertical' : 'horizontal';
+      po.width = '100%';   // the SDK limits the card to 280px unless told otherwise
+      // use the full width of the screen (the SDK's default card is only 280px wide on phones)
+      po.styles = Object.assign({}, po.styles, { product: Object.assign({}, po.styles.product, { 'max-width': '100%', 'margin-left': 'auto', 'margin-right': 'auto' }) });
       po.contents = Object.assign({}, po.contents, { options: true, button: true, description: true });
     } else {
       // Shop grid: just picture, name and price; a click opens the product page
@@ -224,7 +250,7 @@
   }
 
   var SHOP_API = '2024-10';
-  var OPT_DEFAULTS = { sidebar: true, search: true, sort: true, wishlist: true, swatches: true, counts: true, hover_image: true, show_price: true, cols: 0, ratio: '1 / 1', fit: 'cover', default_sort: 'featured', new_days: 0, all_label: 'All products', empty_text: 'No products found' };
+  var OPT_DEFAULTS = { sidebar: true, search: true, sort: true, wishlist: true, swatches: true, counts: true, hover_image: true, show_price: true, cols: 0, ratio: '1 / 1', fit: 'cover', default_sort: 'featured', new_days: 0, cart_side: 'left', all_label: 'All products', empty_text: 'No products found' };
   function shopOpts(settings) { return Object.assign({}, OPT_DEFAULTS, (settings && settings.shop_opts) || {}); }
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
@@ -333,7 +359,7 @@
       '.ish-bar button.on{background:' + s.bar_text + ';color:' + s.bar_bg + ';}' +
       '.ish-count{margin-left:auto;color:' + s.title_color + ';font:600 13px ' + ff(s.price_font) + ';opacity:.85;}' +
       '.ish-grid{display:grid;grid-template-columns:' + cols + ';gap:26px 22px;}' +
-      '.ish-card{display:block;cursor:pointer;color:inherit;text-decoration:none;}' +
+      '.ish-card{display:flex;flex-direction:column;cursor:pointer;color:inherit;text-decoration:none;}' +
       '.ish-img{position:relative;background:' + s.card_bg + ';border-radius:' + px(s.card_radius, 0) + ';aspect-ratio:' + o.ratio + ';overflow:hidden;}' +
       '.ish-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:' + o.fit + ';transition:opacity .3s ease,transform .5s ease;}' +
       '.ish-img img.alt{opacity:0;}' +
@@ -342,12 +368,12 @@
       '.ish-card.soldout .ish-img img{filter:grayscale(.6);opacity:.75;}' +
       '.ish-heart{position:absolute;right:10px;top:10px;width:34px;height:34px;border-radius:50%;border:0;background:' + s.heart_bg + ';color:' + s.heart_color + ';font-size:17px;line-height:34px;text-align:center;cursor:pointer;padding:0;box-shadow:0 1px 5px rgba(0,0,0,.18);z-index:2;}' +
       '.ish-heart.on{background:' + s.heart_color + ';color:' + s.heart_bg + ';}' +
-      '.ish-badge{display:inline-block;margin:12px 0 0;padding:4px 10px;border-radius:6px;background:' + s.badge_bg + ';color:' + s.badge_text + ';font:700 12px ' + ff(s.size_font) + ';}' +
-      '.ish-name{margin-top:10px;color:' + s.title_color + ';font-family:' + ff(s.title_font) + ';font-size:' + px(s.title_size, 15) + ';font-weight:' + s.title_weight + ';text-transform:' + s.title_transform + ';line-height:1.35;}' +
-      '.ish-badge + .ish-name{margin-top:8px;}' +
-      '.ish-price{margin-top:6px;color:' + s.price_color + ';font-family:' + ff(s.price_font) + ';font-size:' + px(s.price_size, 14) + ';font-weight:600;}' +
+      '.ish-badge{position:absolute;left:10px;bottom:10px;z-index:2;padding:4px 10px;border-radius:6px;background:' + s.badge_bg + ';color:' + s.badge_text + ';font:700 12px ' + ff(s.size_font) + ';}' +
+      '.ish-name{flex:1 0 auto;margin-top:12px;color:' + s.title_color + ';font-family:' + ff(s.title_font) + ';font-size:' + px(s.title_size, 15) + ';font-weight:' + s.title_weight + ';text-transform:' + s.title_transform + ';line-height:1.35;}' +
+      '.ish-meta{margin-top:auto;padding-top:8px;}' +
+      '.ish-price{margin-top:0;color:' + s.price_color + ';font-family:' + ff(s.price_font) + ';font-size:' + px(s.price_size, 14) + ';font-weight:600;}' +
       '.ish-price s{opacity:.55;margin-left:8px;font-weight:400;}' +
-      '.ish-sw{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px;align-items:center;}' +
+      '.ish-sw{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px;align-items:center;min-height:15px;}' +
       '.ish-sw i{display:block;width:15px;height:15px;border-radius:3px;border:1px solid ' + s.swatch_border + ';}' +
       '.ish-sw span{font:600 11px ' + ff(s.price_font) + ';color:' + s.price_color + ';margin-left:2px;}' +
       '.ish-narrow{flex-direction:column;gap:14px;}' +
@@ -386,7 +412,7 @@
     section.style.gridTemplateColumns = '';
     var css = doc.getElementById('ish-css');
     if (!css) { css = doc.createElement('style'); css.id = 'ish-css'; doc.head.appendChild(css); }
-    css.textContent = shopCss(s, o);
+    css.textContent = fontFaceCss(settings.site_fonts) + shopCss(s, o);
 
     var root = doc.createElement('div'); root.className = 'ish-root';
     var sideEl = doc.createElement('aside'); sideEl.className = 'ish-side';
@@ -440,7 +466,7 @@
       if (max && parseFloat(max.amount) > parseFloat(min.amount)) price = 'From ' + price;
       var cmp = n.compareAtPriceRange ? parseFloat(n.compareAtPriceRange.minVariantPrice.amount) : 0;
       var cmpHtml = cmp > parseFloat(min.amount) ? '<s>' + esc(money(cmp, min.currencyCode)) + '</s>' : '';
-      var sw = '';
+      var sw = o.swatches ? '<div class="ish-sw"></div>' : '';
       if (o.swatches) {
         var opt = (n.options || []).filter(function (x) { return /colou?r/i.test(x.name); })[0];
         if (opt && opt.values.length > 1) {
@@ -449,10 +475,9 @@
       }
       var heart = o.wishlist ? '<button type="button" class="ish-heart' + (wish.indexOf(k) >= 0 ? ' on' : '') + '" data-heart="' + esc(k) + '" title="Save">' + (wish.indexOf(k) >= 0 ? '\u2665' : '\u2661') + '</button>' : '';
       return '<div class="ish-card' + (n.availableForSale === false ? ' soldout' : '') + '" data-key="' + esc(k) + '">' +
-        '<div class="ish-img">' + (main ? '<img class="main" src="' + esc(main) + '" alt="' + esc(n.title) + '" loading="lazy">' : '') + (alt ? '<img class="alt" src="' + esc(alt) + '" alt="" loading="lazy">' : '') + heart + '</div>' +
-        (b ? '<span class="ish-badge">' + esc(b) + '</span>' : '') +
+        '<div class="ish-img">' + (main ? '<img class="main" src="' + esc(main) + '" alt="' + esc(n.title) + '" loading="lazy">' : '') + (alt ? '<img class="alt" src="' + esc(alt) + '" alt="" loading="lazy">' : '') + heart + (b ? '<span class="ish-badge">' + esc(b) + '</span>' : '') + '</div>' +
         '<div class="ish-name">' + esc(n.title) + '</div>' +
-        (o.show_price ? '<div class="ish-price">' + esc(price) + cmpHtml + '</div>' : '') + sw + '</div>';
+        '<div class="ish-meta">' + (o.show_price ? '<div class="ish-price">' + esc(price) + cmpHtml + '</div>' : '') + sw + '</div></div>';
     }
     function renderGrid() {
       var wish = wishGet(win), keys = listKeys();
@@ -465,7 +490,13 @@
     function renderSide() {
       if (!showSide) return;
       var html = '<a data-cat="" class="' + (state.cat === '' ? 'on' : '') + '">' + esc(o.all_label) + (o.counts ? '<em>' + visibleKeys(settings).filter(function (k) { return data[k]; }).length + '</em>' : '') + '</a>';
+      // open path: the selected category and everything above it; only their children are listed
+      var open = {}, byId = {};
+      tree.forEach(function (n) { byId[n.cat.id] = n.cat; });
+      for (var cur = state.cat, guard = 0; cur && byId[cur] && guard < 6; guard++) { open[cur] = true; cur = byId[cur].parent; }
       tree.forEach(function (n) {
+        var par = n.cat.parent && byId[n.cat.parent] ? n.cat.parent : '';
+        if (par && !open[par]) return;
         var cnt = catKeys(settings, n.cat.id).filter(function (k) { return data[k]; }).length;
         if (!cnt && !opts.editor) return;
         html += '<a data-cat="' + esc(n.cat.id) + '" class="' + (n.depth === 1 ? 'sub ' : n.depth > 1 ? 'sub2 ' : '') + (state.cat === n.cat.id ? 'on' : '') + '">' + esc(n.cat.title) + (o.counts ? '<em>' + cnt + '</em>' : '') + '</a>';
@@ -511,13 +542,35 @@
     section.__ish = { setCat: function (id) { state.cat = id || ''; renderSide(); renderGrid(); } };
   }
 
+  // Cart side: the floating cart button and the cart drawer sit on the left (default) or the right
+  function cartSideCss(doc, settings, opt) {
+    var side = shopOpts(settings).cart_side === 'right' ? 'right' : 'left';
+    var s = merged(settings.shopify_style, settings.site_colors), rad = px(s.toggle_radius, 0);
+    var tag = doc.getElementById('ish-cart-css');
+    if (!tag) { tag = doc.createElement('style'); tag.id = 'ish-cart-css'; doc.head.appendChild(tag); }
+    if (side === 'right') {
+      tag.textContent = '@media(max-width:520px){.shopify-buy-frame--cart{max-width:100%!important;}}';
+      return;
+    }
+    if (opt && opt.toggle) opt.toggle.styles.toggle['border-radius'] = '0 ' + rad + ' ' + rad + ' 0';
+    tag.textContent =
+      '.shopify-buy-frame--toggle.is-sticky{right:auto!important;left:0!important;top:auto!important;bottom:22px!important;transform:none!important;}' +
+      '.shopify-buy-frame--cart{right:auto!important;left:0!important;transform:translateX(-100%)!important;}' +
+      '.shopify-buy-frame--cart.is-active{transform:translateX(0)!important;}' +
+      '@media(max-width:520px){.shopify-buy-frame--cart{max-width:100%!important;}}';
+  }
+
   // Cart drawer + floating cart button (Shopify), styled from the Shop panel
   function setupCart(doc, win, settings, opts) {
+    var ui = win.ShopifyBuy.UI.init(clientFor(win, settings));   // the SDK hands back the SAME object every time
+    // start clean so the new colors / fonts apply (otherwise the old cart is kept and its button is gone)
+    ['product', 'toggle', 'cart'].forEach(function (t) {
+      ((ui.components && ui.components[t]) || []).slice().forEach(function (c) { try { ui.destroyComponent(t, c.id); } catch (e) { /* already gone */ } });
+    });
     Array.prototype.forEach.call(doc.querySelectorAll('.shopify-buy-frame--toggle, .shopify-buy-cart-wrapper, [data-cart-seed]'), function (n) { n.remove(); });
-    var ui = win.ShopifyBuy.UI.init(clientFor(win, settings));
     win.__shopUI = ui;
     win.__shopCheckoutLabel = merged(settings.shopify_style, settings.site_colors).checkout_label;
-    var opt = options(settings.shopify_style, settings.site_colors, opts.toFilterShadow);
+    var opt = options(settings.shopify_style, settings.site_colors, opts.toFilterShadow, settings.site_fonts);
     // The SDK creates the cart + cart button together with its first product, so make one hidden product.
     var first = parseId(visibleKeys(settings)[0]);
     if (first) {
@@ -529,6 +582,8 @@
       if (first.id) cfg.id = first.id; else cfg.handle = first.handle;
       ui.createComponent('product', cfg);
     }
+    cartSideCss(doc, settings, opt);
+    injectFontsSoon(doc, settings);
     // an older render's async cart can land late: keep only the newest cart + cart button
     setTimeout(function () {
       ['.shopify-buy-frame--toggle', '.shopify-buy-cart-wrapper'].forEach(function (sel) {
@@ -570,8 +625,9 @@
       container.style.border = 'none';
       var ui = win.__shopUI;
       if (!ui) { ui = win.ShopifyBuy.UI.init(clientFor(win, settings)); win.__shopUI = ui; }
-      var opt = options(settings.shopify_style, settings.site_colors, opts.toFilterShadow);
+      var opt = options(settings.shopify_style, settings.site_colors, opts.toFilterShadow, settings.site_fonts);
       addProduct(doc, ui, container, productId, settings, opt, { page: true });
+      injectFontsSoon(doc, settings);
     });
   }
 
@@ -598,5 +654,5 @@
     return true;
   }
 
-  g.InteerShop = { FONTS: FONTS, DEFAULTS: DEFAULTS, SCHEMA: SCHEMA, merged: merged, options: options, render: render, renderProductPage: renderProductPage, previewCart: previewCart, parseId: parseId, keyOf: keyOf, visibleKeys: visibleKeys, catTree: catTree, catKeys: catKeys, fetchShopData: fetchShopData, shopOpts: shopOpts, OPT_DEFAULTS: OPT_DEFAULTS, money: money };
+  g.InteerShop = { FONTS: FONTS, DEFAULTS: DEFAULTS, SCHEMA: SCHEMA, merged: merged, options: options, render: render, renderProductPage: renderProductPage, previewCart: previewCart, parseId: parseId, keyOf: keyOf, visibleKeys: visibleKeys, catTree: catTree, catKeys: catKeys, fetchShopData: fetchShopData, shopOpts: shopOpts, OPT_DEFAULTS: OPT_DEFAULTS, money: money, fontList: fontList, fontFaceCss: fontFaceCss };
 })(window);

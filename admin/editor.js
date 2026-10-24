@@ -1056,7 +1056,7 @@ byId('pbg-save').addEventListener('click', async () => {
 // SETTINGS
 // ═══════════════════════════════════════════════════════════════
 
-var shopStyle = {}, shopCats = [], shopImgs = {}, shopOptsData = {}, shopBadges = {}, shopHidden = {};   // Shop panel data (saved inside settings.json)
+var shopStyle = {}, shopCats = [], shopImgs = {}, shopOptsData = {}, shopBadges = {}, shopHidden = {}, shopSiteFonts = [];   // Shop panel data (saved inside settings.json)
 
 async function loadSettings() {
   try {
@@ -1081,6 +1081,7 @@ async function loadSettings() {
     shopOptsData = Object.assign({}, s.shop_opts || {});
     shopBadges = Object.assign({}, s.product_badges || {});
     shopHidden = Object.assign({}, s.product_hidden || {});
+    shopSiteFonts = Array.isArray(s.site_fonts) ? s.site_fonts : [];
     settingsLoaded = true; // only now is it safe to write settings back
     if (typeof shopAfterSettings === 'function') shopAfterSettings();
   } catch (_) {
@@ -1110,6 +1111,7 @@ function collectSettings() {
     shop_opts:                shopOptsData,
     product_badges:           shopBadges,
     product_hidden:           shopHidden,
+    site_fonts:               shopFontsAll(),
   };
 }
 
@@ -1155,10 +1157,22 @@ function fontFaceCss() {
 }
 
 // Make uploaded fonts visible in the canvas and selectable in the Font dropdown
+// every font you uploaded (saved with the settings so the live shop can load it too)
+function shopFontsAll() {
+  const seen = {};
+  return [...customFonts, ...shopSiteFonts].filter((f) => f && f.url && !seen[f.url] && (seen[f.url] = 1));
+}
+function shopFontsChanged() {
+  if (typeof shopRenderSoon !== 'function') return;
+  shopRenderSoon(true);
+  const sp = document.getElementById('shop-panel');
+  if (sp && !sp.classList.contains('hidden') && typeof shopDrawBody === 'function') shopDrawBody();
+}
 function registerFont(url) {
   const name = fontNameFromUrl(url);
   if (customFonts.some((f) => f.url === url)) return;
   customFonts.push({ name, url });
+  setTimeout(shopFontsChanged, 50);
   FONT_OPTIONS.push({ value: `'${name}', sans-serif`, name: `${name} (uploaded)` });
   injectFontsIntoCanvas();
   try {
@@ -2613,7 +2627,7 @@ function shopRow(f, eff) {
     s.value = String(val); s.addEventListener('change', () => set(s.value));
     return s;
   };
-  if (f.t === 'font') inp = sel(InteerShop.FONTS.map((n) => [n, n]), cur);
+  if (f.t === 'font') inp = sel(InteerShop.fontList(shopFontsAll()).map((n) => [n, n]), cur);
   else if (f.t === 'weight') inp = sel([['400', 'Regular'], ['500', 'Medium'], ['600', 'Semi Bold'], ['700', 'Bold'], ['800', 'Extra Bold']], cur);
   else if (f.t === 'select') inp = sel(f.o, cur);
   else if (f.t === 'num') {
@@ -2665,6 +2679,7 @@ function shopDrawLayout(box) {
     check('sidebar', 'Categories sidebar'), check('search', 'Search box'), check('sort', 'Sort menu'), check('wishlist', 'Hearts + Saved filter'),
     check('swatches', 'Color dots'), check('counts', 'Product counts'), check('hover_image', 'Second picture on hover'), check('show_price', 'Prices')));
   box.appendChild(shopEl('div', { class: 'sh-title', text: 'Grid' }));
+  box.appendChild(row('Cart button + cart', sel('cart_side', [['left', 'Left side'], ['right', 'Right side']])));
   box.appendChild(row('Columns', sel('cols', [[0, 'Automatic'], [2, '2'], [3, '3'], [4, '4'], [5, '5'], [6, '6']])));
   box.appendChild(row('Picture shape', sel('ratio', [['1 / 1', 'Square'], ['4 / 5', 'Portrait 4:5'], ['3 / 4', 'Tall 3:4'], ['5 / 4', 'Wide 5:4']])));
   box.appendChild(row('Picture fit', sel('fit', [['cover', 'Fill (crop)'], ['contain', 'Fit inside']])));
@@ -2869,6 +2884,7 @@ function shopPanelDraw() { shopDrawBody(); }
   });
   byId('shop-close').addEventListener('click', closeShop);
   byId('shop-save').addEventListener('click', () => saveAll());
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !p.classList.contains('hidden')) closeShop(); });
   byId('shop-tabs').addEventListener('click', (e) => { const t = e.target.closest('button'); if (t) { shopTab = t.dataset.tab; shopDrawBody(); } });
   ['btn-colors', 'btn-pagebg', 'btn-button', 'btn-imgsize'].forEach((id) => { const b = byId(id); if (b) b.addEventListener('click', () => p.classList.add('hidden')); });
 })();

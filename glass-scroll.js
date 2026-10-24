@@ -28,7 +28,7 @@
 
   g.glassScroll = function (opts) {
     opts = opts || {};
-    if (!window.matchMedia || !window.matchMedia('(pointer: fine)').matches) return { destroy: function () {} };
+    if (!window.matchMedia || !window.matchMedia('(pointer: fine)').matches) return { destroy: function () {}, redraw: function () {} };
     var el = opts.el || null;
     var wrap = document.createElement('div');
     wrap.className = 'gscroll';

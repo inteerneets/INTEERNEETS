@@ -16,8 +16,8 @@
       --btn-hover-fill: var(--btn-fill); --btn-shadow: drop-shadow(0 6px 16px rgba(0,0,0,.28));
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html { scroll-behavior: smooth; background: var(--c-bg); }
-    body { background: var(--c-bg); color: var(--c-text); min-height: 100vh; font-family: 'Inter', sans-serif; }
+    html { scroll-behavior: smooth; background: var(--c-bg); -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+    body { overflow-x: hidden; background: var(--c-bg); color: var(--c-text); min-height: 100vh; font-family: 'Inter', sans-serif; }
 
     /* Loading cover: hides everything until the saved design is ready (no template flash) */
     #loading-screen {
@@ -59,9 +59,9 @@
     /* Top navigation */
     #nav {
       position: fixed; top: 0; left: 0; right: 0; z-index: 100; height: 56px;
-      display: none; align-items: center; justify-content: center; gap: 6px;
+      display: none; align-items: center; justify-content: safe center; gap: 6px;
       background: rgba(0,0,0,.28); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-      overflow-x: auto; white-space: nowrap; padding: 0 12px;
+      overflow-x: auto; white-space: nowrap; padding: 0 12px; scrollbar-width: none;
       transition: transform .4s cubic-bezier(.4,0,.2,1), opacity .4s ease;
     }
     /* Menu bar: fully visible on the first page, tucked away when scrolled down */
@@ -90,7 +90,7 @@
 
   </style>
   <style id="page-fonts"></style>
-  <script src="/glass-scroll.js?v=20261024d"></script>
+  <script src="/glass-scroll.js?v=20261024f"></script>
 </head>
 <body>
   <div id="loading-screen"><div id="ld-root"><div id="ld-default"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div></div>
@@ -546,11 +546,9 @@
         wrap.style.cssText = 'position:relative;width:100%;';
         var root = document.createElement('div');
         root.id = 'prod-root';
-        var narrow = document.documentElement.clientWidth < 700;
         var rw = (design && design.refW) || DEF_REF_W, rh = (design && design.refH) || DEF_REF_H;
         root.className = 'stage';
-        root.style.cssText = narrow ? 'position:relative;width:100%;--vw:1vw;--vh:1vh;'
-          : 'position:absolute;left:0;top:0;width:' + rw + 'px;transform-origin:0 0;--vw:' + (rw / 100) + 'px;--vh:' + (rh / 100) + 'px;';
+        root.style.cssText = 'position:absolute;left:0;top:0;width:' + rw + 'px;transform-origin:0 0;--vw:' + (rw / 100) + 'px;--vh:' + (rh / 100) + 'px;';
         root.innerHTML = unitFix(design && design.html ? stripBg(design.html) : '<section style="min-height:100vh;padding:90px 5vw 60px;color:#fff;box-sizing:border-box;"><div data-shopify-product-page="1" style="max-width:1100px;margin:0 auto;"></div></section>');
         if (design && design.css) {
           var fonts = [], st = document.createElement('style');
@@ -579,13 +577,17 @@
         document.documentElement.style.overflow = 'hidden';
         productOverlay = ov;
         productOverlay.__keys = { prev: prev, next: next };
-        if (!narrow) {
-          var g = { sec: wrap, inner: root, rw: rw, rh: rh };
-          stageFit(g);
-          productResize = function () { stageFit(g); if (productGlass) productGlass.redraw(); };
-          window.addEventListener('resize', productResize);
-          if (window.ResizeObserver) new ResizeObserver(productResize).observe(root);
-        }
+        // same rules as the pages: scaled stage on wide screens, readable stacked column on phones
+        var g = { sec: wrap, inner: root, rw: rw, rh: rh };
+        productResize = function () {
+          var narrow = document.documentElement.clientWidth < STACK_MAX;
+          wrap.style.paddingTop = narrow ? '60px' : '';   // room for the close / arrow buttons
+          if (narrow) stackEnter(g); else { stackExit(g); stageFit(g); }
+          if (productGlass) productGlass.redraw();
+        };
+        productResize();
+        window.addEventListener('resize', productResize);
+        if (window.ResizeObserver) new ResizeObserver(productResize).observe(root);
         productGlass = glassScroll({ el: ov, host: ov });
         var holder = root.querySelector('[data-shopify-product-page]');
         if (holder) InteerShop.renderProductPage(document, holder, settings, key, { toFilterShadow: toFilterShadow });
@@ -612,7 +614,7 @@
       var go = function () { InteerShop.render(document, settings, { toFilterShadow: toFilterShadow, onOpenProduct: openProduct }); };
       if (window.InteerShop) return go();
       var s = document.createElement('script');
-      s.src = '/shopify-shop.js?v=20261024e';
+      s.src = '/shopify-shop.js?v=20261024h';
       s.onload = go;
       document.head.appendChild(s);
     }
