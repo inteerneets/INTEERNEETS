@@ -33,5 +33,11 @@
   },
   "site_bg_color": "#0a0a0a",
   "site_bg_shading": false,
-  "show_nav": true
+  "show_nav": true,
+  "shopify_style": {},
+  "shop_categories": [],
+  "product_custom_images": {},
+  "shop_opts": {},
+  "product_badges": {},
+  "product_hidden": {}
 }
