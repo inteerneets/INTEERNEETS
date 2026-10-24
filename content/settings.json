@@ -3,7 +3,17 @@
   "loading_min_seconds": 0,
   "shopify_domain": "0zzcsm-ya.myshopify.com",
   "shopify_storefront_token": "3caa4d6f14be6656c754d37f20936d08",
-  "shopify_product_ids": [],
+  "shopify_product_ids": [
+    "15894861382009",
+    "15894861316473",
+    "15894861119865",
+    "15894861021561",
+    "15894860923257",
+    "15894860890489",
+    "15894860693881",
+    "15894860628345",
+    "15894860562809"
+  ],
   "social_instagram": "https://www.instagram.com/inteerneets/",
   "social_tiktok": "",
   "social_twitter": "",
