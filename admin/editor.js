@@ -2989,7 +2989,7 @@ function shopEditBox(p) {
   box.appendChild(shopEl('div', { class: 'shop-row-btns' },
     p.desc ? shopEl('button', { class: 'shop-mini', text: 'Copy Shopify\'s text', title: 'Start from the text in Shopify and edit it', onclick: () => { ta.value = p.desc; ta.dispatchEvent(new Event('input')); } }) : null,
     shopEl('button', { class: 'shop-mini', text: 'Use Shopify\'s text', title: 'Remove your text', onclick: () => { ta.value = ''; ta.dispatchEvent(new Event('input')); } })));
-  box.appendChild(shopEl('div', { class: 'sh-title', text: 'Pictures (the first one is the main picture)' }));
+  box.appendChild(shopEl('div', { class: 'sh-title', text: 'Pictures (1st = front, shown in the shop. 2nd = back, the rest are up to you)' }));
   const list = shopImgList(p.key);
   const row = shopEl('div', { class: 'shop-thumbs' });
   if (!list.length) row.appendChild(shopEl('div', { class: 'shop-thumb' }, shopEl('img', { src: p.image, alt: '' }), shopEl('span', { text: 'Shopify\'s' })));
@@ -2997,7 +2997,7 @@ function shopEditBox(p) {
     const mv = (d) => () => { const a = shopImgList(p.key).slice(); const j = i + d; if (j < 0 || j >= a.length) return; [a[i], a[j]] = [a[j], a[i]]; shopSetImgs(p.key, a); shopDrawBody(); shopChanged(); };
     row.appendChild(shopEl('div', { class: 'shop-thumb' + (i === 0 ? ' main' : '') },
       shopEl('img', { src: u, alt: '' }),
-      shopEl('span', { text: i === 0 ? 'Main' : '#' + (i + 1) }),
+      shopEl('span', { text: i === 0 ? 'Front (shop)' : i === 1 ? 'Back' : '#' + (i + 1) }),
       shopEl('div', { class: 'tb' },
         shopEl('button', { class: 'shop-mini', text: '\u25C0', title: 'Move earlier', onclick: mv(-1) }),
         shopEl('button', { class: 'shop-mini', text: '\u25B6', title: 'Move later', onclick: mv(1) }),

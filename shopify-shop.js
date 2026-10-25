@@ -536,7 +536,7 @@
       if (!shopImgs.length && n.featuredImage) shopImgs.push(n.featuredImage.url);
       var custom = customImgs(settings, k);
       var main = custom[0] || shopImgs[0] || '';
-      var alt = o.hover_image ? (custom.length > 1 ? custom[1] : (custom.length ? '' : shopImgs[1])) : '';
+      var alt = '';   // the shop picture never changes on hover: the 1st picture is always the front
       var b = badgeFor(k, n);
       var min = n.priceRange.minVariantPrice, max = n.priceRange.maxVariantPrice;
       var price = money(min.amount, min.currencyCode);
