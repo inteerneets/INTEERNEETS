@@ -69,7 +69,7 @@
     {
       "id": "hoodies",
       "title": "HOODIES",
-      "parent": "tees",
+      "parent": "inteerneets",
       "product_ids": [
         "15894861382009",
         "15894861316473",
@@ -79,7 +79,7 @@
     {
       "id": "other",
       "title": "OTHER",
-      "parent": "hoodies",
+      "parent": "inteerneets",
       "product_ids": [
         "15894861021561",
         "15894860693881",
