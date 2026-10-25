@@ -650,7 +650,7 @@
       if (o.search) h += '<input type="search" data-q placeholder="Search products" value="' + esc(state.q) + '">';
       if (o.sort) h += '<div class="ish-dd" data-dd><button type="button" data-ddbtn>' + ({ featured: 'Featured', 'new': 'Newest', low: 'Price: low to high', high: 'Price: high to low', az: 'Name A\u2013Z' }[state.sort] || 'Featured') + '</button><ul data-ddlist>' + [['featured', 'Featured'], ['new', 'Newest'], ['low', 'Price: low to high'], ['high', 'Price: high to low'], ['az', 'Name A\u2013Z']].map(function (x) { return '<li data-v="' + x[0] + '"' + (state.sort === x[0] ? ' class="on"' : '') + '>' + x[1] + '</li>'; }).join('') + '</ul></div><select data-sort style="display:none">' + [['featured', 'Featured'], ['new', 'Newest'], ['low', 'Price: low to high'], ['high', 'Price: high to low'], ['az', 'Name A\u2013Z']].map(function (x) { return '<option value="' + x[0] + '"' + (state.sort === x[0] ? ' selected' : '') + '>' + x[1] + '</option>'; }).join('') + '</select>';
       if (o.wishlist) h += '<button type="button" data-wishbtn class="' + (state.wish ? 'on' : '') + '"></button>';
-      h += '<span class="ish-count"></span>';
+      /* product count removed: the category list already shows it */
       barEl.innerHTML = h;
     }
     renderSide(); renderBar(); renderGrid();
