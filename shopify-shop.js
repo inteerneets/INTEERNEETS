@@ -87,7 +87,7 @@
   // phones: the cart drawer is only as tall as its items (+ the checkout part) instead of the whole screen
   function fitCart(d, fe) {
     try {
-      if (!(window.matchMedia && window.matchMedia('(max-width:520px)').matches)) { fe.style.removeProperty('height'); var w0 = fe.closest && fe.closest('[class*=shopify-buy-frame--cart]'); if (w0) w0.style.removeProperty('height'); return; }
+      if (!(window.matchMedia && window.matchMedia('(max-width:819px)').matches)) { fe.style.removeProperty('height'); var w0 = fe.closest && fe.closest('[class*=shopify-buy-frame--cart]'); if (w0) w0.style.removeProperty('height'); return; }
       var bottom = d.querySelector('.shopify-buy__cart-bottom'), scroll = d.querySelector('.shopify-buy__cart-scroll');
       if (!bottom || !scroll) return;
       var low = 70;   // header
