@@ -2720,6 +2720,11 @@ function shopRender(force) {
           r.addEventListener('click', (ev) => { ev.preventDefault(); ev.stopPropagation(); if (!confirm("Remove all your pictures and go back to Shopify's picture?")) return; shopSetImgs(pk, []); shopChanged(); showToast("Back to Shopify's picture - press Save to publish"); });
           el.appendChild(r);
         }
+        const hint = doc.createElement('div');
+        hint.className = 'ed-add-pics';
+        hint.style.cssText = 'margin-top:10px;font:600 12px/1.5 Inter,sans-serif;color:#fff;opacity:.9;';
+        hint.innerHTML = 'Best size: <b>1200 \u00D7 1200 px</b> (square, minimum 800 \u00D7 800).<br>JPG or PNG, under 2 MB. Use the same size for every picture so they line up.';
+        el.appendChild(hint);
       };
       [1200, 3000, 6000].forEach((ms) => setTimeout(addBtn, ms));
     }
@@ -3045,6 +3050,7 @@ function shopEditBox(p) {
   box.appendChild(row);
   box.appendChild(shopEl('div', { class: 'shop-row-btns' },
     shopEl('button', { class: 'tb-btn', text: '+ Add pictures', onclick: () => shopAddImages(p.key) }),
+    shopEl('div', { class: 'sh-title', text: 'Best size: 1200 x 1200 px (square, min 800 x 800), JPG or PNG under 2 MB' }),
     list.length ? shopEl('button', { class: 'tb-btn', text: 'Use Shopify\'s pictures', onclick: () => { shopSetImgs(p.key, []); shopDrawBody(); shopChanged(); } }) : null));
   return box;
 }
