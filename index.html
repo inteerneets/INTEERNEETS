@@ -477,7 +477,7 @@
         if (vw < STACK_MAX) { stackEnter(g); return; }
         stackExit(g);
         var H = Math.max(g.inner.offsetHeight, g.inner.scrollHeight);
-        var single = H <= g.rh + 2;                        // a one-screen page: fit it fully on the screen
+        var single = H <= g.rh + 2 && !g.inner.querySelector('[data-shopify-section]');   // a one-screen page: fit it fully on the screen (never the shop: its height changes with the category, so its size must not jump)
         var s = vw / g.rw;
         if (single) s = Math.min(s, vh / g.rh);
         var hs = H * s;
