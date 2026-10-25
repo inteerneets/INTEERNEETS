@@ -575,7 +575,7 @@
         function ctl(txt, css, fn, title) {
           var b = document.createElement('button');
           b.type = 'button'; b.textContent = txt; b.title = title;
-          b.style.cssText = 'position:fixed;z-index:60;cursor:pointer;background:#000;color:#ff0000;border:2px solid #ff0000;border-radius:0;font:700 20px Inter,sans-serif;width:44px;height:44px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;' + css;
+          b.style.cssText = 'position:fixed;z-index:60;cursor:pointer;background:#000;color:#ff0000;border:0;outline:none;box-shadow:none;border-radius:0;-webkit-appearance:none;appearance:none;font:700 20px Inter,sans-serif;width:44px;height:44px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;' + css;
           b.addEventListener('click', fn);
           ov.appendChild(b);
         }
