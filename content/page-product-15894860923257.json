@@ -1,0 +1,246 @@
+{
+  "refW": 1296,
+  "refH": 605,
+  "projectData": {
+    "assets": [
+      {
+        "type": "image",
+        "src": "/images/uploads/records_logo.png",
+        "unitDim": "px",
+        "height": 0,
+        "width": 0
+      },
+      {
+        "type": "image",
+        "src": "/images/uploads/Untitled-4__3_.png",
+        "unitDim": "px",
+        "height": 0,
+        "width": 0
+      },
+      {
+        "type": "image",
+        "src": "/images/uploads/weblogo.png",
+        "unitDim": "px",
+        "height": 0,
+        "width": 0
+      },
+      {
+        "type": "image",
+        "src": "/images/uploads/photo_2026-09-25_14-45-21.jpg",
+        "unitDim": "px",
+        "height": 0,
+        "width": 0
+      },
+      {
+        "type": "image",
+        "src": "/images/uploads/inteerneets_logo.png",
+        "unitDim": "px",
+        "height": 0,
+        "width": 0
+      },
+      {
+        "type": "image",
+        "src": "/images/uploads/1444658-hi-res-wallpaper-2560-x-1440-2560x1440-720p.jpg",
+        "unitDim": "px",
+        "height": 0,
+        "width": 0
+      }
+    ],
+    "styles": [
+      {
+        "selectors": [
+          "#icvw"
+        ],
+        "style": {
+          "min-height": "100vh",
+          "padding": "90px 5vw 60px",
+          "color": "#ffffff",
+          "box-sizing": "border-box"
+        }
+      },
+      {
+        "selectors": [
+          "#ivfp"
+        ],
+        "style": {
+          "max-width": "1100px",
+          "margin": "0 auto",
+          "display": "flex",
+          "flex-wrap": "wrap",
+          "gap": "40px",
+          "align-items": "flex-start"
+        }
+      },
+      {
+        "selectors": [
+          "#iv7z"
+        ],
+        "style": {
+          "flex": "1 1 380px",
+          "min-width": "260px",
+          "min-height": "320px"
+        }
+      },
+      {
+        "selectors": [
+          "#i81c"
+        ],
+        "style": {
+          "flex": "1 1 380px",
+          "min-width": "260px"
+        }
+      },
+      {
+        "selectors": [
+          "#i2n7"
+        ],
+        "style": {
+          "margin": "0 0 8px",
+          "font-size": "30px",
+          "line-height": "1.2",
+          "font-family": "'Inter 18pt Bold',sans-serif",
+          "color": "#ffffff"
+        }
+      },
+      {
+        "selectors": [
+          "#imy3v"
+        ],
+        "style": {
+          "min-height": "120px"
+        }
+      },
+      {
+        "selectors": [
+          "#ifl63"
+        ],
+        "style": {
+          "margin-top": "22px",
+          "min-height": "90px",
+          "font-size": "15px",
+          "line-height": "1.65",
+          "font-family": "'Inter 18pt Bold',sans-serif",
+          "color": "#ffffff"
+        }
+      }
+    ],
+    "pages": [
+      {
+        "frames": [
+          {
+            "component": {
+              "type": "wrapper",
+              "stylable": true,
+              "attributes": {
+                "id": "ia46"
+              },
+              "components": [
+                {
+                  "tagName": "section",
+                  "attributes": {
+                    "id": "icvw"
+                  },
+                  "components": [
+                    {
+                      "attributes": {
+                        "id": "ivfp"
+                      },
+                      "components": [
+                        {
+                          "attributes": {
+                            "data-shopify-product-page": "gallery",
+                            "id": "iv7z"
+                          }
+                        },
+                        {
+                          "attributes": {
+                            "id": "i81c"
+                          },
+                          "components": [
+                            {
+                              "tagName": "h1",
+                              "type": "text",
+                              "resizable": {
+                                "tl": 1,
+                                "tr": 1,
+                                "bl": 1,
+                                "br": 1,
+                                "cl": 1,
+                                "cr": 1,
+                                "tc": 0,
+                                "bc": 0
+                              },
+                              "attributes": {
+                                "data-product-title": "1",
+                                "id": "i2n7"
+                              },
+                              "components": [
+                                {
+                                  "type": "textnode",
+                                  "content": "INTEERNEETS RECORDS NEON LOGO TEE"
+                                }
+                              ]
+                            },
+                            {
+                              "attributes": {
+                                "data-shopify-product-page": "buy",
+                                "id": "imy3v"
+                              }
+                            },
+                            {
+                              "type": "text",
+                              "resizable": {
+                                "tl": 1,
+                                "tr": 1,
+                                "bl": 1,
+                                "br": 1,
+                                "cl": 1,
+                                "cr": 1,
+                                "tc": 0,
+                                "bc": 0
+                              },
+                              "attributes": {
+                                "data-product-desc": "1",
+                                "id": "ifl63"
+                              },
+                              "components": [
+                                {
+                                  "type": "textnode",
+                                  "content": "Click here and type the description of this item…"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "head": {
+                "type": "head"
+              },
+              "docEl": {
+                "tagName": "html"
+              }
+            },
+            "id": "RaP4JNlkdSHZGOr6"
+          }
+        ],
+        "type": "main",
+        "id": "4iDdu4rXqOb4iTco"
+      }
+    ],
+    "symbols": []
+  },
+  "html": "<body id=\"ia46\"><section id=\"icvw\"><div id=\"ivfp\"><div data-shopify-product-page=\"gallery\" id=\"iv7z\"></div><div id=\"i81c\"><h1 data-product-title=\"1\" id=\"i2n7\">INTEERNEETS RECORDS NEON LOGO TEE</h1><div data-shopify-product-page=\"buy\" id=\"imy3v\"></div><div data-product-desc=\"1\" id=\"ifl63\">Click here and type the description of this item…</div></div></div></section></body>",
+  "css": "@font-face{font-family:'Inter 18pt Bold';src:url('/fonts/Inter_18pt-Bold.ttf') format('truetype');font-display:swap;}\n@font-face{font-family:'Inter 18pt Regular';src:url('/fonts/Inter_18pt-Regular.ttf') format('truetype');font-display:swap;}\n* { box-sizing: border-box; } body {margin: 0;}#icvw{min-height:100vh;padding:90px 5vw 60px;color:#ffffff;box-sizing:border-box;}#ivfp{max-width:1100px;margin:0 auto;display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start;}#iv7z{flex:1 1 380px;min-width:260px;min-height:320px;}#i81c{flex:1 1 380px;min-width:260px;}#i2n7{margin:0 0 8px;font-size:30px;line-height:1.2;font-family:'Inter 18pt Bold',sans-serif;color:#ffffff;}#imy3v{min-height:120px;}#ifl63{margin-top:22px;min-height:90px;font-size:15px;line-height:1.65;font-family:'Inter 18pt Bold',sans-serif;color:#ffffff;}",
+  "bg": {
+    "color": "#f80000",
+    "image": "",
+    "mode": "cover",
+    "tile_size": 256,
+    "position": "center center",
+    "overlay": 0
+  }
+}
