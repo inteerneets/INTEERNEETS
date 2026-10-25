@@ -561,7 +561,9 @@
         function ctl(txt, css, fn, title) {
           var b = document.createElement('button');
           b.type = 'button'; b.textContent = txt; b.title = title;
-          b.style.cssText = 'position:fixed;z-index:60;cursor:pointer;background:#000;color:#ff0000;border:2px solid #ff0000;font:700 18px Inter,sans-serif;width:44px;height:44px;line-height:1;' + css;
+          b.style.cssText = 'position:fixed;z-index:60;cursor:pointer;background:rgba(0,0,0,.35);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:50%;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);font:600 17px Inter,sans-serif;width:44px;height:44px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;transition:transform .15s,background .15s,color .15s;' + css;
+          b.addEventListener('mouseenter', function () { b.style.background = '#fff'; b.style.color = '#000'; b.style.transform = 'scale(1.1)'; });
+          b.addEventListener('mouseleave', function () { b.style.background = 'rgba(0,0,0,.35)'; b.style.color = '#fff'; b.style.transform = ''; });
           b.addEventListener('click', fn);
           ov.appendChild(b);
         }
@@ -589,8 +591,15 @@
         window.addEventListener('resize', productResize);
         if (window.ResizeObserver) new ResizeObserver(productResize).observe(root);
         productGlass = glassScroll({ el: ov, host: ov });
-        var holder = root.querySelector('[data-shopify-product-page]');
-        if (holder) InteerShop.renderProductPage(document, holder, settings, key, { toFilterShadow: toFilterShadow });
+        root.querySelectorAll('[data-shopify-product-page]').forEach(function (holder) {
+          InteerShop.renderProductPage(document, holder, settings, key, { toFilterShadow: toFilterShadow });
+        });
+        root.querySelectorAll('[data-product-desc]').forEach(function (d) {
+          if (/^\s*Click here and type/i.test(d.textContent)) {
+            var cd = (settings.product_descriptions || {})[key];
+            if (typeof cd === 'string' && cd.trim()) d.textContent = cd; else d.remove();
+          }
+        });
       });
     }
     function closeProduct() {
