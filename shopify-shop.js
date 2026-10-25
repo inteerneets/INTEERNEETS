@@ -80,12 +80,12 @@
   function fontList(list) { return FONTS.concat(withBuiltin(list).map(function (f) { return f.name; })); }
   // the cart / product page live in iframes: give them the uploaded fonts too
   function injectFrameFonts(doc, settings) {
-    var css = fontFaceCss(settings.site_fonts);
-    if (!css) return;
+    var css = fontFaceCss(settings.site_fonts) + 'select,button,input,a{outline:none!important;-webkit-tap-highlight-color:transparent;}select{border-radius:0;box-shadow:none!important;}select:focus{outline:none!important;box-shadow:none!important;}[class*=select-wrapper],[class*=option-select]{border:0!important;outline:0!important;box-shadow:none!important;background-clip:padding-box;}select{border:0!important;}';
     Array.prototype.forEach.call(doc.querySelectorAll('iframe'), function (f) {
       try {
         var d = f.contentDocument;
         if (!d || !d.head || d.getElementById('site-fonts')) return;
+        if (!d.querySelector('select,button')) return;
         var s = d.createElement('style'); s.id = 'site-fonts'; s.textContent = css; d.head.appendChild(s);
       } catch (e) { /* cross-origin frame */ }
     });
@@ -153,7 +153,7 @@
         googleFonts: gf,
         styles: {
           label: { 'color': s.title_color, 'font-family': ff(s.size_font) },
-          select: { 'background-color': s.size_bg, 'color': s.size_text, 'border-color': s.size_border, 'font-family': ff(s.size_font), 'font-size': px(s.size_size, 14) },
+          select: { 'outline': 'none', ':focus': { 'outline': 'none', 'box-shadow': 'none' }, 'background-color': s.size_bg, 'color': s.size_text, 'border-color': s.size_border, 'font-family': ff(s.size_font), 'font-size': px(s.size_size, 14) },
           selectIcon: { 'fill': s.size_text }
         }
       },
