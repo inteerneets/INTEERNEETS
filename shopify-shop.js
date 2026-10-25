@@ -79,19 +79,77 @@
   }
   function fontList(list) { return FONTS.concat(withBuiltin(list).map(function (f) { return f.name; })); }
   // the cart / product page live in iframes: give them the uploaded fonts too
-  function injectFrameFonts(doc, settings) {
-    var css = fontFaceCss(settings.site_fonts) + 'select,button,input,a{outline:none!important;-webkit-tap-highlight-color:transparent;}select{border-radius:0;box-shadow:none!important;}select:focus{outline:none!important;box-shadow:none!important;}[class*=select-wrapper],[class*=option-select]{border:0!important;outline:0!important;box-shadow:none!important;background-clip:padding-box;}select{border:0!important;}';
+  // The size picker / cart live in Shopify iframes. We hide each frame until it is styled (no flash of the
+  // browser's white outline) and swap Shopify's plain <select> for our own black / red dropdown.
+  var FRAME_CSS = 'select,button,input,a{outline:none!important;-webkit-tap-highlight-color:transparent;}select{border:0!important;border-radius:0;box-shadow:none!important;}[class*=select-wrapper],[class*=option-select]{border:0!important;outline:0!important;box-shadow:none!important;}' +
+    '[class*=select-icon]{display:none!important;}.ddx{width:100%;}.ddx button{display:block;width:100%;text-align:left;border:0!important;border-radius:0;cursor:pointer;padding:10px 40px 10px 14px;font:inherit;background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);background-position:calc(100% - 20px) 55%,calc(100% - 14px) 55%;background-size:6px 6px,6px 6px;background-repeat:no-repeat;}' +
+    '.ddx ul{display:none;margin:0;padding:0;list-style:none;}.ddx.open ul{display:block;}.ddx li{padding:10px 14px;cursor:pointer;}';
+  function enhanceSelects(d) {
+    Array.prototype.forEach.call(d.querySelectorAll('select:not([data-ddx])'), function (sel) {
+      sel.setAttribute('data-ddx', '1');
+      var cs = d.defaultView.getComputedStyle(sel);
+      var bg = cs.backgroundColor, fg = cs.color, font = cs.font;
+      var wrap = d.createElement('div'); wrap.className = 'ddx';
+      wrap.style.cssText = 'background:' + bg + ';color:' + fg + ';font:' + font + ';';
+      var btn = d.createElement('button'); btn.type = 'button';
+      btn.style.cssText = 'background-color:' + bg + ';color:' + fg + ';font:' + font + ';';
+      var cur = sel.options[sel.selectedIndex]; btn.textContent = cur ? cur.text : '';
+      var ul = d.createElement('ul');
+      Array.prototype.forEach.call(sel.options, function (o) {
+        var li = d.createElement('li'); li.textContent = o.text; li.setAttribute('data-v', o.value);
+        li.style.cssText = 'color:' + fg + ';';
+        li.addEventListener('mouseenter', function () { li.style.background = fg; li.style.color = bg; });
+        li.addEventListener('mouseleave', function () { li.style.background = ''; li.style.color = fg; });
+        li.addEventListener('click', function (e) {
+          e.stopPropagation();
+          sel.value = o.value; btn.textContent = o.text; wrap.classList.remove('open');
+          sel.dispatchEvent(new d.defaultView.Event('change', { bubbles: true }));
+          fit();
+        });
+        ul.appendChild(li);
+      });
+      function fit() {
+        setTimeout(function () {
+          try { var fe = d.defaultView.frameElement; if (fe) fe.style.height = Math.max(d.documentElement.scrollHeight, d.body.scrollHeight) + 'px'; } catch (e) { /* ignore */ }
+        }, 30);
+      }
+      btn.addEventListener('click', function (e) { e.stopPropagation(); wrap.classList.toggle('open'); fit(); });
+      wrap.appendChild(btn); wrap.appendChild(ul);
+      sel.style.display = 'none';
+      sel.parentNode.insertBefore(wrap, sel.nextSibling);
+    });
+  }
+  function holdFrames(doc) {
+    if (!doc.head || doc.getElementById('ish-hold')) return;
+    var s = doc.createElement('style'); s.id = 'ish-hold';
+    s.textContent = 'iframe.shopify-buy-frame:not([data-ish-ok]){opacity:0!important;}';
+    doc.head.appendChild(s);
+  }
+  function injectFrameFonts(doc, settings, force) {
+    var css = fontFaceCss(settings.site_fonts) + FRAME_CSS;
     Array.prototype.forEach.call(doc.querySelectorAll('iframe'), function (f) {
       try {
         var d = f.contentDocument;
-        if (!d || !d.head || d.getElementById('site-fonts')) return;
-        if (!d.querySelector('select,button')) return;
-        var s = d.createElement('style'); s.id = 'site-fonts'; s.textContent = css; d.head.appendChild(s);
-      } catch (e) { /* cross-origin frame */ }
+        if (!d || !d.head || !d.body) { if (force) f.setAttribute('data-ish-ok', '1'); return; }
+        if (!d.getElementById('site-fonts')) {
+          if (!d.querySelector('select,button') && !force) return;
+          var s = d.createElement('style'); s.id = 'site-fonts'; s.textContent = css; d.head.appendChild(s);
+          if (d.defaultView.MutationObserver) {
+            var tm = null;
+            new d.defaultView.MutationObserver(function () { clearTimeout(tm); tm = setTimeout(function () { enhanceSelects(d); }, 20); }).observe(d.body, { childList: true, subtree: true });
+          }
+        }
+        enhanceSelects(d);
+        f.setAttribute('data-ish-ok', '1');
+      } catch (e) { f.setAttribute('data-ish-ok', '1'); /* cross-origin frame */ }
     });
   }
   function injectFontsSoon(doc, settings) {
-    [300, 900, 2000, 4500, 8000].forEach(function (t) { setTimeout(function () { injectFrameFonts(doc, settings); }, t); });
+    holdFrames(doc);
+    var n = 0, iv = setInterval(function () {
+      n++; injectFrameFonts(doc, settings, n > 60);
+      if (n > 80) clearInterval(iv);
+    }, 100);
   }
 
   // Until you pick another font, all shop text uses your uploaded "Inter ... Bold" font (if there is one)
