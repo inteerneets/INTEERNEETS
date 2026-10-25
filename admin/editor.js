@@ -2672,6 +2672,45 @@ function shopRender(force) {
         b.style.cssText = 'display:block;margin:12px 0 0;padding:10px 16px;background:#000;color:#ff0000;border:2px solid #ff0000;font:700 13px Inter,sans-serif;letter-spacing:.08em;cursor:pointer;';
         b.addEventListener('mousedown', (ev) => ev.stopPropagation());
         b.addEventListener('click', (ev) => { ev.preventDefault(); ev.stopPropagation(); shopAddImages(pk); });
+        const imgsNow = shopImgList(pk);
+        if (imgsNow.length) {
+          const pt = el.querySelector('.pg-thumbs'); if (pt) pt.style.display = 'none';
+          const strip = doc.createElement('div');
+          strip.className = 'ed-add-pics';
+          strip.style.cssText = 'display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;';
+          let dragFrom = -1;
+          imgsNow.forEach((u, i) => {
+            const cell = doc.createElement('div');
+            cell.draggable = true;
+            cell.title = 'Drag to change the order';
+            cell.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:3px;cursor:grab;';
+            const xb = doc.createElement('button');
+            xb.type = 'button'; xb.textContent = '\u2715'; xb.title = 'Remove this picture';
+            xb.style.cssText = 'background:#000;color:#ff0000;border:1px solid #ff0000;font:700 11px Inter,sans-serif;width:20px;height:20px;line-height:1;padding:0;cursor:pointer;';
+            xb.addEventListener('mousedown', (ev) => ev.stopPropagation());
+            xb.addEventListener('click', (ev) => { ev.preventDefault(); ev.stopPropagation(); const a = shopImgList(pk).slice(); a.splice(i, 1); shopSetImgs(pk, a); shopChanged(); });
+            const im = doc.createElement('img');
+            im.src = u; im.draggable = false;
+            im.style.cssText = 'width:72px;height:72px;object-fit:cover;background:#fff;border:2px solid ' + (i === 0 ? '#000' : 'transparent') + ';';
+            const lb = doc.createElement('span');
+            lb.textContent = i === 0 ? 'Front' : i === 1 ? 'Back' : '#' + (i + 1);
+            lb.style.cssText = 'font:700 10px Inter,sans-serif;color:#fff;letter-spacing:.06em;';
+            cell.appendChild(xb); cell.appendChild(im); cell.appendChild(lb);
+            cell.addEventListener('mousedown', (ev) => ev.stopPropagation());
+            cell.addEventListener('dragstart', (ev) => { dragFrom = i; cell.style.opacity = '.4'; ev.dataTransfer.effectAllowed = 'move'; try { ev.dataTransfer.setData('text/plain', String(i)); } catch (_) {} });
+            cell.addEventListener('dragend', () => { cell.style.opacity = ''; });
+            cell.addEventListener('dragover', (ev) => { if (dragFrom < 0) return; ev.preventDefault(); im.style.outline = '3px solid #ff0000'; });
+            cell.addEventListener('dragleave', () => { im.style.outline = ''; });
+            cell.addEventListener('drop', (ev) => {
+              ev.preventDefault(); ev.stopPropagation(); im.style.outline = '';
+              if (dragFrom < 0 || dragFrom === i) return;
+              const a = shopImgList(pk).slice(); const m = a.splice(dragFrom, 1)[0]; a.splice(i, 0, m);
+              dragFrom = -1; shopSetImgs(pk, a); shopChanged();
+            });
+            strip.appendChild(cell);
+          });
+          el.appendChild(strip);
+        }
         el.appendChild(b);
         if (shopImgList(pk).length) {
           const r = doc.createElement('button');
