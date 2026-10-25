@@ -11,11 +11,12 @@
     :root {
       --c-bg: #0a0a0a; --c-text: #ffffff; --c-highlight: #e53935;
       --c-button: #e53935; --c-button-text: #ffffff;
-      /* Buttons: outline only, black, soft shadow on hover (customizable in the editor: Colors -> Buttons) */
+    /* Buttons: outline only, black, soft shadow on hover (customizable in the editor: Colors -> Buttons) */
       --btn-fill: transparent; --btn-text: #000000; --btn-border: #000000; --btn-border-width: 2px; --btn-radius: 0px;
       --btn-hover-fill: var(--btn-fill); --btn-shadow: drop-shadow(0 6px 16px rgba(0,0,0,.28));
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    button, select, input, a, [role=button] { outline: none !important; -webkit-tap-highlight-color: transparent; }
     html { scroll-behavior: smooth; background: var(--c-bg); -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
     body { overflow-x: hidden; background: var(--c-bg); color: var(--c-text); min-height: 100vh; font-family: 'Inter', sans-serif; }
 
