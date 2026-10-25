@@ -429,7 +429,7 @@
           if (i === 0) { l.style.webkitMaskImage = l.style.maskImage = 'none'; return; }
           var B = sections[i].getBoundingClientRect().top + window.scrollY;   // where page i starts
           var p = ease(Math.max(0, Math.min(1, (center - (B - vh * 0.5)) / vh)));  // 0 -> 1 across one screen
-          if (COARSE) { l.style.webkitMaskImage = l.style.maskImage = 'none'; l.style.opacity = p.toFixed(3); return; }   // phones: a plain fade is far cheaper than a moving mask
+          /* same soft rising-edge fade on phones as on desktop */
           var y0 = vh - p * (vh + soft);                       // fully hidden above this line
           var m = 'linear-gradient(to bottom, transparent ' + y0.toFixed(1) + 'px, #000 ' + (y0 + soft).toFixed(1) + 'px)';
           l.style.webkitMaskImage = m;
