@@ -430,6 +430,12 @@
       '.ish-bar input::placeholder{color:' + s.bar_text + ';opacity:.6;}' +
       '.ish-bar button,.ish-bar select{cursor:pointer;}' +
     '.ish-root button,.ish-root select,.ish-root input,.ish-root a{outline:none!important;-webkit-tap-highlight-color:transparent;}' +
+    '.ish-dd{position:relative;display:inline-block;}' +
+    '.ish-dd>button{-webkit-appearance:none;appearance:none;padding-right:34px!important;background-image:linear-gradient(45deg,transparent 50%,' + s.bar_text + ' 50%),linear-gradient(135deg,' + s.bar_text + ' 50%,transparent 50%);background-position:calc(100% - 18px) 55%,calc(100% - 12px) 55%;background-size:6px 6px,6px 6px;background-repeat:no-repeat;text-align:left;}' +
+    '.ish-dd ul{display:none;position:absolute;left:0;top:calc(100% + 6px);min-width:100%;margin:0;padding:4px;list-style:none;background:' + s.bar_bg + ';border:2px solid ' + s.bar_border + ';border-radius:' + px(Math.min(parseFloat(s.card_radius) || 0, 10), 0) + ';z-index:20;white-space:nowrap;}' +
+    '.ish-dd.open ul{display:block;}' +
+    '.ish-dd li{padding:9px 12px;cursor:pointer;color:' + s.bar_text + ';font:600 13px ' + ff(s.size_font) + ';border-radius:' + px(Math.max(0, Math.min(parseFloat(s.card_radius) || 0, 10) - 3), 0) + ';}' +
+    '.ish-dd li:hover,.ish-dd li.on{background:' + s.bar_text + ';color:' + s.bar_bg + ';}' +
     '.ish-bar select{-webkit-appearance:none;appearance:none;padding-right:34px;background-image:linear-gradient(45deg,transparent 50%,' + s.bar_text + ' 50%),linear-gradient(135deg,' + s.bar_text + ' 50%,transparent 50%);background-position:calc(100% - 18px) 55%,calc(100% - 12px) 55%;background-size:6px 6px,6px 6px;background-repeat:no-repeat;}' +
     '.ish-bar select option{background:' + s.bar_bg + ';color:' + s.bar_text + ';font-weight:600;}' +
     '.ish-bar select option:checked,.ish-bar select option:hover{background:' + s.bar_text + ' linear-gradient(' + s.bar_text + ',' + s.bar_text + ');color:' + s.bar_bg + ';}' +
@@ -584,7 +590,7 @@
       if (single) { barEl.style.display = 'none'; return; }
       var h = '';
       if (o.search) h += '<input type="search" data-q placeholder="Search products" value="' + esc(state.q) + '">';
-      if (o.sort) h += '<select data-sort>' + [['featured', 'Featured'], ['new', 'Newest'], ['low', 'Price: low to high'], ['high', 'Price: high to low'], ['az', 'Name A\u2013Z']].map(function (x) { return '<option value="' + x[0] + '"' + (state.sort === x[0] ? ' selected' : '') + '>' + x[1] + '</option>'; }).join('') + '</select>';
+      if (o.sort) h += '<div class="ish-dd" data-dd><button type="button" data-ddbtn>' + ({ featured: 'Featured', 'new': 'Newest', low: 'Price: low to high', high: 'Price: high to low', az: 'Name A\u2013Z' }[state.sort] || 'Featured') + '</button><ul data-ddlist>' + [['featured', 'Featured'], ['new', 'Newest'], ['low', 'Price: low to high'], ['high', 'Price: high to low'], ['az', 'Name A\u2013Z']].map(function (x) { return '<li data-v="' + x[0] + '"' + (state.sort === x[0] ? ' class="on"' : '') + '>' + x[1] + '</li>'; }).join('') + '</ul></div><select data-sort style="display:none">' + [['featured', 'Featured'], ['new', 'Newest'], ['low', 'Price: low to high'], ['high', 'Price: high to low'], ['az', 'Name A\u2013Z']].map(function (x) { return '<option value="' + x[0] + '"' + (state.sort === x[0] ? ' selected' : '') + '>' + x[1] + '</option>'; }).join('') + '</select>';
       if (o.wishlist) h += '<button type="button" data-wishbtn class="' + (state.wish ? 'on' : '') + '"></button>';
       h += '<span class="ish-count"></span>';
       barEl.innerHTML = h;
@@ -610,6 +616,20 @@
       if (card && opts.onOpenProduct) opts.onOpenProduct(card.getAttribute('data-key'));
     });
     root.addEventListener('input', function (e) { if (e.target.hasAttribute && e.target.hasAttribute('data-q')) { state.q = e.target.value; renderGrid(); } });
+    root.addEventListener('click', function (e) {
+      var t = e.target, dd = t.closest && t.closest('[data-dd]');
+      Array.prototype.forEach.call(root.querySelectorAll('[data-dd].open'), function (d) { if (d !== dd) d.classList.remove('open'); });
+      if (!dd) return;
+      if (t.hasAttribute('data-ddbtn')) { dd.classList.toggle('open'); return; }
+      var v = t.getAttribute && t.getAttribute('data-v');
+      if (v) {
+        var sel = root.querySelector('select[data-sort]'); sel.value = v;
+        dd.querySelector('[data-ddbtn]').textContent = t.textContent;
+        Array.prototype.forEach.call(dd.querySelectorAll('li'), function (li) { li.className = li === t ? 'on' : ''; });
+        dd.classList.remove('open');
+        sel.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    });
     root.addEventListener('change', function (e) { if (e.target.hasAttribute && e.target.hasAttribute('data-sort')) { state.sort = e.target.value; renderGrid(); } });
     // phones: sidebar becomes a row of chips and the grid 2 columns
     function narrowCheck() { root.classList.toggle('ish-narrow', section.clientWidth < 760); }
