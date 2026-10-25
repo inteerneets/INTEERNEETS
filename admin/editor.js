@@ -2702,7 +2702,7 @@ function shopPageProductKey() {
 (function buildProdSwitch() {
   const wrap = document.createElement('div');
   wrap.id = 'prod-switch';
-  wrap.innerHTML = '<button type="button" class="tb-btn" id="ps-prev" title="Previous product page">&#9664;</button><select id="ps-sel" title="Pick which product page to edit"></select><button type="button" class="tb-btn" id="ps-next" title="Next product page">&#9654;</button><button type="button" class="tb-btn" id="ps-reset" title="Throw away this product\'s design and start its layout again">&#8634; Reset layout</button>';
+  wrap.innerHTML = '<button type="button" class="tb-btn" id="ps-prev" title="Previous product page">&#9664;</button><select id="ps-sel" title="Pick which product page to edit"></select><button type="button" class="tb-btn" id="ps-next" title="Next product page">&#9654;</button><button type="button" class="tb-btn" id="ps-pics" title="Add pictures to this product (visitors can scroll through them). No pictures added = Shopify\'s picture only.">+ Pictures</button><button type="button" class="tb-btn" id="ps-reset" title="Throw away this product\'s design and start its layout again">&#8634; Reset layout</button>';
   byId('btn-add-page').parentNode.appendChild(wrap);
   const ids = () => [...shopProducts.map((p) => PRODUCT_PAGE.id + '-' + shopSlug(p.key))];
   const go = (id) => {
@@ -2711,6 +2711,7 @@ function shopPageProductKey() {
     switchPage(id);
   };
   const step = (d) => { const a = ids(), i = Math.max(0, a.indexOf(currentPage)); go(a[(i + d + a.length) % a.length]); };
+  byId('ps-pics').addEventListener('click', () => { const k = shopPageProductKey(); if (k) shopAddImages(k); });
   byId('ps-prev').addEventListener('click', () => step(-1));
   byId('ps-next').addEventListener('click', () => step(1));
   byId('ps-sel').addEventListener('change', (e) => go(e.target.value));

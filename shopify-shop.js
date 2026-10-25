@@ -267,21 +267,33 @@
 
     if (gal) {
       var imgs = customImgs(settings, key);
-      if (!imgs.length && data) imgs = ((data.images && data.images.nodes) || []).map(function (x) { return x.url; });
+      var scroll = imgs.length > 1;   // only your own pictures can be scrolled through; Shopify's picture stays single
       if (!imgs.length && data && data.featuredImage) imgs = [data.featuredImage.url];
+      if (!imgs.length && data) imgs = ((data.images && data.images.nodes) || []).slice(0, 1).map(function (x) { return x.url; });
       if (imgs.length) {
+        var stage = doc.createElement('div'); stage.style.cssText = 'position:relative;';
         var main = doc.createElement('img');
         main.className = 'pg-main'; main.src = imgs[0]; main.alt = (data && data.title) || '';
-        gal.appendChild(main);
-        if (imgs.length > 1) {
-          var th = doc.createElement('div'); th.className = 'pg-thumbs';
+        stage.appendChild(main); gal.appendChild(stage);
+        if (scroll) {
+          var cur = 0, th = doc.createElement('div'); th.className = 'pg-thumbs';
+          var go = function (n) {
+            cur = (n + imgs.length) % imgs.length; main.src = imgs[cur];
+            Array.prototype.forEach.call(th.children, function (c, i) { c.className = i === cur ? 'on' : ''; });
+          };
+          [['\u2039', 'left:8px', -1], ['\u203A', 'right:8px', 1]].forEach(function (d) {
+            var bt = doc.createElement('button'); bt.type = 'button'; bt.textContent = d[0];
+            bt.style.cssText = 'position:absolute;top:50%;' + d[1] + ';transform:translateY(-50%);width:38px;height:38px;border-radius:50%;border:0;background:rgba(0,0,0,.55);color:#fff;font-size:26px;line-height:1;cursor:pointer;z-index:2;';
+            bt.addEventListener('click', function (e) { e.stopPropagation(); go(cur + d[2]); });
+            stage.appendChild(bt);
+          });
+          var sx = null;
+          stage.addEventListener('touchstart', function (e) { sx = e.touches[0].clientX; }, { passive: true });
+          stage.addEventListener('touchend', function (e) { if (sx === null) return; var dx = e.changedTouches[0].clientX - sx; sx = null; if (Math.abs(dx) > 40) go(cur + (dx < 0 ? 1 : -1)); });
           imgs.forEach(function (u, i) {
-            var t = doc.createElement('img'); t.src = u; t.alt = ''; if (i === 0) t.className = 'on';
-            t.addEventListener('click', function () {
-              main.src = u;
-              Array.prototype.forEach.call(th.children, function (c) { c.className = c === t ? 'on' : ''; });
-            });
-            th.appendChild(t);
+            var tt = doc.createElement('img'); tt.src = u; tt.alt = ''; if (i === 0) tt.className = 'on';
+            tt.addEventListener('click', function () { go(i); });
+            th.appendChild(tt);
           });
           gal.appendChild(th);
         }
