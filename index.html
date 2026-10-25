@@ -529,6 +529,16 @@
       var x = (vw - g.rw * s) / 2, y = single ? (secH - hs) / 2 : 0;
       g.inner.style.transform = 'translate(' + x.toFixed(2) + 'px,' + y.toFixed(2) + 'px) scale(' + s.toFixed(5) + ')';
     }
+    // product page: scale the whole page down until it fits the window, so nothing needs scrolling
+    function productFit(g) {
+      var vw = document.documentElement.clientWidth, vh = window.innerHeight, top = 50;
+      g.inner.style.transform = 'none';
+      var H = Math.max(g.inner.offsetHeight, g.inner.scrollHeight);
+      var s = Math.min(vw / g.rw, (vh - top - 10) / H, 1.6);
+      g.sec.style.height = Math.max(vh, H * s + top).toFixed(2) + 'px';
+      var x = (vw - g.rw * s) / 2;
+      g.inner.style.transform = 'translate(' + x.toFixed(2) + 'px,' + top + 'px) scale(' + s.toFixed(5) + ')';
+    }
     function openProduct(key) {
       var keys = productKeys();
       if (!keys.length) return;
@@ -578,7 +588,7 @@
         productResize = function () {
           var narrow = document.documentElement.clientWidth < STACK_MAX;
           wrap.style.paddingTop = narrow ? '60px' : '';   // room for the close / arrow buttons
-          if (narrow) stackEnter(g); else { stackExit(g); stageFit(g); }
+          if (narrow) stackEnter(g); else { stackExit(g); productFit(g); }
           if (productGlass) productGlass.redraw();
         };
         productResize();
