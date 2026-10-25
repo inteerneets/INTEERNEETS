@@ -2673,6 +2673,14 @@ function shopRender(force) {
         b.addEventListener('mousedown', (ev) => ev.stopPropagation());
         b.addEventListener('click', (ev) => { ev.preventDefault(); ev.stopPropagation(); shopAddImages(pk); });
         el.appendChild(b);
+        if (shopImgList(pk).length) {
+          const r = doc.createElement('button');
+          r.type = 'button'; r.className = 'ed-add-pics'; r.textContent = "Remove my images (use Shopify's)";
+          r.style.cssText = b.style.cssText + 'margin-top:8px;';
+          r.addEventListener('mousedown', (ev) => ev.stopPropagation());
+          r.addEventListener('click', (ev) => { ev.preventDefault(); ev.stopPropagation(); if (!confirm("Remove all your pictures and go back to Shopify's picture?")) return; shopSetImgs(pk, []); shopChanged(); showToast("Back to Shopify's picture - press Save to publish"); });
+          el.appendChild(r);
+        }
       };
       [1200, 3000, 6000].forEach((ms) => setTimeout(addBtn, ms));
     }
