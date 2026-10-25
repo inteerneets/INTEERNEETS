@@ -281,12 +281,6 @@
             cur = (n + imgs.length) % imgs.length; main.src = imgs[cur];
             Array.prototype.forEach.call(th.children, function (c, i) { c.className = i === cur ? 'on' : ''; });
           };
-          [['\u2039', 'left:8px', -1], ['\u203A', 'right:8px', 1]].forEach(function (d) {
-            var bt = doc.createElement('button'); bt.type = 'button'; bt.textContent = d[0];
-            bt.style.cssText = 'position:absolute;top:50%;' + d[1] + ';transform:translateY(-50%);width:38px;height:38px;border-radius:50%;border:0;background:rgba(0,0,0,.55);color:#fff;font-size:26px;line-height:1;cursor:pointer;z-index:2;';
-            bt.addEventListener('click', function (e) { e.stopPropagation(); go(cur + d[2]); });
-            stage.appendChild(bt);
-          });
           var sx = null;
           stage.addEventListener('touchstart', function (e) { sx = e.touches[0].clientX; }, { passive: true });
           stage.addEventListener('touchend', function (e) { if (sx === null) return; var dx = e.changedTouches[0].clientX - sx; sx = null; if (Math.abs(dx) > 40) go(cur + (dx < 0 ? 1 : -1)); });
