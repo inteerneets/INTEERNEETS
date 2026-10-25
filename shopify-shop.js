@@ -321,7 +321,7 @@
   }
 
   var SHOP_API = '2024-10';
-  var OPT_DEFAULTS = { sidebar: true, search: true, sort: true, wishlist: true, swatches: true, counts: true, hover_image: true, show_price: true, cols: 0, ratio: '1 / 1', fit: 'cover', default_sort: 'featured', new_days: 0, cart_side: 'left', all_label: 'All products', empty_text: 'No products found' };
+  var OPT_DEFAULTS = { sidebar: true, search: true, sort: true, wishlist: false, swatches: true, counts: true, hover_image: true, show_price: true, cols: 0, ratio: '1 / 1', fit: 'cover', default_sort: 'featured', new_days: 0, cart_side: 'left', all_label: 'All products', empty_text: 'No products found' };
   function shopOpts(settings) { return Object.assign({}, OPT_DEFAULTS, (settings && settings.shop_opts) || {}); }
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
