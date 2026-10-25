@@ -84,9 +84,27 @@
   var FRAME_CSS = 'select,button,input,a{outline:none!important;-webkit-tap-highlight-color:transparent;}select{border:0!important;border-radius:0;box-shadow:none!important;}[class*=select-wrapper],[class*=option-select]{border:0!important;outline:0!important;box-shadow:none!important;}' +
     '[class*=select-icon]{display:none!important;}.ddx{width:100%;}.ddx button{display:block;width:100%;text-align:left;border:0!important;border-radius:0;cursor:pointer;padding:10px 40px 10px 14px;font:inherit;background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);background-position:calc(100% - 20px) 55%,calc(100% - 14px) 55%;background-size:6px 6px,6px 6px;background-repeat:no-repeat;}' +
     '.ddx ul{display:none;margin:0;padding:0;list-style:none;}.ddx.open ul{display:block;}.ddx li{padding:10px 14px;cursor:pointer;}';
+  // phones: the cart drawer is only as tall as its items (+ the checkout part) instead of the whole screen
+  function fitCart(d, fe) {
+    try {
+      if (!(window.matchMedia && window.matchMedia('(max-width:520px)').matches)) { fe.style.removeProperty('height'); var w0 = fe.closest && fe.closest('[class*=shopify-buy-frame--cart]'); if (w0) w0.style.removeProperty('height'); return; }
+      var bottom = d.querySelector('.shopify-buy__cart-bottom'), scroll = d.querySelector('.shopify-buy__cart-scroll');
+      if (!bottom || !scroll) return;
+      var low = 70;   // header
+      Array.prototype.forEach.call(scroll.querySelectorAll('.shopify-buy__cart-item, [class*=empty-text]'), function (el) {
+        var r = el.getBoundingClientRect(); if (r.height && r.bottom > low) low = r.bottom;
+      });
+      var h = Math.min(window.parent.innerHeight, Math.max(300, Math.ceil(low) + bottom.offsetHeight + 16));
+      fe.style.setProperty('height', h + 'px', 'important');
+      var wr = fe.closest && fe.closest('[class*=shopify-buy-frame--cart]'); if (wr) wr.style.setProperty('height', h + 'px', 'important');
+    } catch (e) { /* ignore */ }
+  }
   function fitFrame(d) {
     try {
       var fe = d.defaultView.frameElement; if (!fe || !d.body) return;
+      var kind = String(fe.className) + ' ' + String((fe.closest && fe.closest('[class*=shopify-buy-frame]') || {}).className || '');
+      if (kind.indexOf('--cart') >= 0) { fitCart(d, fe); return; }
+      if (kind.indexOf('--product') < 0) return;   // only the product box
       var bottom = 0;
       Array.prototype.forEach.call(d.body.querySelectorAll('*'), function (el) {
         var r = el.getBoundingClientRect(); if (r.height && r.bottom > bottom) bottom = r.bottom;
@@ -129,7 +147,7 @@
   function holdFrames(doc) {
     if (!doc.head || doc.getElementById('ish-hold')) return;
     var s = doc.createElement('style'); s.id = 'ish-hold';
-    s.textContent = 'iframe.shopify-buy-frame:not([data-ish-ok]){opacity:0!important;}';
+    s.textContent = '[class*=shopify-buy-frame] iframe:not([data-ish-ok]),iframe.shopify-buy-frame:not([data-ish-ok]){opacity:0!important;}';
     doc.head.appendChild(s);
   }
   function injectFrameFonts(doc, settings, force) {
@@ -233,6 +251,7 @@
       },
       cart: {
         googleFonts: gf,
+        popup: false,   // checkout opens in the same tab: pop-ups are blocked / glitch on phones
         text: { title: s.cart_title, button: s.checkout_label },
         styles: {
           cart: { 'background-color': s.cart_bg },
@@ -525,7 +544,8 @@
       '.ish-sw{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px;align-items:center;min-height:15px;}' +
       '.ish-sw i{display:block;width:15px;height:15px;border-radius:3px;border:1px solid ' + s.swatch_border + ';}' +
       '.ish-sw span{font:600 11px ' + ff(s.price_font) + ';color:' + s.price_color + ';margin-left:2px;}' +
-      '.ish-narrow{flex-direction:column;gap:14px;}' +
+      '@media(hover:none){.ish-card:hover .ish-img img.main{transform:none;}.ish-img img{transition:none;}}' +
+    '.ish-narrow{flex-direction:column;gap:14px;}' +
       '.ish-narrow .ish-side{flex:none;width:100%;display:flex;gap:8px;overflow-x:auto;padding:2px 0 8px;-webkit-overflow-scrolling:touch;}' +
       '.ish-narrow .ish-side a{flex:none;white-space:nowrap;margin:0;padding:8px 16px;border:2px solid ' + s.side_text + ';border-radius:999px;font-size:' + px(s.side_size, 15) + ';}' +
       '.ish-narrow .ish-side a.on{background:' + s.side_text + ';color:' + s.bar_text + '!important;}' +
@@ -712,7 +732,7 @@
     var tag = doc.getElementById('ish-cart-css');
     if (!tag) { tag = doc.createElement('style'); tag.id = 'ish-cart-css'; doc.head.appendChild(tag); }
     if (side === 'right') {
-      tag.textContent = '@media(max-width:520px){.shopify-buy-frame--cart{max-width:100%!important;}}';
+      tag.textContent = '@media(max-width:520px){.shopify-buy-frame--cart{max-width:100%!important;transition-duration:.22s!important;will-change:transform;}}';
       return;
     }
     if (opt && opt.toggle) opt.toggle.styles.toggle['border-radius'] = '0 ' + rad + ' ' + rad + ' 0';
@@ -720,7 +740,7 @@
       '.shopify-buy-frame--toggle.is-sticky{right:auto!important;left:0!important;top:auto!important;bottom:22px!important;transform:none!important;}' +
       '.shopify-buy-frame--cart{right:auto!important;left:0!important;transform:translateX(-100%)!important;}' +
       '.shopify-buy-frame--cart.is-active{transform:translateX(0)!important;}' +
-      '@media(max-width:520px){.shopify-buy-frame--cart{max-width:100%!important;}}';
+      '@media(max-width:520px){.shopify-buy-frame--cart{max-width:100%!important;transition-duration:.22s!important;will-change:transform;}}';
   }
 
   // Cart drawer + floating cart button (Shopify), styled from the Shop panel

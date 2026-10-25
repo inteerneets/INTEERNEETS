@@ -66,6 +66,10 @@
       transition: transform .4s cubic-bezier(.4,0,.2,1), opacity .4s ease;
     }
     /* Menu bar: fully visible on the first page, tucked away when scrolled down */
+    @media (pointer: coarse), (max-width: 819px) {
+      #nav { backdrop-filter: none; -webkit-backdrop-filter: none; background: rgba(0,0,0,.62); transition-duration: .22s; }
+      html { scroll-behavior: auto; }
+    }
     #nav.nav-hide { transform: translateY(-100%); opacity: 0; pointer-events: none; }
     #nav a {
       color: var(--c-text); text-decoration: none; font-size: .78rem; font-weight: 600;
@@ -414,6 +418,7 @@
       // from the bottom of the screen with a soft gradient edge over the previous one (colors
       // and pictures alike), until at the next page it is simply that background. Scrolling back
       // up plays the exact same thing in reverse (it is driven by scroll position).
+      var COARSE = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
       function ease(t) { return t * t * (3 - 2 * t); }
       function blend() {
         var vh = window.innerHeight, center = window.scrollY + vh * 0.5;
@@ -424,6 +429,7 @@
           if (i === 0) { l.style.webkitMaskImage = l.style.maskImage = 'none'; return; }
           var B = sections[i].getBoundingClientRect().top + window.scrollY;   // where page i starts
           var p = ease(Math.max(0, Math.min(1, (center - (B - vh * 0.5)) / vh)));  // 0 -> 1 across one screen
+          if (COARSE) { l.style.webkitMaskImage = l.style.maskImage = 'none'; l.style.opacity = p.toFixed(3); return; }   // phones: a plain fade is far cheaper than a moving mask
           var y0 = vh - p * (vh + soft);                       // fully hidden above this line
           var m = 'linear-gradient(to bottom, transparent ' + y0.toFixed(1) + 'px, #000 ' + (y0 + soft).toFixed(1) + 'px)';
           l.style.webkitMaskImage = m;
