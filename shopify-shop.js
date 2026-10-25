@@ -528,7 +528,7 @@
       '.ish-narrow{flex-direction:column;gap:14px;}' +
       '.ish-narrow .ish-side{flex:none;width:100%;display:flex;gap:8px;overflow-x:auto;padding:2px 0 8px;-webkit-overflow-scrolling:touch;}' +
       '.ish-narrow .ish-side a{flex:none;white-space:nowrap;margin:0;padding:8px 16px;border:2px solid ' + s.side_text + ';border-radius:999px;font-size:' + px(s.side_size, 15) + ';}' +
-      '.ish-narrow .ish-side a.on{background:' + s.side_text + ';color:' + s.bar_bg + ';}' +
+      '.ish-narrow .ish-side a.on{background:' + s.side_text + ';color:' + s.bar_text + '!important;}' +
       '.ish-narrow .ish-side a.on::before{display:none;}' +
       '.ish-narrow .ish-side a em{display:none;}' +
       '.ish-narrow .ish-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 12px;}' +
