@@ -55,6 +55,36 @@
         "15894860628345",
         "15894860562809"
       ]
+    },
+    {
+      "id": "tees",
+      "title": "TEES",
+      "parent": "inteerneets",
+      "product_ids": [
+        "15894860890489",
+        "15894860923257",
+        "15894860562809"
+      ]
+    },
+    {
+      "id": "hoodies",
+      "title": "HOODIES",
+      "parent": "tees",
+      "product_ids": [
+        "15894861382009",
+        "15894861316473",
+        "15894861119865"
+      ]
+    },
+    {
+      "id": "other",
+      "title": "OTHER",
+      "parent": "hoodies",
+      "product_ids": [
+        "15894861021561",
+        "15894860693881",
+        "15894860628345"
+      ]
     }
   ],
   "product_custom_images": {},
