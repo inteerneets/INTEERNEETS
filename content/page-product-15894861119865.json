@@ -1,0 +1,246 @@
+{
+  "refW": 1296,
+  "refH": 605,
+  "projectData": {
+    "assets": [
+      {
+        "type": "image",
+        "src": "/images/uploads/records_logo.png",
+        "unitDim": "px",
+        "height": 0,
+        "width": 0
+      },
+      {
+        "type": "image",
+        "src": "/images/uploads/Untitled-4__3_.png",
+        "unitDim": "px",
+        "height": 0,
+        "width": 0
+      },
+      {
+        "type": "image",
+        "src": "/images/uploads/weblogo.png",
+        "unitDim": "px",
+        "height": 0,
+        "width": 0
+      },
+      {
+        "type": "image",
+        "src": "/images/uploads/photo_2026-09-25_14-45-21.jpg",
+        "unitDim": "px",
+        "height": 0,
+        "width": 0
+      },
+      {
+        "type": "image",
+        "src": "/images/uploads/inteerneets_logo.png",
+        "unitDim": "px",
+        "height": 0,
+        "width": 0
+      },
+      {
+        "type": "image",
+        "src": "/images/uploads/1444658-hi-res-wallpaper-2560-x-1440-2560x1440-720p.jpg",
+        "unitDim": "px",
+        "height": 0,
+        "width": 0
+      }
+    ],
+    "styles": [
+      {
+        "selectors": [
+          "#im5g"
+        ],
+        "style": {
+          "min-height": "100vh",
+          "padding": "90px 5vw 60px",
+          "color": "#ffffff",
+          "box-sizing": "border-box"
+        }
+      },
+      {
+        "selectors": [
+          "#iil8"
+        ],
+        "style": {
+          "max-width": "1100px",
+          "margin": "0 auto",
+          "display": "flex",
+          "flex-wrap": "wrap",
+          "gap": "40px",
+          "align-items": "flex-start"
+        }
+      },
+      {
+        "selectors": [
+          "#ilpk"
+        ],
+        "style": {
+          "flex": "1 1 380px",
+          "min-width": "260px",
+          "min-height": "320px"
+        }
+      },
+      {
+        "selectors": [
+          "#iqd9"
+        ],
+        "style": {
+          "flex": "1 1 380px",
+          "min-width": "260px"
+        }
+      },
+      {
+        "selectors": [
+          "#io63"
+        ],
+        "style": {
+          "margin": "0 0 8px",
+          "font-size": "30px",
+          "line-height": "1.2",
+          "font-family": "'Inter 18pt Bold',sans-serif",
+          "color": "#ffffff"
+        }
+      },
+      {
+        "selectors": [
+          "#ileps"
+        ],
+        "style": {
+          "min-height": "120px"
+        }
+      },
+      {
+        "selectors": [
+          "#ia68f"
+        ],
+        "style": {
+          "margin-top": "22px",
+          "min-height": "90px",
+          "font-size": "15px",
+          "line-height": "1.65",
+          "font-family": "'Inter 18pt Bold',sans-serif",
+          "color": "#ffffff"
+        }
+      }
+    ],
+    "pages": [
+      {
+        "frames": [
+          {
+            "component": {
+              "type": "wrapper",
+              "stylable": true,
+              "attributes": {
+                "id": "ia46"
+              },
+              "components": [
+                {
+                  "tagName": "section",
+                  "attributes": {
+                    "id": "im5g"
+                  },
+                  "components": [
+                    {
+                      "attributes": {
+                        "id": "iil8"
+                      },
+                      "components": [
+                        {
+                          "attributes": {
+                            "data-shopify-product-page": "gallery",
+                            "id": "ilpk"
+                          }
+                        },
+                        {
+                          "attributes": {
+                            "id": "iqd9"
+                          },
+                          "components": [
+                            {
+                              "tagName": "h1",
+                              "type": "text",
+                              "resizable": {
+                                "tl": 1,
+                                "tr": 1,
+                                "bl": 1,
+                                "br": 1,
+                                "cl": 1,
+                                "cr": 1,
+                                "tc": 0,
+                                "bc": 0
+                              },
+                              "attributes": {
+                                "data-product-title": "1",
+                                "id": "io63"
+                              },
+                              "components": [
+                                {
+                                  "type": "textnode",
+                                  "content": "INTEERNEETS SPIDER LOGO HOODIE"
+                                }
+                              ]
+                            },
+                            {
+                              "attributes": {
+                                "data-shopify-product-page": "buy",
+                                "id": "ileps"
+                              }
+                            },
+                            {
+                              "type": "text",
+                              "resizable": {
+                                "tl": 1,
+                                "tr": 1,
+                                "bl": 1,
+                                "br": 1,
+                                "cl": 1,
+                                "cr": 1,
+                                "tc": 0,
+                                "bc": 0
+                              },
+                              "attributes": {
+                                "data-product-desc": "1",
+                                "id": "ia68f"
+                              },
+                              "components": [
+                                {
+                                  "type": "textnode",
+                                  "content": "Click here and type the description of this item…"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "head": {
+                "type": "head"
+              },
+              "docEl": {
+                "tagName": "html"
+              }
+            },
+            "id": "RaP4JNlkdSHZGOr6"
+          }
+        ],
+        "type": "main",
+        "id": "4iDdu4rXqOb4iTco"
+      }
+    ],
+    "symbols": []
+  },
+  "html": "<body id=\"ia46\"><section id=\"im5g\"><div id=\"iil8\"><div data-shopify-product-page=\"gallery\" id=\"ilpk\"></div><div id=\"iqd9\"><h1 data-product-title=\"1\" id=\"io63\">INTEERNEETS SPIDER LOGO HOODIE</h1><div data-shopify-product-page=\"buy\" id=\"ileps\"></div><div data-product-desc=\"1\" id=\"ia68f\">Click here and type the description of this item…</div></div></div></section></body>",
+  "css": "@font-face{font-family:'Inter 18pt Bold';src:url('/fonts/Inter_18pt-Bold.ttf') format('truetype');font-display:swap;}\n@font-face{font-family:'Inter 18pt Regular';src:url('/fonts/Inter_18pt-Regular.ttf') format('truetype');font-display:swap;}\n* { box-sizing: border-box; } body {margin: 0;}#im5g{min-height:100vh;padding:90px 5vw 60px;color:#ffffff;box-sizing:border-box;}#iil8{max-width:1100px;margin:0 auto;display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start;}#ilpk{flex:1 1 380px;min-width:260px;min-height:320px;}#iqd9{flex:1 1 380px;min-width:260px;}#io63{margin:0 0 8px;font-size:30px;line-height:1.2;font-family:'Inter 18pt Bold',sans-serif;color:#ffffff;}#ileps{min-height:120px;}#ia68f{margin-top:22px;min-height:90px;font-size:15px;line-height:1.65;font-family:'Inter 18pt Bold',sans-serif;color:#ffffff;}",
+  "bg": {
+    "color": "#f80000",
+    "image": "",
+    "mode": "cover",
+    "tile_size": 256,
+    "position": "center center",
+    "overlay": 0
+  }
+}
