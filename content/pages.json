@@ -5,6 +5,10 @@
       "title": "Home"
     },
     {
+      "id": "studio",
+      "title": "STUDIO"
+    },
+    {
       "id": "shop",
       "title": "Shop"
     }
