@@ -13,7 +13,7 @@
     img_radius: 0,
     desc_font: 'Inter', desc_color: '#ffffff', desc_size: 15,
     side_font: 'Inter', side_text: '#ffffff', side_size: 15, side_active: '#000000', side_bar: '#000000',
-    card_bg: '#ffffff', card_radius: 14, badge_bg: BLACK, badge_text: RED, heart_bg: '#ffffff', heart_color: BLACK,
+    card_bg: '#ffffff', card_radius: 14, badge_bg: BLACK, badge_text: RED, heart_bg: BLACK, heart_color: RED,
     bar_bg: BLACK, bar_text: RED, bar_border: BLACK, swatch_border: BLACK,
     cat_font: 'Playfair Display', cat_color: '#ffffff', cat_size: 28, cat_weight: '700', cat_transform: 'uppercase',
     size_bg: BLACK, size_text: RED, size_border: BLACK, size_font: 'Inter', size_size: 14,
