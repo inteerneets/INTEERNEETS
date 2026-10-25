@@ -240,7 +240,8 @@
       '.pg-gal{flex:1 1 360px;min-width:0;}' +
       '.pg-info{flex:1 1 340px;min-width:0;}' +
       '.pg-main{display:block;width:100%;aspect-ratio:1/1;object-fit:contain;background:' + s.card_bg + ';border-radius:' + px(s.img_radius, 0) + ';}' +
-      '.pg-thumbs{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}' +
+      '.pg-has-thumbs .pg-main{width:calc(100% - 76px);}' +
+    '.pg-thumbs{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}' +
       '.pg-thumbs img{width:66px;height:66px;object-fit:cover;background:' + s.card_bg + ';border-radius:' + px(Math.min(parseFloat(s.img_radius) || 0, 10), 0) + ';cursor:pointer;border:2px solid transparent;opacity:.75;}' +
       '.pg-thumbs img.on{border-color:' + s.side_bar + ';opacity:1;}' +
       '.pg-name{margin:0 0 8px;color:' + s.title_color + ';font-family:' + ff(s.title_font) + ';font-size:' + px((parseFloat(s.title_size) || 15) * 1.8, 27) + ';font-weight:' + s.title_weight + ';text-transform:' + s.title_transform + ';line-height:1.25;}' +
@@ -276,6 +277,7 @@
         main.className = 'pg-main'; main.src = imgs[0]; main.alt = (data && data.title) || '';
         stage.appendChild(main); gal.appendChild(stage);
         if (scroll) {
+          gal.className += ' pg-has-thumbs';   // picture gets a little smaller so the thumbnails fit without scrolling
           var cur = 0, th = doc.createElement('div'); th.className = 'pg-thumbs';
           var go = function (n) {
             cur = (n + imgs.length) % imgs.length; main.src = imgs[cur];
