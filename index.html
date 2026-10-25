@@ -561,19 +561,13 @@
         function ctl(txt, css, fn, title) {
           var b = document.createElement('button');
           b.type = 'button'; b.textContent = txt; b.title = title;
-          b.style.cssText = 'position:fixed;z-index:60;cursor:pointer;background:rgba(0,0,0,.35);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:50%;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);font:600 17px Inter,sans-serif;width:44px;height:44px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;transition:transform .15s,background .15s,color .15s;' + css;
-          b.addEventListener('mouseenter', function () { b.style.background = '#fff'; b.style.color = '#000'; b.style.transform = 'scale(1.1)'; });
-          b.addEventListener('mouseleave', function () { b.style.background = 'rgba(0,0,0,.35)'; b.style.color = '#fff'; b.style.transform = ''; });
+          b.style.cssText = 'position:fixed;z-index:60;cursor:pointer;background:#000;color:#ff0000;border:2px solid #ff0000;border-radius:0;font:700 20px Inter,sans-serif;width:44px;height:44px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;' + css;
           b.addEventListener('click', fn);
           ov.appendChild(b);
         }
         var i = keys.indexOf(key);
         var prev = keys[(i - 1 + keys.length) % keys.length], next = keys[(i + 1) % keys.length];
         ctl('\u2715', 'top:72px;left:16px;', closeProduct, 'Close (Esc)');
-        if (keys.length > 1) {
-          ctl('\u25C0', 'top:72px;left:68px;', function () { openProduct(prev); }, 'Previous product (left arrow key)');
-          ctl('\u25B6', 'top:72px;left:120px;', function () { openProduct(next); }, 'Next product (right arrow key)');
-        }
         document.body.appendChild(ov);
         document.body.classList.add('prod-open');
         document.documentElement.style.overflow = 'hidden';
