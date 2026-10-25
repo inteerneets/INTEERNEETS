@@ -533,8 +533,11 @@
     function productFit(g) {
       var vw = document.documentElement.clientWidth, vh = window.innerHeight, top = 50;
       g.inner.style.transform = 'none';
+      // measure only the real content (not the full-screen minimum height or the big top padding)
+      Array.prototype.forEach.call(g.inner.querySelectorAll('section'), function (sc) { sc.style.minHeight = '0'; sc.style.paddingTop = '24px'; sc.style.paddingBottom = '16px'; });
+      if (g.sec.parentNode) g.sec.parentNode.style.overflowX = 'hidden';
       var H = Math.max(g.inner.offsetHeight, g.inner.scrollHeight);
-      var s = Math.min(vw / g.rw, (vh - top - 10) / H, 1.6);
+      var s = Math.min(vw / Math.min(g.rw, 1150), (vh - top - 10) / H, 2);
       g.sec.style.height = Math.max(vh, H * s + top).toFixed(2) + 'px';
       var x = (vw - g.rw * s) / 2;
       g.inner.style.transform = 'translate(' + x.toFixed(2) + 'px,' + top + 'px) scale(' + s.toFixed(5) + ')';
