@@ -1,0 +1,201 @@
+{
+  "refW": 1306,
+  "refH": 605,
+  "projectData": {
+    "assets": [
+      {
+        "type": "image",
+        "src": "/images/uploads/weblogo.png",
+        "unitDim": "px",
+        "height": 0,
+        "width": 0
+      },
+      {
+        "type": "image",
+        "src": "/images/uploads/photo_2026-09-25_14-45-21.jpg",
+        "unitDim": "px",
+        "height": 0,
+        "width": 0
+      },
+      {
+        "type": "image",
+        "src": "/images/uploads/inteerneets_logo.png",
+        "unitDim": "px",
+        "height": 0,
+        "width": 0
+      },
+      {
+        "type": "image",
+        "src": "/images/uploads/1444658-hi-res-wallpaper-2560-x-1440-2560x1440-720p.jpg",
+        "unitDim": "px",
+        "height": 0,
+        "width": 0
+      }
+    ],
+    "styles": [
+      {
+        "selectors": [
+          "#ijxf"
+        ],
+        "style": {
+          "min-height": "100vh",
+          "display": "flex",
+          "flex-direction": "column",
+          "align-items": "center",
+          "justify-content": "center",
+          "gap": "16px",
+          "padding": "40px 20px",
+          "box-sizing": "border-box"
+        }
+      },
+      {
+        "selectors": [
+          "#ic9f"
+        ],
+        "style": {
+          "width": "280px",
+          "max-width": "100%",
+          "background": "#111",
+          "border": "1px solid #e53935",
+          "color": "#ff0600",
+          "padding": "12px 14px",
+          "font-size": "15px",
+          "border-radius": "6px",
+          "text-align": "center",
+          "letter-spacing": ".1em"
+        }
+      },
+      {
+        "selectors": [
+          "#iov8"
+        ],
+        "style": {
+          "width": "280px",
+          "max-width": "100%",
+          "background": "var(--btn-fill)",
+          "color": "#000",
+          "border": "0",
+          "padding": "12px",
+          "font-weight": "700",
+          "letter-spacing": ".2em",
+          "border-radius": "6px",
+          "cursor": "pointer",
+          "--btn-fill": "#ff0400"
+        }
+      },
+      {
+        "selectors": [
+          "#ibzmg"
+        ],
+        "style": {
+          "color": "#e53935",
+          "font-size": "12px",
+          "min-height": "16px"
+        }
+      },
+      {
+        "selectors": [
+          "#ie36s"
+        ],
+        "style": {
+          "color": "black",
+          "width": "360px",
+          "height": "189px"
+        }
+      }
+    ],
+    "pages": [
+      {
+        "frames": [
+          {
+            "component": {
+              "type": "wrapper",
+              "stylable": true,
+              "components": [
+                {
+                  "tagName": "section",
+                  "attributes": {
+                    "id": "ijxf"
+                  },
+                  "components": [
+                    {
+                      "type": "image",
+                      "resizable": {
+                        "ratioDefault": 1
+                      },
+                      "attributes": {
+                        "id": "ie36s",
+                        "src": "/images/uploads/weblogo.png"
+                      }
+                    },
+                    {
+                      "tagName": "input",
+                      "void": true,
+                      "attributes": {
+                        "type": "password",
+                        "data-login-pw": "1",
+                        "placeholder": "Password",
+                        "id": "ic9f"
+                      }
+                    },
+                    {
+                      "tagName": "button",
+                      "type": "text",
+                      "resizable": {
+                        "tl": 1,
+                        "tr": 1,
+                        "bl": 1,
+                        "br": 1,
+                        "cl": 1,
+                        "cr": 1,
+                        "tc": 0,
+                        "bc": 0
+                      },
+                      "attributes": {
+                        "type": "button",
+                        "data-login-btn": "1",
+                        "id": "iov8"
+                      },
+                      "components": [
+                        {
+                          "type": "textnode",
+                          "content": "ENTER"
+                        }
+                      ]
+                    },
+                    {
+                      "attributes": {
+                        "data-login-err": "1",
+                        "id": "ibzmg"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "head": {
+                "type": "head"
+              },
+              "docEl": {
+                "tagName": "html"
+              }
+            },
+            "id": "RaP4JNlkdSHZGOr6"
+          }
+        ],
+        "type": "main",
+        "id": "4iDdu4rXqOb4iTco"
+      }
+    ],
+    "symbols": []
+  },
+  "html": "<body><section id=\"ijxf\"><img id=\"ie36s\" src=\"/images/uploads/weblogo.png\"/><input type=\"password\" data-login-pw=\"1\" placeholder=\"Password\" id=\"ic9f\"/><button type=\"button\" data-login-btn=\"1\" id=\"iov8\">ENTER</button><div data-login-err=\"1\" id=\"ibzmg\"></div></section></body>",
+  "css": "@font-face{font-family:'Inter 18pt Bold';src:url('/fonts/Inter_18pt-Bold.ttf') format('truetype');font-display:swap;}\n@font-face{font-family:'Inter 18pt Regular';src:url('/fonts/Inter_18pt-Regular.ttf') format('truetype');font-display:swap;}\n* { box-sizing: border-box; } body {margin: 0;}#ijxf{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px 20px;box-sizing:border-box;}#ic9f{width:280px;max-width:100%;background:#111;border:1px solid #e53935;color:#ff0600;padding:12px 14px;font-size:15px;border-radius:6px;text-align:center;letter-spacing:.1em;}#iov8{width:280px;max-width:100%;background:var(--btn-fill);color:#000;border:0;padding:12px;font-weight:700;letter-spacing:.2em;border-radius:6px;cursor:pointer;--btn-fill:#ff0400;}#ibzmg{color:#e53935;font-size:12px;min-height:16px;}#ie36s{color:black;width:360px;height:189px;}",
+  "bg": {
+    "color": "#000000",
+    "image": "",
+    "mode": "cover",
+    "tile_size": 256,
+    "position": "center center",
+    "overlay": 0
+  }
+}
