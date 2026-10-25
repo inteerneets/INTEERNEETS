@@ -260,7 +260,7 @@
     wrap.className = 'shop-card pg' + (mode === 'gallery' ? ' pg-gallery' : (mode === 'info' || mode === 'buy') ? ' pg-info' : '');
     wrap.setAttribute('data-product-key', key);
     parent.appendChild(wrap);
-    var gal = mode === 'info' ? null : doc.createElement('div');
+    var gal = (mode === 'info' || mode === 'buy') ? null : doc.createElement('div');
     var info = mode === 'gallery' ? null : doc.createElement('div');
     if (gal) { gal.className = 'pg-gal'; wrap.appendChild(gal); }
     if (info) { info.className = 'pg-info'; wrap.appendChild(info); }

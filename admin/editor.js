@@ -2664,6 +2664,18 @@ function shopRender(force) {
     el.__shopFor = pk;
     if (!pk) return;
     InteerShop.renderProductPage(doc, el, st, pk, { toFilterShadow });
+    if (el.getAttribute('data-shopify-product-page') === 'gallery') {
+      const addBtn = () => {
+        if (el.querySelector('.ed-add-pics')) return;
+        const b = doc.createElement('button');
+        b.type = 'button'; b.className = 'ed-add-pics'; b.textContent = '+ Add images';
+        b.style.cssText = 'display:block;margin:12px 0 0;padding:10px 16px;background:#000;color:#ff0000;border:2px solid #ff0000;font:700 13px Inter,sans-serif;letter-spacing:.08em;cursor:pointer;';
+        b.addEventListener('mousedown', (ev) => ev.stopPropagation());
+        b.addEventListener('click', (ev) => { ev.preventDefault(); ev.stopPropagation(); shopAddImages(pk); });
+        el.appendChild(b);
+      };
+      [1200, 3000, 6000].forEach((ms) => setTimeout(addBtn, ms));
+    }
   });
 }
 function shopRenderSoon(force) {
