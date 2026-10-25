@@ -770,3 +770,10 @@ a.tb-btn:hover { color: #ddd; border-color: #555; }
 .lock-screen:not(.ready) .lock-box { visibility:hidden; }
 .lock-screen.designed .lock-box { display:none; }
 #lock-root { position:absolute; inset:0; overflow:auto; }
+
+/* one toolbar only: the component toolbar carries font/size/color; hide the second (rich-text) bar */
+.gjs-rte-actionbar { display: none !important; }
+.tb-color { width: 22px; height: 18px; padding: 0; border: 0; background: none; cursor: pointer; vertical-align: middle; }
+.page-btn.tab-dragging { opacity: .4; }
+.page-btn.tab-drop-before { box-shadow: -3px 0 0 #e53935; }
+.page-btn.tab-drop-after { box-shadow: 3px 0 0 #e53935; }

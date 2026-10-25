@@ -702,6 +702,7 @@ window.addEventListener('beforeunload', (e) => {
 
 // ─── Tabs ───
 function renderTabs() { renderTabsCore(); if (typeof devSchedule === 'function') devSchedule(); if (typeof shopSyncSwitch === 'function') shopSyncSwitch(); }
+let tabDrag = null;
 function renderTabsCore() {
   const box = byId('page-tabs');
   box.innerHTML = '';
@@ -735,6 +736,31 @@ function renderTabsCore() {
       x.addEventListener('click', (e) => { e.stopPropagation(); deletePage(p.id); });
       b.appendChild(x);
     }
+    if (!isError && p.id !== PRODUCT_PAGE.id) {
+      b.draggable = true;
+      b.addEventListener('dragstart', (e) => { tabDrag = p.id; b.classList.add('tab-dragging'); e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', p.id); } catch (_) {} });
+      b.addEventListener('dragend', () => { tabDrag = null; box.querySelectorAll('.page-btn').forEach((x) => x.classList.remove('tab-dragging', 'tab-drop-before', 'tab-drop-after')); });
+      b.addEventListener('dragover', (e) => {
+        if (!tabDrag || tabDrag === p.id) return;
+        e.preventDefault();
+        const r = b.getBoundingClientRect(), after = e.clientX > r.left + r.width / 2;
+        b.classList.toggle('tab-drop-after', after); b.classList.toggle('tab-drop-before', !after);
+      });
+      b.addEventListener('dragleave', () => b.classList.remove('tab-drop-before', 'tab-drop-after'));
+      b.addEventListener('drop', (e) => {
+        e.preventDefault();
+        if (!tabDrag || tabDrag === p.id) return;
+        const after = b.classList.contains('tab-drop-after');
+        const from = pages.findIndex((x) => x.id === tabDrag);
+        const item = pages.splice(from, 1)[0];
+        let to = pages.findIndex((x) => x.id === p.id);
+        pages.splice(after ? to + 1 : to, 0, item);
+        tabDrag = null; pagesDirty = true;
+        markDirty(currentPage);
+        renderTabs();
+        showToast('Page order changed — press Save to publish');
+      });
+    }
     b.addEventListener('click', () => switchPage(p.id));
     if (!isError) b.addEventListener('dblclick', () => renamePage(p.id));
     box.appendChild(b);
@@ -742,6 +768,10 @@ function renderTabsCore() {
 }
 
 async function switchPage(id) {
+  if (id === PRODUCT_PAGE.id) {
+    const k = shopPageProductKey() || (shopProducts[0] && shopProducts[0].key);
+    if (k) id = PRODUCT_PAGE.id + '-' + shopSlug(k);
+  }
   if (id === currentPage || loadingPage) return;
   if (dirty.has(currentPage) || newPages.has(currentPage)) drafts[currentPage] = snapshot();
   await loadPage(id);
@@ -884,9 +914,20 @@ function applyDefaultTemplate(page) {
   }
   if (isProductPageId(page)) {
     editor.setStyle('');
+    const slug = page.slice(PRODUCT_PAGE.id.length + 1);
+    const prod = shopProducts.find((x) => shopSlug(x.key) === slug);
+    const ttl = escapeHtml((prod && prod.title) || 'Product name');
+    const IB = "font-family:'Inter 18pt Bold',sans-serif;color:#ffffff;";
     editor.setComponents(`
-<section style="min-height:100vh;padding:90px 5vw 60px;color:var(--c-text,#ffffff);box-sizing:border-box;">
-  <div data-shopify-product-page="1" style="max-width:1100px;margin:0 auto;min-height:320px;">The selected product shows here</div>
+<section style="min-height:100vh;padding:90px 5vw 60px;color:#ffffff;box-sizing:border-box;">
+  <div style="max-width:1100px;margin:0 auto;display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start;">
+    <div data-shopify-product-page="gallery" style="flex:1 1 380px;min-width:260px;min-height:320px;"></div>
+    <div style="flex:1 1 380px;min-width:260px;">
+      <h1 data-product-title="1" style="margin:0 0 8px;font-size:30px;line-height:1.2;${IB}">${ttl}</h1>
+      <div data-shopify-product-page="buy" style="min-height:120px;"></div>
+      <div data-product-desc="1" style="margin-top:22px;min-height:90px;font-size:15px;line-height:1.65;${IB}">Click here and type the description of this item…</div>
+    </div>
+  </div>
 </section>`);
     return;
   }
@@ -917,9 +958,9 @@ async function loadPage(id) {
     try { data = await fetchContent(`page-${id}.json`); } catch (_) { data = null; }
   }
   let fromTemplate = false;
-  if (!data && id !== PRODUCT_PAGE.id && isProductPageId(id)) {
-    // a product without its own design starts as a copy of the template
-    try { data = await fetchContent(`page-${PRODUCT_PAGE.id}.json`); fromTemplate = !!data; } catch (_) { data = null; }
+  if (data && isProductPageId(id)) {
+    const s = JSON.stringify(data.projectData || {});
+    if (s.includes('data-shopify-product-page') && !s.includes('data-product-desc')) data = null;   // old single-block layout -> new editable layout
   }
 
   if (data && data.projectData) {
@@ -1643,6 +1684,7 @@ function ensureTextToolbar(c) {
       command: toggle('text-decoration', 'underline', 'none', (v) => String(v).includes('underline')) },
     { id: 'q-sm', label: '<span class="tb-fmt">A−</span>', attributes: { title: 'Smaller text' }, command: size(-2) },
     { id: 'q-lg', label: '<span class="tb-fmt">A+</span>', attributes: { title: 'Bigger text' }, command: size(2) },
+    { id: 'q-col', label: '<input type="color" class="tb-color" value="#ffffff" title="Text color">', attributes: { title: 'Text color' }, command: () => {} },
     ...tb,
   ]);
 }
@@ -1653,6 +1695,11 @@ function setupTextToolbars() {
   // Existing components (already on the page)
   editor.getWrapper().find('*').forEach(ensureTextToolbar);
 
+  document.addEventListener('input', (e) => {
+    if (!e.target.matches || !e.target.matches('input.tb-color')) return;
+    const comp = editor.getSelected();
+    if (comp) comp.addStyle({ color: e.target.value });
+  });
   document.addEventListener('change', (e) => {
     if (!e.target.matches || !e.target.matches('select.tb-font')) return;
     const comp = editor.getSelected();
@@ -2655,9 +2702,9 @@ function shopPageProductKey() {
 (function buildProdSwitch() {
   const wrap = document.createElement('div');
   wrap.id = 'prod-switch';
-  wrap.innerHTML = '<button type="button" class="tb-btn" id="ps-prev" title="Previous product page">&#9664;</button><select id="ps-sel" title="Pick which product page to edit"></select><button type="button" class="tb-btn" id="ps-next" title="Next product page">&#9654;</button><button type="button" class="tb-btn" id="ps-reset" title="Throw away this product\'s own design and use the template again">&#8634; Use template</button>';
+  wrap.innerHTML = '<button type="button" class="tb-btn" id="ps-prev" title="Previous product page">&#9664;</button><select id="ps-sel" title="Pick which product page to edit"></select><button type="button" class="tb-btn" id="ps-next" title="Next product page">&#9654;</button><button type="button" class="tb-btn" id="ps-reset" title="Throw away this product\'s design and start its layout again">&#8634; Reset layout</button>';
   byId('btn-add-page').parentNode.appendChild(wrap);
-  const ids = () => [PRODUCT_PAGE.id, ...shopProducts.map((p) => PRODUCT_PAGE.id + '-' + shopSlug(p.key))];
+  const ids = () => [...shopProducts.map((p) => PRODUCT_PAGE.id + '-' + shopSlug(p.key))];
   const go = (id) => {
     const key = (shopProducts.find((p) => PRODUCT_PAGE.id + '-' + shopSlug(p.key) === id) || {}).key;
     if (key) { shopCurrent = key; sessionStorage.setItem('shopCurrentProduct', key); }
@@ -2669,12 +2716,12 @@ function shopPageProductKey() {
   byId('ps-sel').addEventListener('change', (e) => go(e.target.value));
   byId('ps-reset').addEventListener('click', async () => {
     if (currentPage === PRODUCT_PAGE.id || !isProductPageId(currentPage)) return;
-    if (!confirm('Use the template for this product again? Its own design is deleted.')) return;
+    if (!confirm('Reset this product page to the default layout? Your changes to it are deleted.')) return;
     const id = currentPage;
     try { await apiFetch('/api/delete-page', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ page: id }) }); } catch (_) { /* never saved */ }
     dirty.delete(id); delete drafts[id];
     await loadPage(id);
-    showToast('Back to the template design');
+    showToast('Layout reset');
   });
 })();
 function shopSyncSwitch() {
@@ -2684,10 +2731,9 @@ function shopSyncSwitch() {
   const sel = byId('ps-sel');
   sel.innerHTML = '';
   const add = (v, n) => { const o = document.createElement('option'); o.value = v; o.textContent = n; sel.appendChild(o); };
-  add(PRODUCT_PAGE.id, '\u2605 Template (all products)');
   shopProducts.forEach((p) => add(PRODUCT_PAGE.id + '-' + shopSlug(p.key), p.title));
   sel.value = currentPage;
-  byId('ps-reset').style.display = currentPage === PRODUCT_PAGE.id ? 'none' : '';
+  byId('ps-reset').style.display = '';
 }
 
 function shopChanged() { markDirty(currentPage); shopRenderSoon(true); }

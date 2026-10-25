@@ -69,10 +69,15 @@
 
   // Fonts you uploaded in the editor: [{ name, url }]
   function fontFormat(url) { var e = String(url).split('.').pop().toLowerCase(); return { woff2: 'woff2', woff: 'woff', ttf: 'truetype', otf: 'opentype' }[e] || 'truetype'; }
-  function fontFaceCss(list) {
-    return (list || []).map(function (f) { return "@font-face{font-family:'" + f.name + "';src:url('" + f.url + "') format('" + fontFormat(f.url) + "');font-display:swap;}\n"; }).join('');
+  function withBuiltin(list) {
+    list = (list || []).slice();
+    if (!list.some(function (x) { return /^inter/i.test(x.name) && /bold/i.test(x.name) && !/semi|extra|italic|light|thin|black/i.test(x.name); })) list.push({ name: 'Inter 18pt Bold', url: '/fonts/Inter_18pt-Bold.ttf' });
+    return list;
   }
-  function fontList(list) { return FONTS.concat((list || []).map(function (f) { return f.name; })); }
+  function fontFaceCss(list) {
+    return withBuiltin(list).map(function (f) { return "@font-face{font-family:'" + f.name + "';src:url('" + f.url + "') format('" + fontFormat(f.url) + "');font-display:swap;}\n"; }).join('');
+  }
+  function fontList(list) { return FONTS.concat(withBuiltin(list).map(function (f) { return f.name; })); }
   // the cart / product page live in iframes: give them the uploaded fonts too
   function injectFrameFonts(doc, settings) {
     var css = fontFaceCss(settings.site_fonts);
@@ -89,6 +94,15 @@
     [300, 900, 2000, 4500, 8000].forEach(function (t) { setTimeout(function () { injectFrameFonts(doc, settings); }, t); });
   }
 
+  // Until you pick another font, all shop text uses your uploaded "Inter ... Bold" font (if there is one)
+  var _siteFonts = [];
+  var FONT_KEYS = ['title_font', 'price_font', 'size_font', 'btn_font', 'cart_font', 'side_font', 'desc_font', 'cat_font'];
+  function setSiteFonts(list) { _siteFonts = withBuiltin(list); }
+  function preferredFont() {
+    var f = _siteFonts.filter(function (x) { return /^inter/i.test(x.name) && /bold/i.test(x.name) && !/semi|extra|italic|light|thin|black/i.test(x.name); })[0];
+    return f ? f.name : '';
+  }
+
   function px(n, d) { n = parseFloat(n); return (isNaN(n) ? d : n) + 'px'; }
   function ff(n) { return SYSTEM.indexOf(n) >= 0 ? '"' + n + '"' : '"' + n + '", sans-serif'; }
 
@@ -99,10 +113,13 @@
       btn_fill: colors.btn_fill || 'transparent', btn_text: colors.btn_text || BLACK,
       btn_border: colors.btn_border || BLACK, btn_radius: parseFloat(colors.btn_radius) || 0
     };
-    return Object.assign({}, DEFAULTS, site, style || {});
+    var base = Object.assign({}, DEFAULTS), pf = preferredFont();
+    if (pf) FONT_KEYS.forEach(function (k) { base[k] = pf; });
+    return Object.assign(base, site, style || {});
   }
 
   function options(style, colors, toFilter, siteFonts) {
+    if (siteFonts) setSiteFonts(siteFonts);
     var s = merged(style, colors);
     var mine = (siteFonts || []).map(function (f) { return f.name; });
     var fonts = [s.title_font, s.price_font, s.size_font, s.btn_font, s.cart_font].filter(function (f, i, a) { return f && SYSTEM.indexOf(f) < 0 && mine.indexOf(f) < 0 && a.indexOf(f) === i; });
@@ -218,6 +235,7 @@
     if (!tag) { tag = doc.createElement('style'); tag.id = 'ish-pg-css'; doc.head.appendChild(tag); }
     tag.textContent =
       '.pg{display:flex;flex-wrap:wrap;gap:36px;align-items:flex-start;width:100%;box-sizing:border-box;text-align:left;}' +
+      '.pg.pg-gallery,.pg.pg-info{display:block;}' +
       '.pg *{box-sizing:border-box;}' +
       '.pg-gal{flex:1 1 360px;min-width:0;}' +
       '.pg-info{flex:1 1 340px;min-width:0;}' +
@@ -225,64 +243,75 @@
       '.pg-thumbs{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}' +
       '.pg-thumbs img{width:66px;height:66px;object-fit:cover;background:' + s.card_bg + ';border-radius:' + px(Math.min(parseFloat(s.img_radius) || 0, 10), 0) + ';cursor:pointer;border:2px solid transparent;opacity:.75;}' +
       '.pg-thumbs img.on{border-color:' + s.side_bar + ';opacity:1;}' +
+      '.pg-name{margin:0 0 8px;color:' + s.title_color + ';font-family:' + ff(s.title_font) + ';font-size:' + px((parseFloat(s.title_size) || 15) * 1.8, 27) + ';font-weight:' + s.title_weight + ';text-transform:' + s.title_transform + ';line-height:1.25;}' +
+      '.pg-price{margin:0 0 16px;color:' + s.price_color + ';font-family:' + ff(s.price_font) + ';font-size:' + px((parseFloat(s.price_size) || 14) * 1.35, 19) + ';font-weight:600;}' +
       '.pg-desc{margin-top:22px;color:' + s.desc_color + ';font-family:' + ff(s.desc_font) + ';font-size:' + px(s.desc_size, 15) + ';line-height:1.65;white-space:pre-line;}';
   }
 
-  // The product page body: picture gallery on the left, buy box (name, price, sizes, Add to cart) and description on the right
+  // The product page body. mode: 'full' (gallery + info side by side), 'gallery' (pictures only) or 'info'
+  // (name, price, sizes + Add to cart). The description box is a normal text box you type in the editor.
   function addProduct(doc, ui, parent, raw, settings, opt, extra) {
     var p = parseId(raw);
     if (!p) return;
-    var key = p.id || p.handle, data = extra && extra.data;
+    var key = p.id || p.handle, data = extra && extra.data, mode = (extra && extra.mode) || 'full';
     var s = merged(settings.shopify_style, settings.site_colors);
     pageCss(doc, s);
     var wrap = doc.createElement('div');
-    wrap.className = 'shop-card pg';
+    wrap.className = 'shop-card pg' + (mode === 'gallery' ? ' pg-gallery' : (mode === 'info' || mode === 'buy') ? ' pg-info' : '');
     wrap.setAttribute('data-product-key', key);
     parent.appendChild(wrap);
-    var gal = doc.createElement('div'); gal.className = 'pg-gal';
-    var info = doc.createElement('div'); info.className = 'pg-info';
-    wrap.appendChild(gal); wrap.appendChild(info);
+    var gal = mode === 'info' ? null : doc.createElement('div');
+    var info = mode === 'gallery' ? null : doc.createElement('div');
+    if (gal) { gal.className = 'pg-gal'; wrap.appendChild(gal); }
+    if (info) { info.className = 'pg-info'; wrap.appendChild(info); }
 
-    var imgs = customImgs(settings, key);
-    if (!imgs.length && data) imgs = ((data.images && data.images.nodes) || []).map(function (x) { return x.url; });
-    if (!imgs.length && data && data.featuredImage) imgs = [data.featuredImage.url];
-    if (imgs.length) {
-      var main = doc.createElement('img');
-      main.className = 'pg-main'; main.src = imgs[0]; main.alt = (data && data.title) || '';
-      gal.appendChild(main);
-      if (imgs.length > 1) {
-        var th = doc.createElement('div'); th.className = 'pg-thumbs';
-        imgs.forEach(function (u, i) {
-          var t = doc.createElement('img'); t.src = u; t.alt = ''; if (i === 0) t.className = 'on';
-          t.addEventListener('click', function () {
-            main.src = u;
-            Array.prototype.forEach.call(th.children, function (c) { c.className = c === t ? 'on' : ''; });
+    if (gal) {
+      var imgs = customImgs(settings, key);
+      if (!imgs.length && data) imgs = ((data.images && data.images.nodes) || []).map(function (x) { return x.url; });
+      if (!imgs.length && data && data.featuredImage) imgs = [data.featuredImage.url];
+      if (imgs.length) {
+        var main = doc.createElement('img');
+        main.className = 'pg-main'; main.src = imgs[0]; main.alt = (data && data.title) || '';
+        gal.appendChild(main);
+        if (imgs.length > 1) {
+          var th = doc.createElement('div'); th.className = 'pg-thumbs';
+          imgs.forEach(function (u, i) {
+            var t = doc.createElement('img'); t.src = u; t.alt = ''; if (i === 0) t.className = 'on';
+            t.addEventListener('click', function () {
+              main.src = u;
+              Array.prototype.forEach.call(th.children, function (c) { c.className = c === t ? 'on' : ''; });
+            });
+            th.appendChild(t);
           });
-          th.appendChild(t);
-        });
-        gal.appendChild(th);
+          gal.appendChild(th);
+        }
       }
     }
 
-    var po = Object.assign({}, opt.product);
-    po.layout = 'vertical';
-    po.width = '100%';
-    po.contents = Object.assign({}, po.contents, { img: false, imgWithCarousel: false, description: false });
-    var left = { 'text-align': 'left' };
-    po.styles = Object.assign({}, po.styles, {
-      product: Object.assign({}, po.styles.product, { 'max-width': '100%', 'margin-left': '0', 'margin-right': '0', 'text-align': 'left' }),
-      title: Object.assign({}, po.styles.title, left),
-      prices: left,
-      price: Object.assign({}, po.styles.price, left)
-    });
-    var node = doc.createElement('div');
-    info.appendChild(node);
-    var cfg = { node: node, moneyFormat: '%24%7B%7Bamount%7D%7D', options: Object.assign({}, opt, { product: po }) };
-    if (p.id) cfg.id = p.id; else cfg.handle = p.handle;
-    ui.createComponent('product', cfg);
-
-    var d = descFor(settings, key, data);
-    if (d) { var dd = doc.createElement('div'); dd.className = 'pg-desc'; dd.textContent = d; info.appendChild(dd); }
+    if (info) {
+      if (data) {
+        if (mode !== 'buy') { var nm = doc.createElement('h1'); nm.className = 'pg-name'; nm.textContent = data.title; info.appendChild(nm); }
+        var mn = data.priceRange.minVariantPrice, mx = data.priceRange.maxVariantPrice;
+        var pr = money(mn.amount, mn.currencyCode);
+        if (mx && parseFloat(mx.amount) > parseFloat(mn.amount)) pr = 'From ' + pr;
+        var pe = doc.createElement('div'); pe.className = 'pg-price'; pe.textContent = pr; info.appendChild(pe);
+      }
+      var po = Object.assign({}, opt.product);
+      po.layout = 'vertical';
+      po.width = '100%';
+      // name, price and pictures are our own text/pictures (editable); the Shopify box only keeps sizes + Add to cart
+      po.contents = Object.assign({}, po.contents, { img: false, imgWithCarousel: false, description: false, title: !data, price: !data });
+      po.styles = Object.assign({}, po.styles, {
+        product: Object.assign({}, po.styles.product, { 'max-width': '100%', 'margin-left': '0', 'margin-right': '0', 'text-align': 'left' })
+      });
+      var node = doc.createElement('div');
+      info.appendChild(node);
+      var cfg = { node: node, moneyFormat: '%24%7B%7Bamount%7D%7D', options: Object.assign({}, opt, { product: po }) };
+      if (p.id) cfg.id = p.id; else cfg.handle = p.handle;
+      ui.createComponent('product', cfg);
+      var d = (settings.product_descriptions || {})[key];
+      if (mode !== 'buy' && typeof d === 'string' && d.trim()) { var dd = doc.createElement('div'); dd.className = 'pg-desc'; dd.textContent = d; info.appendChild(dd); }
+    }
   }
 
   var SHOP_API = '2024-10';
@@ -641,6 +670,7 @@
     var sections = doc.querySelectorAll('[data-shopify-section]');
     if (!sections.length) return;
     var win = doc.defaultView;
+    setSiteFonts(settings.site_fonts);
     var seq = (win.__shopSeq = (win.__shopSeq || 0) + 1);
     var sdk = new Promise(function (res) { loadSdk(win, res); });
     Promise.all([fetchShopData(settings, win), sdk]).then(function (r) {
@@ -655,6 +685,7 @@
     opts = opts || {};
     if (!settings.shopify_domain || !settings.shopify_storefront_token || !productId) return;
     var win = doc.defaultView;
+    setSiteFonts(settings.site_fonts);
     loadSdk(win, function () {
       container.style.display = 'block';
       container.style.border = 'none';
@@ -663,7 +694,8 @@
       var opt = options(settings.shopify_style, settings.site_colors, opts.toFilterShadow, settings.site_fonts);
       Promise.resolve(fetchShopData(settings, win)).then(function (map) {
         container.innerHTML = '';
-        addProduct(doc, ui, container, productId, settings, opt, { data: map[productId] });
+        var attr = container.getAttribute('data-shopify-product-page');
+        addProduct(doc, ui, container, productId, settings, opt, { data: map[productId], mode: attr === 'gallery' || attr === 'info' || attr === 'buy' ? attr : 'full' });
         injectFontsSoon(doc, settings);
       });
     });
@@ -692,5 +724,5 @@
     return true;
   }
 
-  g.InteerShop = { FONTS: FONTS, DEFAULTS: DEFAULTS, SCHEMA: SCHEMA, merged: merged, options: options, render: render, renderProductPage: renderProductPage, previewCart: previewCart, parseId: parseId, keyOf: keyOf, visibleKeys: visibleKeys, catTree: catTree, catKeys: catKeys, fetchShopData: fetchShopData, shopOpts: shopOpts, OPT_DEFAULTS: OPT_DEFAULTS, money: money, fontList: fontList, fontFaceCss: fontFaceCss, customImgs: customImgs };
+  g.InteerShop = { FONTS: FONTS, DEFAULTS: DEFAULTS, SCHEMA: SCHEMA, merged: merged, options: options, render: render, renderProductPage: renderProductPage, previewCart: previewCart, parseId: parseId, keyOf: keyOf, visibleKeys: visibleKeys, catTree: catTree, catKeys: catKeys, fetchShopData: fetchShopData, shopOpts: shopOpts, OPT_DEFAULTS: OPT_DEFAULTS, money: money, fontList: fontList, fontFaceCss: fontFaceCss, customImgs: customImgs, setSiteFonts: setSiteFonts };
 })(window);
