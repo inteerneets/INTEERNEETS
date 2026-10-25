@@ -777,3 +777,12 @@ a.tb-btn:hover { color: #ddd; border-color: #555; }
 .page-btn.tab-dragging { opacity: .4; }
 .page-btn.tab-drop-before { box-shadow: -3px 0 0 #e53935; }
 .page-btn.tab-drop-after { box-shadow: 3px 0 0 #e53935; }
+
+/* Save/Reset stay on screen: the tabs area scrolls instead of pushing them away */
+.top-bar-left { flex: 1 1 420px !important; min-width: 240px !important; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+.top-bar-left::-webkit-scrollbar { display: none; }
+.top-bar-left > * { flex-shrink: 0; }
+.top-bar-right { flex: 1 1 0 !important; min-width: 0 !important; }
+.top-bar-pinned { flex: none !important; position: sticky; right: 0; }
+#prod-switch select { max-width: 190px; }
+#ps-reset { display: none !important; }

@@ -3191,3 +3191,6 @@ function devSchedule() {
 }
 editor.on('change:device', () => setTimeout(devSync, 60));
 editor.on('update', devSchedule);
+
+// mouse wheel over the tabs scrolls them sideways (the Save button stays put)
+(function () { const l = document.querySelector('.top-bar-left'); if (l) l.addEventListener('wheel', (e) => { if (l.scrollWidth > l.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) { l.scrollLeft += e.deltaY; e.preventDefault(); } }, { passive: false }); })();
