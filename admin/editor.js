@@ -1122,7 +1122,7 @@ byId('pbg-save').addEventListener('click', async () => {
 // SETTINGS
 // ═══════════════════════════════════════════════════════════════
 
-var shopStyle = {}, shopCats = [], shopImgs = {}, shopOptsData = {}, shopBadges = {}, shopHidden = {}, shopSiteFonts = [], shopDescs = {};   // Shop panel data (saved inside settings.json)
+var shopVarImgs = {}, shopStyle = {}, shopCats = [], shopImgs = {}, shopOptsData = {}, shopBadges = {}, shopHidden = {}, shopSiteFonts = [], shopDescs = {};   // Shop panel data (saved inside settings.json)
 
 async function loadSettings() {
   try {
@@ -1145,6 +1145,7 @@ async function loadSettings() {
     shopStyle = Object.assign({}, s.shopify_style || {});
     shopCats = Array.isArray(s.shop_categories) ? s.shop_categories : [];
     shopImgs = Object.assign({}, s.product_custom_images || {});
+    shopVarImgs = Object.assign({}, s.product_variant_images || {});
     shopOptsData = Object.assign({}, s.shop_opts || {});
     shopBadges = Object.assign({}, s.product_badges || {});
     shopHidden = Object.assign({}, s.product_hidden || {});
@@ -1176,6 +1177,7 @@ function collectSettings() {
     shopify_style:            shopStyle,
     shop_categories:          shopCats,
     product_custom_images:    shopImgs,
+      product_variant_images:   shopVarImgs,
     shop_opts:                shopOptsData,
     product_badges:           shopBadges,
     product_hidden:           shopHidden,
@@ -2629,6 +2631,7 @@ async function shopFetchProducts() {
     return {
       key: k, title: n ? n.title : k, desc: n ? (n.description || '') : '',
       image: n && n.featuredImage ? n.featuredImage.url + (n.featuredImage.url.includes('?') ? '&' : '?') + 'width=140' : '',
+      options: n ? (n.options || []) : [],
       price: n ? InteerShop.money(n.priceRange.minVariantPrice.amount, n.priceRange.minVariantPrice.currencyCode) : '',
     };
   });
@@ -3023,6 +3026,35 @@ function shopMoveProduct(key, d) {
 const SHOP_BADGES = [['', 'Auto'], ['none', 'No badge'], ['New', 'New'], ['Sale', 'Sale'], ['Limited', 'Limited'], ['Best seller', 'Best seller'], ['Sold out', 'Sold out'], ['Coming soon', 'Coming soon']];
 let shopEditKey = '';
 
+// own picture per color (shown when a visitor picks that color)
+function shopColorPics(box, p) {
+  const opt = (p.options || []).find((o) => /colou?r/i.test(o.name));
+  if (!opt || !opt.values || !opt.values.length) return;
+  box.appendChild(shopEl('div', { class: 'sh-title', text: 'Color pictures (shown when a visitor picks that color)' }));
+  const wrap = shopEl('div', { class: 'shop-thumbs' });
+  const map = shopVarImgs[p.key] || {};
+  opt.values.forEach((v) => {
+    const cur = map[v];
+    const pick = () => {
+      const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
+      inp.addEventListener('change', async () => {
+        const f = inp.files && inp.files[0]; if (!f) return;
+        try { showToast('Uploading\u2026'); const url = await shopUploadOne(f); shopVarImgs[p.key] = Object.assign({}, shopVarImgs[p.key] || {}, { [v]: url }); shopDrawBody(); shopChanged(); showToast('Picture set for ' + v + ' \u2014 click Save to publish'); }
+        catch (err) { console.error(err); showToast('Upload failed'); }
+      });
+      inp.click();
+    };
+    const clear = () => { const m = Object.assign({}, shopVarImgs[p.key] || {}); delete m[v]; if (Object.keys(m).length) shopVarImgs[p.key] = m; else delete shopVarImgs[p.key]; shopDrawBody(); shopChanged(); };
+    wrap.appendChild(shopEl('div', { class: 'shop-thumb' + (cur ? ' main' : '') },
+      cur ? shopEl('img', { src: cur, alt: '' }) : shopEl('div', { style: 'height:60px;display:flex;align-items:center;justify-content:center;font-size:11px;opacity:.7;', text: 'Shopify\'s' }),
+      shopEl('span', { text: v }),
+      shopEl('div', { class: 'tb' },
+        shopEl('button', { class: 'shop-mini', text: cur ? 'Change' : '+ Picture', title: 'Upload your own picture for ' + v, onclick: pick }),
+        cur ? shopEl('button', { class: 'shop-mini', text: '\u2715', title: 'Back to Shopify\'s picture', onclick: clear }) : null)));
+  });
+  box.appendChild(wrap);
+}
+
 // the "Edit" box under a product: description + pictures
 function shopEditBox(p) {
   const box = shopEl('div', { class: 'shop-edit' });
@@ -3049,6 +3081,7 @@ function shopEditBox(p) {
         shopEl('button', { class: 'shop-mini', text: '\u2715', title: 'Remove this picture', onclick: () => { const a = shopImgList(p.key).slice(); a.splice(i, 1); shopSetImgs(p.key, a); shopDrawBody(); shopChanged(); } }))));
   });
   box.appendChild(row);
+  shopColorPics(box, p);
   box.appendChild(shopEl('div', { class: 'shop-row-btns' },
     shopEl('button', { class: 'tb-btn', text: '+ Add pictures', onclick: () => shopAddImages(p.key) }),
     shopEl('div', { class: 'sh-title', text: 'Best size: 1200 x 1200 px (square, min 800 x 800), JPG or PNG under 2 MB' }),

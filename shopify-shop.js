@@ -113,6 +113,18 @@
       if (h > 20 && Math.abs(fe.offsetHeight - h) > 1) fe.style.height = h + 'px';
     } catch (e) { /* ignore */ }
   }
+  // Picking a color in the buy box changes the picture: your own picture for that color if you added one,
+  // otherwise Shopify's picture for that color (only while you have not added pictures of your own).
+  var galReg = {};
+  function varPick(sel, d) {
+    try {
+      var name = sel.getAttribute('name') || '';
+      if (!/colou?r/i.test(name)) return;
+      var fe = d.defaultView.frameElement, wr = fe && fe.closest && fe.closest('[data-product-key]');
+      var key = wr && wr.getAttribute('data-product-key');
+      if (key && galReg[key]) galReg[key](sel.value);
+    } catch (e) { /* ignore */ }
+  }
   function enhanceSelects(d) {
     Array.prototype.forEach.call(d.querySelectorAll('select:not([data-ddx])'), function (sel) {
       sel.setAttribute('data-ddx', '1');
@@ -133,6 +145,7 @@
           e.stopPropagation();
           sel.value = o.value; btn.textContent = o.text; wrap.classList.remove('open');
           sel.dispatchEvent(new d.defaultView.Event('change', { bubbles: true }));
+          varPick(sel, d);
           fit();
         });
         ul.appendChild(li);
@@ -384,6 +397,17 @@
           gal.appendChild(th);
         }
       }
+      var hasOwn = customImgs(settings, key).length > 0, own = ((settings.product_variant_images || {})[key]) || {};
+      var featured = data && data.featuredImage ? data.featuredImage.url : '';
+      galReg[key] = function (val) {
+        var url = own[val] || '';
+        if (!url && !hasOwn && data && data.variants) {
+          var vs = (data.variants.nodes || []).filter(function (v) { return v.image && (v.selectedOptions || []).some(function (o) { return /colou?r/i.test(o.name) && o.value === val; }); });
+          if (vs.length) url = vs[0].image.url;
+        }
+        if (!url && !hasOwn) url = featured;
+        var m = gal.querySelector('.pg-main'); if (m && url) m.src = url;
+      };
     }
 
     if (info) {
@@ -475,7 +499,7 @@
     var token = String(settings.shopify_storefront_token).trim();
     var nums = keys.filter(function (k) { return /^\d+$/.test(k); });
     var hs = keys.filter(function (k) { return !/^\d+$/.test(k); });
-    var frag = 'fragment F on Product{id title handle description availableForSale productType tags createdAt featuredImage{url} images(first:12){nodes{url}} priceRange{minVariantPrice{amount currencyCode} maxVariantPrice{amount}} compareAtPriceRange{minVariantPrice{amount}} options{name values}}';
+    var frag = 'fragment F on Product{id title handle description availableForSale productType tags createdAt featuredImage{url} images(first:12){nodes{url}} priceRange{minVariantPrice{amount currencyCode} maxVariantPrice{amount}} compareAtPriceRange{minVariantPrice{amount}} options{name values} variants(first:100){nodes{selectedOptions{name value} image{url}}}}';
     var q = 'query{' + (nums.length ? 'nodes(ids:[' + nums.map(function (n) { return '"gid://shopify/Product/' + n + '"'; }).join(',') + ']){... on Product{...F}}' : '') +
       hs.map(function (h, i) { return ' h' + i + ':productByHandle(handle:"' + h.replace(/"/g, '') + '"){...F}'; }).join('') + '}' + frag;
     var p = win.fetch('https://' + domain + '/api/' + SHOP_API + '/graphql.json', {
@@ -868,5 +892,5 @@
     return true;
   }
 
-  g.InteerShop = { autoAdd: autoAdd, FONTS: FONTS, DEFAULTS: DEFAULTS, SCHEMA: SCHEMA, merged: merged, options: options, render: render, renderProductPage: renderProductPage, previewCart: previewCart, parseId: parseId, keyOf: keyOf, visibleKeys: visibleKeys, catTree: catTree, catKeys: catKeys, fetchShopData: fetchShopData, shopOpts: shopOpts, OPT_DEFAULTS: OPT_DEFAULTS, money: money, fontList: fontList, fontFaceCss: fontFaceCss, customImgs: customImgs, setSiteFonts: setSiteFonts };
+  g.InteerShop = { autoAdd: autoAdd, fetchShopDataRaw: fetchShopData, FONTS: FONTS, DEFAULTS: DEFAULTS, SCHEMA: SCHEMA, merged: merged, options: options, render: render, renderProductPage: renderProductPage, previewCart: previewCart, parseId: parseId, keyOf: keyOf, visibleKeys: visibleKeys, catTree: catTree, catKeys: catKeys, fetchShopData: fetchShopData, shopOpts: shopOpts, OPT_DEFAULTS: OPT_DEFAULTS, money: money, fontList: fontList, fontFaceCss: fontFaceCss, customImgs: customImgs, setSiteFonts: setSiteFonts };
 })(window);
