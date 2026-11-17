@@ -1,3 +1,11 @@
-# Cloudflare Pages: never serve a stale saved design
+# Never serve a stale saved design
 /content/*
   Cache-Control: no-cache
+
+# Basic hardening for every page
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+  X-Frame-Options: SAMEORIGIN
+

@@ -39,6 +39,33 @@ function toB64(str) {
 }
 const b64 = (obj) => toB64(JSON.stringify(obj, null, 2));
 
+// Constant-time string compare (no early exit that leaks how many characters matched)
+function safeEqual(a, b) {
+  a = String(a); b = String(b);
+  let diff = a.length ^ b.length;
+  const n = Math.max(a.length, b.length);
+  for (let i = 0; i < n; i++) diff |= (a.charCodeAt(i) || 0) ^ (b.charCodeAt(i) || 0);
+  return diff === 0;
+}
+
+// What an upload really is (first bytes), so a script/HTML file can not pose as a picture or font
+function sniffKind(bytes) {
+  const b = bytes, s = (i, n) => String.fromCharCode.apply(null, Array.from(b.slice(i, i + n)));
+  if (b[0] === 0xFF && b[1] === 0xD8 && b[2] === 0xFF) return 'jpg';
+  if (b[0] === 0x89 && s(1, 3) === 'PNG') return 'png';
+  if (s(0, 4) === 'GIF8') return 'gif';
+  if (s(0, 4) === 'RIFF' && s(8, 4) === 'WEBP') return 'webp';
+  if (s(4, 8) === 'ftypavif' || s(4, 8) === 'ftypavis') return 'avif';
+  if (s(0, 4) === 'wOFF') return 'woff';
+  if (s(0, 4) === 'wOF2') return 'woff2';
+  if (s(0, 4) === 'OTTO') return 'otf';
+  if ((b[0] === 0 && b[1] === 1 && b[2] === 0 && b[3] === 0) || s(0, 4) === 'true') return 'ttf';
+  return '';
+}
+const IMG_EXT = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif'];
+const FONT_EXT = ['woff', 'woff2', 'ttf', 'otf'];
+const MAX_UPLOAD = 10 * 1024 * 1024;   // 10 MB
+
 export async function onRequest(context) {
   try {
     return await handle(context);
@@ -147,8 +174,19 @@ async function handle(context) {
   if (request.method !== 'POST') return json(405, { success: false, error: 'Method not allowed' });
 
   // ── Password-protected write routes ──
+  // Brute-force guard: after 8 wrong guesses from one address, lock that address out for 15 minutes
+  const ip = request.headers.get('cf-connecting-ip') || 'unknown';
+  const rlCache = caches.default;
+  const rlKey = new Request('https://ratelimit.invalid/' + encodeURIComponent(ip));
+  const hit = await rlCache.match(rlKey);
+  const fails = hit ? parseInt(await hit.text(), 10) || 0 : 0;
+  if (fails >= 8) return json(429, { success: false, error: 'Too many wrong passwords. Try again in 15 minutes.' }, { 'Retry-After': '900' });
   const given = request.headers.get('x-admin-password');
-  if (String(given || '').trim() !== env.ADMIN_PASSWORD) return json(401, { success: false, error: 'Wrong password' });
+  if (!safeEqual(String(given || '').trim(), env.ADMIN_PASSWORD)) {
+    waitUntil(rlCache.put(rlKey, new Response(String(fails + 1), { headers: { 'Cache-Control': 'max-age=900' } })));
+    await new Promise((r) => setTimeout(r, 500));   // slows guessing down
+    return json(401, { success: false, error: 'Wrong password' });
+  }
 
   // Used by the editor's lock screen: reaching this line means the password was right
   if (route === 'check-auth') return json(200, { success: true });
@@ -186,10 +224,18 @@ async function handle(context) {
     if (route === 'upload') {
       const filename = String(body.filename || body.name || `upload-${Date.now()}`)
         .split(/[\\/]/).pop().replace(/[^a-zA-Z0-9._-]/g, '_');
-      const isFont = /\.(woff2?|ttf|otf)$/i.test(filename);
+      const ext = (filename.split('.').pop() || '').toLowerCase();
+      const isFont = FONT_EXT.includes(ext);
+      if (!isFont && !IMG_EXT.includes(ext)) return json(400, { success: false, error: 'Only pictures (jpg, png, gif, webp, avif) and fonts (woff, woff2, ttf, otf) can be uploaded' });
       const dir = isFont ? 'fonts' : 'images/uploads';
       const data = String(body.data || '');
       const base64 = data.includes(',') ? data.split(',')[1] : data;
+      if (base64.length > MAX_UPLOAD * 1.4) return json(413, { success: false, error: 'File too big (max 10 MB)' });
+      let head;
+      try { const raw = atob(base64.slice(0, 64)); head = Uint8Array.from(raw, (c) => c.charCodeAt(0)); } catch { return json(400, { success: false, error: 'Bad file data' }); }
+      const kind = sniffKind(head);
+      const okKind = isFont ? FONT_EXT.includes(kind) : IMG_EXT.includes(kind);
+      if (!okKind) return json(400, { success: false, error: 'That file is not really a ' + (isFont ? 'font' : 'picture') });
       // [skip ci]: no rebuild needed - the Worker serves uploads straight from GitHub (see serveFromGithub),
       // so the file is usable right away. A later normal deploy bundles it as a static file too.
       await commitFile(`${dir}/${filename}`, base64, `Editor: upload ${filename} [skip ci]`);
@@ -226,7 +272,7 @@ export async function serveFromGithub(context) {
   const ext = path.split('.').pop().toLowerCase();
   const out = new Response(await res.arrayBuffer(), {
     status: 200,
-    headers: { 'Content-Type': MIME[ext] || 'application/octet-stream', 'Cache-Control': 'public, max-age=300' },
+    headers: { 'Content-Type': MIME[ext] || 'application/octet-stream', 'Cache-Control': 'public, max-age=300', 'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; sandbox" },
   });
   waitUntil(cache.put(key, out.clone()));
   return out;

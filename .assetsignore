@@ -14,3 +14,12 @@ package-lock.json
 .assetsignore
 .gitignore
 .gitattributes
+
+.git
+.wrangler
+.gitignore
+.gitattributes
+*.md
+*.bat
+package.json
+package-lock.json
