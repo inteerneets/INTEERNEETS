@@ -798,5 +798,10 @@
     // ?? Glass scrollbar (desktop / mouse only) ??
     glassScroll();
   </script>
+<script src="/spotify-player.js?v=20261117d"></script>
+<script>
+  // playlist cards placed in the editor: start them once the pages are on screen
+  (function () { var n = 0, iv = setInterval(function () { if (window.SpotifyPlayer) SpotifyPlayer.mountAll(document); if (++n > 40) clearInterval(iv); }, 500); })();
+</script>
 </body>
 </html>

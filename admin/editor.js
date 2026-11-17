@@ -1374,6 +1374,30 @@ document.getElementById('btn-add-image').addEventListener('click', () => {
   });
 });
 
+// Spotify playlist card: a see-through player you can drag anywhere and resize by its corners
+const isSpotify = (c) => !!(c && c.getAttributes && c.getAttributes()['data-spotify-player']);
+function makeSpotifyResizable(c) {
+  if (!isSpotify(c)) return;
+  c.set('resizable', { tl: 1, tr: 1, bl: 1, br: 1, cl: 1, cr: 1, tc: 1, bc: 1 });
+}
+editor.on('component:add', makeSpotifyResizable);
+editor.on('component:selected', makeSpotifyResizable);
+function spotifyMount() {
+  try { const doc = editor.Canvas.getDocument(); if (doc && doc.body && window.SpotifyPlayer) SpotifyPlayer.mountAll(doc, { editor: true }); } catch (e) { /* canvas not ready */ }
+}
+setInterval(spotifyMount, 1500);
+document.getElementById('btn-add-playlist').addEventListener('click', () => {
+  const raw = prompt('Paste the link of your PUBLIC Spotify playlist (Spotify > ... > Share > Copy link to playlist):', localStorage.getItem('spLast') || '');
+  if (!raw) return;
+  const id = SpotifyPlayer.idOf(raw);
+  if (!id) { showToast('That is not a Spotify playlist link'); return; }
+  localStorage.setItem('spLast', raw);
+  const c = editor.getWrapper().append('<div data-spotify-player="' + id + '" style="position:absolute;top:80px;left:80px;width:380px;height:480px;z-index:10;"></div>')[0];
+  editor.select(c);
+  setTimeout(spotifyMount, 150);
+  showToast('Playlist added: drag it anywhere, resize it by its corners');
+});
+
 // ═══════════════════════════════════════════════════════════════
 // UI EVENTS
 // ═══════════════════════════════════════════════════════════════
@@ -2053,6 +2077,26 @@ function ensureExtraTools(c) {
   }
   if (add.length) c.set('toolbar', [...add, ...tb]);
 }
+// "Link" shortcut on the little toolbar above a selected Spotify playlist
+(function addSpotifyTool() {
+  const prev = ensureExtraTools;
+  ensureExtraTools = function (c) {
+    prev(c);
+    if (!isSpotify(c)) return;
+    const tb = c.get('toolbar') || [];
+    if (tb.some((t) => t.id === 'q-sp')) return;
+    c.set('toolbar', [{ id: 'q-sp', label: '<span class="tb-fmt" style="font-size:11px">\u266B Link</span>', attributes: { title: 'Change the Spotify playlist' }, command: () => {
+      const raw = prompt('Spotify playlist link:', c.getAttributes()['data-spotify-player'] || '');
+      if (!raw) return;
+      const id = SpotifyPlayer.idOf(raw);
+      if (!id) { showToast('That is not a Spotify playlist link'); return; }
+      c.addAttributes({ 'data-spotify-player': id });
+      const el = c.getEl(); if (el) SpotifyPlayer.remount(el, { editor: true });
+      markDirty(currentPage);
+    } }, ...tb]);
+  };
+})();
+
 editor.on('component:add', ensureExtraTools);
 editor.on('component:selected', ensureExtraTools);
 editor.getWrapper().find('*').forEach(ensureExtraTools);
