@@ -1128,6 +1128,7 @@ async function loadSettings() {
   try {
     let s = {};
     try { s = await fetchContent('settings.json'); } catch (e) { if (e.message !== 'nf') throw e; }
+    try { if (typeof InteerShop !== 'undefined' && InteerShop.autoAdd) await InteerShop.autoAdd(s, window); } catch (e) { /* offline */ }   // new Shopify products join the list
     const set = (id, v) => { if (v) byId(id).value = v; };
     set('set-email', s.contact_email);
     set('set-loading-min', s.loading_min_seconds);

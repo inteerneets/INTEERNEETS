@@ -109,7 +109,7 @@
     var DEFAULT_PAGES = [{ id: 'home', title: 'Home' }, { id: 'shop', title: 'Shop' }];
     var settings = {};
 
-    // ── Content loading ──
+    // â”€â”€ Content loading â”€â”€
     // Live site: read straight from GitHub via the function (instant after Save).
     // Falls back to the deployed static file. Local: static file.
     // Editor device preview (/?ep=1 inside the editor): use the editor's unsaved designs, otherwise the saved ones
@@ -140,7 +140,7 @@
       }, wait);
     }
 
-    // ── Theme colors from Site Colors (exact flat colors; shading only if enabled) ──
+    // â”€â”€ Theme colors from Site Colors (exact flat colors; shading only if enabled) â”€â”€
     function applySettings(s) {
       var c = s.site_colors || (s.site_bg_color ? { bg: s.site_bg_color } : null);
       if (c) {
@@ -152,7 +152,7 @@
       if (s.site_bg_shading) document.getElementById('shade').style.display = 'block';
     }
 
-    // ── Scope a page's CSS so pages cannot affect each other ──
+    // â”€â”€ Scope a page's CSS so pages cannot affect each other â”€â”€
     // A page's background is controlled only by its Page BG setting, so drop any
     // background that old designs painted on the page itself (html/body or full-page sections).
     var THEME_BG = /background(?:-color)?\s*:\s*var\(--c-bg[^;}]*;?/gi;
@@ -252,7 +252,7 @@
       return scopeRules(rules, scope, fonts);
     }
 
-    // ── Build ──
+    // â”€â”€ Build â”€â”€
     function fallbackHtml(title) {
       var mail = settings.contact_email || 'inteerneets@gmail.com';
       return '<section style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2rem;">' +
@@ -508,7 +508,7 @@
       if (target) { document.documentElement.style.scrollBehavior = 'auto'; target.scrollIntoView(); document.documentElement.style.scrollBehavior = ''; update(); }
     }
 
-    // ── Shopify (products from Site Settings render into [data-shopify-section] blocks) ──
+    // â”€â”€ Shopify (products from Site Settings render into [data-shopify-section] blocks) â”€â”€
     // The product page: one design (Product Page tab in the editor) shown full screen for the clicked product,
     // with arrows to move between products. Closes with the X, Esc, or the arrows' neighbours.
     // The product page: one design per product (falls back to the "template" design from the Product Page
@@ -637,12 +637,12 @@
       var go = function () { InteerShop.autoAdd(settings, window).then(function () { InteerShop.render(document, settings, { toFilterShadow: toFilterShadow, onOpenProduct: openProduct }); }); };
       if (window.InteerShop) return go();
       var s = document.createElement('script');
-      s.src = '/shopify-shop.js?v=20261117a';
+      s.src = '/shopify-shop.js?v=20261117b';
       s.onload = go;
       document.head.appendChild(s);
     }
 
-    // ── Start ──
+    // â”€â”€ Start â”€â”€
     // ?? Loading screen: designed in the editor (Loading Page tab). The last design is remembered
     // in this browser so returning visitors see it instantly; the newest one is fetched every visit.
     var LD_KEY = 'inteerneets-loading-design';
