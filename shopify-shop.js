@@ -494,6 +494,27 @@
     return p;
   }
 
+  // New products you add in Shopify (e.g. from Printful) show up on the site by themselves: every product
+  // Shopify returns that is not in your list yet is added at the end of the shop (hide any you do not want).
+  function autoAdd(settings, win) {
+    win = win || window;
+    if (!settings || !settings.shopify_domain || !settings.shopify_storefront_token || settings.shopify_auto_all === false) return Promise.resolve(settings);
+    var domain = String(settings.shopify_domain).trim().replace(/^https?:\/\//i, '').replace(/\/.*$/, '');
+    var token = String(settings.shopify_storefront_token).trim();
+    return win.fetch('https://' + domain + '/api/' + SHOP_API + '/graphql.json', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Shopify-Storefront-Access-Token': token },
+      body: JSON.stringify({ query: 'query{products(first:100,sortKey:CREATED_AT,reverse:true){nodes{id}}}' })
+    }).then(function (r) { return r.json(); }).then(function (j) {
+      var nodes = (j && j.data && j.data.products && j.data.products.nodes) || [];
+      var have = {};
+      (settings.shopify_product_ids || []).forEach(function (x) { have[keyOf(x)] = 1; });
+      var add = [];
+      nodes.forEach(function (n) { var id = n.id && n.id.split('/').pop(); if (id && !have[id]) add.push(id); });
+      if (add.length) settings.shopify_product_ids = (settings.shopify_product_ids || []).concat(add);
+      return settings;
+    }).catch(function () { return settings; });
+  }
+
   function money(amount, cur) {
     var a = parseFloat(amount);
     if (isNaN(a)) return '';
@@ -847,5 +868,5 @@
     return true;
   }
 
-  g.InteerShop = { FONTS: FONTS, DEFAULTS: DEFAULTS, SCHEMA: SCHEMA, merged: merged, options: options, render: render, renderProductPage: renderProductPage, previewCart: previewCart, parseId: parseId, keyOf: keyOf, visibleKeys: visibleKeys, catTree: catTree, catKeys: catKeys, fetchShopData: fetchShopData, shopOpts: shopOpts, OPT_DEFAULTS: OPT_DEFAULTS, money: money, fontList: fontList, fontFaceCss: fontFaceCss, customImgs: customImgs, setSiteFonts: setSiteFonts };
+  g.InteerShop = { autoAdd: autoAdd, FONTS: FONTS, DEFAULTS: DEFAULTS, SCHEMA: SCHEMA, merged: merged, options: options, render: render, renderProductPage: renderProductPage, previewCart: previewCart, parseId: parseId, keyOf: keyOf, visibleKeys: visibleKeys, catTree: catTree, catKeys: catKeys, fetchShopData: fetchShopData, shopOpts: shopOpts, OPT_DEFAULTS: OPT_DEFAULTS, money: money, fontList: fontList, fontFaceCss: fontFaceCss, customImgs: customImgs, setSiteFonts: setSiteFonts };
 })(window);
