@@ -121,6 +121,7 @@
     }
   ],
   "product_custom_images": {},
+  "product_variant_images": {},
   "shop_opts": {},
   "product_badges": {},
   "product_hidden": {},
@@ -134,5 +135,8 @@
       "url": "/fonts/Inter_18pt-Regular.ttf"
     }
   ],
-  "product_descriptions": {}
+  "product_descriptions": {
+    "15978671243641": "Official merch for c4pars' new EP #austinumuzika. Features the official EP cover artwork designed by Klāvs Damiens Ārnieks (@infovisualss), framed by bold pink typography. Printed on premium 100% heavyweight pre-shrunk cotton for a durable, classic streetwear fit.",
+    "15978674684281": "Official merch for c4pars' new EP #austinumuzika. Designed by Klāvs Damiens Ārnieks (@infovisualss), featuring glowing neon music notes tangled in wired earphones. Printed on premium 100% heavyweight pre-shrunk cotton for a durable, classic streetwear fit."
+  }
 }
