@@ -1374,27 +1374,27 @@ document.getElementById('btn-add-image').addEventListener('click', () => {
   });
 });
 
-// Spotify playlist card: a see-through player you can drag anywhere and resize by its corners
-const isSpotify = (c) => !!(c && c.getAttributes && c.getAttributes()['data-spotify-player']);
-function makeSpotifyResizable(c) {
-  if (!isSpotify(c)) return;
+// SoundCloud playlist card: a see-through player you can drag anywhere and resize by its corners
+const isSoundCloud = (c) => !!(c && c.getAttributes && c.getAttributes()['data-soundcloud-player']);
+function makeSoundCloudResizable(c) {
+  if (!isSoundCloud(c)) return;
   c.set('resizable', { tl: 1, tr: 1, bl: 1, br: 1, cl: 1, cr: 1, tc: 1, bc: 1 });
 }
-editor.on('component:add', makeSpotifyResizable);
-editor.on('component:selected', makeSpotifyResizable);
-function spotifyMount() {
-  try { const doc = editor.Canvas.getDocument(); if (doc && doc.body && window.SpotifyPlayer) SpotifyPlayer.mountAll(doc, { editor: true }); } catch (e) { /* canvas not ready */ }
+editor.on('component:add', makeSoundCloudResizable);
+editor.on('component:selected', makeSoundCloudResizable);
+function scMount() {
+  try { const doc = editor.Canvas.getDocument(); if (doc && doc.body && window.SoundCloudPlayer) SoundCloudPlayer.mountAll(doc, { editor: true }); } catch (e) { /* canvas not ready */ }
 }
-setInterval(spotifyMount, 1500);
+setInterval(scMount, 1500);
 document.getElementById('btn-add-playlist').addEventListener('click', () => {
-  const raw = prompt('Paste the link of your PUBLIC Spotify playlist (Spotify > ... > Share > Copy link to playlist):', localStorage.getItem('spLast') || '');
+  const raw = prompt('Paste the link of your public SoundCloud playlist (SoundCloud > Share > Copy link), for example https://soundcloud.com/you/sets/your-playlist :', localStorage.getItem('scLast') || '');
   if (!raw) return;
-  const id = SpotifyPlayer.idOf(raw);
-  if (!id) { showToast('That is not a Spotify playlist link'); return; }
-  localStorage.setItem('spLast', raw);
-  const c = editor.getWrapper().append('<div data-spotify-player="' + id + '" style="position:absolute;top:80px;left:80px;width:380px;height:480px;z-index:10;"></div>')[0];
+  const id = SoundCloudPlayer.urlOf(raw);
+  if (!id) { showToast('That is not a SoundCloud link'); return; }
+  localStorage.setItem('scLast', raw);
+  const c = editor.getWrapper().append('<div data-soundcloud-player="' + id + '" style="position:absolute;top:80px;left:80px;width:380px;height:480px;z-index:10;"></div>')[0];
   editor.select(c);
-  setTimeout(spotifyMount, 150);
+  setTimeout(scMount, 150);
   showToast('Playlist added: drag it anywhere, resize it by its corners');
 });
 
@@ -2077,21 +2077,21 @@ function ensureExtraTools(c) {
   }
   if (add.length) c.set('toolbar', [...add, ...tb]);
 }
-// "Link" shortcut on the little toolbar above a selected Spotify playlist
+// "Link" shortcut on the little toolbar above a selected SoundCloud playlist
 (function addSpotifyTool() {
   const prev = ensureExtraTools;
   ensureExtraTools = function (c) {
     prev(c);
-    if (!isSpotify(c)) return;
+    if (!isSoundCloud(c)) return;
     const tb = c.get('toolbar') || [];
     if (tb.some((t) => t.id === 'q-sp')) return;
-    c.set('toolbar', [{ id: 'q-sp', label: '<span class="tb-fmt" style="font-size:11px">\u266B Link</span>', attributes: { title: 'Change the Spotify playlist' }, command: () => {
-      const raw = prompt('Spotify playlist link:', c.getAttributes()['data-spotify-player'] || '');
+    c.set('toolbar', [{ id: 'q-sp', label: '<span class="tb-fmt" style="font-size:11px">\u266B Link</span>', attributes: { title: 'Change the SoundCloud playlist' }, command: () => {
+      const raw = prompt('SoundCloud playlist link:', c.getAttributes()['data-soundcloud-player'] || '');
       if (!raw) return;
-      const id = SpotifyPlayer.idOf(raw);
-      if (!id) { showToast('That is not a Spotify playlist link'); return; }
-      c.addAttributes({ 'data-spotify-player': id });
-      const el = c.getEl(); if (el) SpotifyPlayer.remount(el, { editor: true });
+      const id = SoundCloudPlayer.urlOf(raw);
+      if (!id) { showToast('That is not a SoundCloud link'); return; }
+      c.addAttributes({ 'data-soundcloud-player': id });
+      const el = c.getEl(); if (el) SoundCloudPlayer.remount(el, { editor: true });
       markDirty(currentPage);
     } }, ...tb]);
   };
