@@ -30,7 +30,7 @@
       var t = r.getBoundingClientRect().width / sc;
       var sp = Math.max(10, parseFloat(el.getAttribute('data-marquee-speed')) || 80);
       var key = Math.round(w) + '|' + Math.round(t) + '|' + sp;
-      if (el.__mq === key || !(w > 0)) return;
+      if ((el.__mq === key && el.style.getPropertyValue('--mq-a')) || !(w > 0)) return;   // re-apply if the editor re-drew the element and dropped our values
       el.__mq = key;
       el.style.setProperty('--mq-a', Math.round(w) + 'px');
       el.style.setProperty('--mq-b', (-Math.ceil(t) - 4) + 'px');

@@ -2838,10 +2838,13 @@ function openTextFxPanel(c) {
   const cur = () => p.__c;
   const el = () => { const x = cur(); return x && x.getEl(); };
   const touch = () => { markDirty(currentPage); setTimeout(() => { try { InteerMarquee.apply(editor.Canvas.getDocument()); } catch (_) { /* not ready */ } }, 60); };
-  const ensureBox = (x) => { // scrolling / aligning needs a box with a fixed width
+  const ensureBox = (x) => { // scrolling / aligning needs a box with a real, fixed width (measured BEFORE the text stops wrapping)
     const e = x.getEl(); if (!e) return;
-    const cs = e.ownerDocument.defaultView.getComputedStyle(e);
-    if (!x.getStyle().width && (cs.position === 'absolute' || cs.position === 'fixed')) x.addStyle({ width: Math.round(e.offsetWidth) + 'px' });
+    const w = String(x.getStyle().width || '').trim();
+    if (/^\d+(\.\d+)?(px|%|em|rem|vw|ch)$/.test(w)) return;     // already a usable width
+    const wasScrolling = !!x.getAttributes()['data-marquee'];
+    const px = wasScrolling ? Math.min(e.offsetWidth, 520) : e.offsetWidth;    // a scrolling box would measure as wide as its whole line
+    x.addStyle({ width: Math.max(80, Math.round(px)) + 'px' });
   };
   const sync = () => {
     const x = cur(); if (!x) return;
@@ -2853,7 +2856,7 @@ function openTextFxPanel(c) {
     const al = x.getStyle()['text-align'] || '';
     p.querySelectorAll('[data-a]').forEach((b) => b.classList.toggle('on', b.dataset.a === al));
   };
-  const setDir = (d) => { const x = cur(); x.addAttributes({ 'data-marquee': d, 'data-marquee-speed': String(p.querySelector('#tfx-sp').value) }); ensureBox(x); sync(); touch(); };
+  const setDir = (d) => { const x = cur(); ensureBox(x); x.addAttributes({ 'data-marquee': d, 'data-marquee-speed': String(p.querySelector('#tfx-sp').value) }); sync(); touch(); };
   if (!p) {
     p = document.createElement('div');
     p.id = 'text-fx-panel';
