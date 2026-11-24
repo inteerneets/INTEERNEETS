@@ -202,7 +202,10 @@
     try {
       var sm = merged(settings.shopify_style, settings.site_colors), rr = px(sm.toggle_radius, 0);
       // The cart button sits against a screen edge: its flat side touches the edge, the outer corners are rounded
-      css += '.shopify-buy__cart-toggle{border-radius:' + (shopOpts(settings).cart_side === 'right' ? rr + ' 0 0 ' + rr : '0 ' + rr + ' ' + rr + ' 0') + '!important;}';
+      // compact cart button in the menu bar: cart icon + amount side by side
+      css += '.shopify-buy__cart-toggle{display:flex!important;flex-direction:row-reverse!important;align-items:center!important;justify-content:center!important;gap:8px!important;width:100%!important;height:100%!important;box-sizing:border-box!important;padding:0 10px!important;margin:0!important;float:none!important;border-radius:' + rr + '!important;}' +
+        '.shopify-buy__cart-toggle__count{margin:0!important;padding:0!important;font-size:16px!important;line-height:1!important;}' +
+        '.shopify-buy__icon-cart{width:20px!important;height:20px!important;margin:0!important;}';
     } catch (e) { /* ignore */ }
     Array.prototype.forEach.call(doc.querySelectorAll('iframe'), function (f) {
       try {
@@ -812,15 +815,17 @@
   // Cart side: the floating cart button is pinned top-right (default) or top-left, flat side flush against the
   // screen edge, always visible once something is in the cart; the drawer slides from that same edge, no gap.
   function cartSideCss(doc, settings, opt) {
-    var side = shopOpts(settings).cart_side === 'left' ? 'left' : 'right';
+    var side = shopOpts(settings).cart_side === 'left' ? 'left' : 'right';     // side the DRAWER opens from
     var s = merged(settings.shopify_style, settings.site_colors), rad = px(s.toggle_radius, 0);
     var tag = doc.getElementById('ish-cart-css');
     if (!tag) { tag = doc.createElement('style'); tag.id = 'ish-cart-css'; doc.head.appendChild(tag); }
     var mob = '@media(max-width:520px){.shopify-buy-frame--cart{max-width:100%!important;transition-duration:.22s!important;will-change:transform;}}';
     var from = side === 'right' ? 'right' : 'left', other = side === 'right' ? 'left' : 'right', away = side === 'right' ? '100%' : '-100%';
-    if (opt && opt.toggle) opt.toggle.styles.toggle['border-radius'] = side === 'right' ? rad + ' 0 0 ' + rad : '0 ' + rad + ' ' + rad + ' 0';
+    if (opt && opt.toggle) opt.toggle.styles.toggle['border-radius'] = rad;
     tag.textContent =
-      '.shopify-buy-frame--toggle.is-sticky{' + from + ':0!important;' + other + ':auto!important;top:12px!important;bottom:auto!important;margin:0!important;transform:none!important;z-index:110!important;}' +
+      // the cart button lives in the menu bar, at the far left (with a gap), and is always there: icon + amount
+      '.shopify-buy-frame--toggle.is-sticky{display:block!important;visibility:visible!important;opacity:1!important;position:fixed!important;left:16px!important;right:auto!important;top:9px!important;bottom:auto!important;width:78px!important;height:38px!important;margin:0!important;transform:none!important;z-index:110!important;}' +
+      '.shopify-buy-frame--toggle iframe{width:100%!important;height:100%!important;}' +
       '.shopify-buy-frame--cart{' + from + ':0!important;' + other + ':auto!important;margin:0!important;border:0!important;transform:translateX(' + away + ')!important;}' +
       '.shopify-buy-frame--cart.is-active{transform:translateX(0)!important;}' + mob;
   }
