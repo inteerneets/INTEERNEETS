@@ -1,10 +1,14 @@
 /* Scrolling ("marquee") text. Put data-marquee="left" or "right" (and optionally data-marquee-speed="80", pixels per
-   second) on any text box: the text scrolls sideways inside the box, which keeps its size. Used by the live site and the editor. */
+   second) on any text box: the text scrolls sideways inside the box, which keeps its size. The line repeats itself,
+   so as soon as the text leaves one edge it enters on the other: a clean, endless loop with no gaps.
+   Used by the live site and the editor. */
 (function (g) {
+  var GAP = '\u2003\u2003\u2003';
   var CSS =
-    '@keyframes mq-l{from{text-indent:var(--mq-a,100%)}to{text-indent:var(--mq-b,-100%)}}' +
-    '@keyframes mq-r{from{text-indent:var(--mq-b,-100%)}to{text-indent:var(--mq-a,100%)}}' +
+    '@keyframes mq-l{from{text-indent:0}to{text-indent:calc(-1 * var(--mq-p,300px))}}' +
+    '@keyframes mq-r{from{text-indent:calc(-1 * var(--mq-p,300px))}to{text-indent:0}}' +
     '[data-marquee]{overflow:hidden!important;white-space:nowrap!important;text-overflow:clip!important;text-align:left!important;}' +
+    '[data-marquee]::after{content:attr(data-mq-rep);white-space:pre;}' +
     '[data-marquee="left"]{animation:mq-l var(--mq-d,10s) linear infinite;}' +
     '[data-marquee="right"]{animation:mq-r var(--mq-d,10s) linear infinite;}';
 
@@ -13,7 +17,14 @@
     var s = doc.createElement('style'); s.id = 'mq-css'; s.textContent = CSS;
     (doc.head || doc.documentElement).appendChild(s);
   }
-  // measure each scrolling box and its text once (and again whenever either changes)
+  function clear(el) {
+    el.removeAttribute('data-mq-rep');
+    el.style.removeProperty('--mq-p'); el.style.removeProperty('--mq-d');
+    el.style.removeProperty('--mq-a'); el.style.removeProperty('--mq-b');
+    el.style.removeProperty('text-indent');
+    el.__mq = null;
+  }
+  // measure each scrolling box and one repeat of its text (again whenever either changes)
   function apply(doc) {
     doc = doc || document;
     var list = doc.querySelectorAll('[data-marquee]');
@@ -25,20 +36,30 @@
       if (dir !== 'left' && dir !== 'right') return;
       var cs = win.getComputedStyle(el);
       var w = el.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0);
-      var r = doc.createRange(); r.selectNodeContents(el);
-      var br = el.getBoundingClientRect(), sc = (br.width / (el.offsetWidth || 1)) || 1;   // the page may be scaled
-      var t = r.getBoundingClientRect().width / sc;
+      var text = (el.textContent || '').replace(/\s+/g, ' ').trim();
+      if (!(w > 0) || !text) return;
       var sp = Math.max(10, parseFloat(el.getAttribute('data-marquee-speed')) || 80);
-      var key = Math.round(w) + '|' + Math.round(t) + '|' + sp;
-      if ((el.__mq === key && el.style.getPropertyValue('--mq-a')) || !(w > 0)) return;   // re-apply if the editor re-drew the element and dropped our values
+      // width of one repeat = the text + the gap, in the page's own pixels (the page may be scaled)
+      var probe = doc.createElement('span');
+      probe.style.cssText = 'position:absolute;left:0;top:0;visibility:hidden;white-space:pre;text-indent:0;pointer-events:none;';
+      probe.textContent = text + GAP;
+      el.appendChild(probe);
+      var sc = (el.getBoundingClientRect().width / (el.offsetWidth || 1)) || 1;
+      var P = probe.getBoundingClientRect().width / sc;
+      el.removeChild(probe);
+      if (!(P > 4)) return;
+      var key = Math.round(w) + '|' + P.toFixed(1) + '|' + sp + '|' + text;
+      if (el.__mq === key && el.getAttribute('data-mq-rep')) return;
       el.__mq = key;
-      el.style.setProperty('--mq-a', Math.round(w) + 'px');
-      el.style.setProperty('--mq-b', (-Math.ceil(t) - 4) + 'px');
-      el.style.setProperty('--mq-d', Math.max(2, (w + t) / sp).toFixed(2) + 's');
+      var n = Math.ceil(w / P) + 2, rep = '';
+      for (var i = 0; i < n; i++) rep += GAP + text;
+      el.setAttribute('data-mq-rep', rep);
+      el.style.setProperty('--mq-p', P.toFixed(2) + 'px');
+      el.style.setProperty('--mq-d', Math.max(1, P / sp).toFixed(2) + 's');
     });
   }
   g.InteerMarquee = {
-    css: CSS, ensureCss: ensureCss, apply: apply,
+    css: CSS, ensureCss: ensureCss, apply: apply, clear: clear,
     start: function (doc) {
       doc = doc || document;
       apply(doc);

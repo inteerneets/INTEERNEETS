@@ -93,7 +93,7 @@
     /* Embed / Widget blocks: no editor border on the live site, content fills the box */
     .custom-widget-block { border: 0 !important; outline: 0 !important; box-shadow: none !important; background: none !important; display: block !important; overflow: hidden; padding: 0 !important; }
     .custom-widget-block iframe { max-width: 100%; border: 0; }
-    .custom-widget-block > iframe { width: 100%; height: 100%; }
+    .custom-widget-block > iframe { width: calc(100% + 24px) !important; max-width: none !important; height: 100%; }   /* the embed's own scrollbar sits in the clipped 24px */
     .custom-widget-block[data-scroll-h] { overflow-y: auto !important; overflow-x: hidden !important; }
     .custom-widget-block[data-scroll-h] iframe { height: var(--eh, 1500px) !important; }
     .custom-widget-block * { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.4) transparent; }
@@ -857,7 +857,7 @@
     });
   </script>
 <script src="/soundcloud-player.js?v=20261124g"></script>
-<script src="/marquee.js?v=20261125f"></script>
+<script src="/marquee.js?v=20261125h"></script>
 <script>InteerMarquee.start(document);</script>
 <script>
   // playlist cards placed in the editor: start them once the pages are on screen

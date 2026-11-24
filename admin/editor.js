@@ -1365,7 +1365,7 @@ document.getElementById('upload-input').addEventListener('change', (e) => {
 });
 
 // Free-drag mode: drag any element anywhere on the canvas (absolute positioning)
-let freeDrag = true;   // on by default: every page (and every new page) drags freely and snaps
+let freeDrag = false;   // off by default: dragging snaps to the blue guide lines and pushes other items aside (the Free Drag button switches to free placement)
 function applyDragMode() {
   try { editor.setDragMode(freeDrag ? 'absolute' : ''); } catch (_) { /* editor not ready */ }
   const b = document.getElementById('btn-freedrag'); if (b) b.classList.toggle('active', freeDrag);
@@ -1493,7 +1493,7 @@ function injectWidgetEditorCss() {
       tag.id = 'widget-editor-css';
       doc.head.appendChild(tag);
     }
-    tag.textContent = '.custom-widget-block * { pointer-events: none !important; user-select: none !important; } .custom-widget-block { cursor: move !important; display: block !important; overflow: hidden; outline: 1px dashed rgba(255,255,255,.45); outline-offset: -1px; } .custom-widget-block iframe { max-width: 100%; border: 0; } .custom-widget-block > iframe { width: 100%; height: 100%; } .custom-widget-block[data-scroll-h] { overflow-y: auto !important; overflow-x: hidden !important; } .custom-widget-block[data-scroll-h] iframe { height: var(--eh, 1500px) !important; } .custom-widget-block * { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.4) transparent; } .custom-widget-block *::-webkit-scrollbar { width: 8px; height: 8px; } .custom-widget-block *::-webkit-scrollbar-track { background: transparent; } .custom-widget-block *::-webkit-scrollbar-thumb { background: linear-gradient(180deg, rgba(255,255,255,.42), rgba(255,255,255,.14)); border-radius: 999px; border: 1px solid rgba(255,255,255,.38); }';
+    tag.textContent = '.custom-widget-block * { pointer-events: none !important; user-select: none !important; } .custom-widget-block { cursor: move !important; display: block !important; overflow: hidden; outline: 1px dashed rgba(255,255,255,.45); outline-offset: -1px; } .custom-widget-block iframe { max-width: 100%; border: 0; } .custom-widget-block > iframe { width: calc(100% + 24px) !important; max-width: none !important; height: 100%; } .custom-widget-block[data-scroll-h] { overflow-y: auto !important; overflow-x: hidden !important; } .custom-widget-block[data-scroll-h] iframe { height: var(--eh, 1500px) !important; } .custom-widget-block * { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.4) transparent; } .custom-widget-block *::-webkit-scrollbar { width: 8px; height: 8px; } .custom-widget-block *::-webkit-scrollbar-track { background: transparent; } .custom-widget-block *::-webkit-scrollbar-thumb { background: linear-gradient(180deg, rgba(255,255,255,.42), rgba(255,255,255,.14)); border-radius: 999px; border: 1px solid rgba(255,255,255,.38); }';
   } catch (_) {}
 }
 editor.on('canvas:frame:load', injectWidgetEditorCss);
@@ -2844,6 +2844,7 @@ function openTextFxPanel(c) {
     if (/^\d+(\.\d+)?(px|%|em|rem|vw|ch)$/.test(w)) return;     // already a usable width
     const wasScrolling = !!x.getAttributes()['data-marquee'];
     const px = wasScrolling ? Math.min(e.offsetWidth, 520) : e.offsetWidth;    // a scrolling box would measure as wide as its whole line
+    if (!x.get('mqOrigWidth')) x.set('mqOrigWidth', w || '__none__');   // remembered, so turning scrolling off puts the box back as it was
     x.addStyle({ width: Math.max(80, Math.round(px)) + 'px' });
   };
   const sync = () => {
@@ -2874,7 +2875,13 @@ function openTextFxPanel(c) {
     p.querySelector('#tfx-on').addEventListener('change', (ev) => {
       const x = cur();
       if (ev.target.checked) setDir((x.getAttributes()['data-marquee']) || 'left');
-      else { x.removeAttributes(['data-marquee', 'data-marquee-speed']); const e = x.getEl(); if (e) { e.style.removeProperty('--mq-a'); e.style.removeProperty('--mq-b'); e.style.removeProperty('--mq-d'); e.__mq = null; } sync(); touch(); }
+      else {
+        x.removeAttributes(['data-marquee', 'data-marquee-speed']);
+        const e = x.getEl(); if (e) InteerMarquee.clear(e);
+        const o = x.get('mqOrigWidth');   // give the box its old width back (e.g. "fits the text"), so the text does not spill out of it
+        if (o) { if (o === '__none__') { const st = Object.assign({}, x.getStyle()); delete st.width; x.setStyle(st); } else x.addStyle({ width: o }); x.set('mqOrigWidth', null); }
+        sync(); touch();
+      }
     });
     p.querySelectorAll('[data-d]').forEach((b) => b.addEventListener('click', () => setDir(b.dataset.d)));
     p.querySelector('#tfx-sp').addEventListener('input', () => { const x = cur(); const d = x.getAttributes()['data-marquee']; if (d) setDir(d); });
