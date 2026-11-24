@@ -573,6 +573,13 @@ bm.add('shopify-products', {
       Shopify products will load here
     </div>`,
 });
+bm.add('custom-widget', {
+  label: 'Embed / Widget',
+  category: 'Studio',
+  content: `<div class="custom-widget-block" style="position:absolute;top:80px;left:80px;width:380px;min-height:160px;z-index:10;border:2px dashed #555;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#555;font-family:'Inter',sans-serif;padding:20px;cursor:move;">
+    Click me, then use the &lt;/&gt; Widget button to paste your embed code
+  </div>`,
+});
 
 // ═══════════════════════════════════════════════════════════════
 // TOAST
