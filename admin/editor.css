@@ -790,3 +790,7 @@ a.tb-btn:hover { color: #ddd; border-color: #555; }
 /* Long-label toolbar buttons (widget Code, playlist Link) take their own width so they never sit on top of the Center button */
 .gjs-toolbar-item__q-widget-code, .gjs-toolbar-item__q-sp { width: auto !important; min-width: 62px; padding: 0 8px !important; white-space: nowrap; }
 .gjs-toolbar-item .tb-fmt { white-space: nowrap; }
+
+.gjs-toolbar-item__q-scroll { width: auto !important; min-width: 74px; padding: 0 6px !important; white-space: nowrap; }
+#text-fx-panel button { background:#2a2a2a; color:#ddd; border:1px solid #555; border-radius:5px; padding:4px 8px; cursor:pointer; font:12px Inter,sans-serif; }
+#text-fx-panel button.on { background:#e53935; border-color:#e53935; color:#000; }

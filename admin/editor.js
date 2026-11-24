@@ -2702,8 +2702,8 @@ function makeTextResizable(c) {
       try {
         if (!start) {
           const cs = el.ownerDocument.defaultView.getComputedStyle(el);
-          const br = el.getBoundingClientRect();
-          start = { w: br.width || 1, h: br.height || 1, fs: parseFloat(cs.fontSize) || 16, ls: parseFloat(cs.letterSpacing) || 0, hasW: !!c.getStyle().width, orig: Object.assign({}, c.getStyle()) };
+          // offsetWidth/Height are in page pixels (getBoundingClientRect is scaled by the editor zoom)
+          start = { w: el.offsetWidth || 1, h: el.offsetHeight || 1, fs: parseFloat(cs.fontSize) || 16, ls: parseFloat(cs.letterSpacing) || 0, hasW: !!c.getStyle().width, orig: Object.assign({}, c.getStyle()) };
           um.stop(); // the whole drag becomes ONE undo step
         }
         let patch;
@@ -2712,9 +2712,10 @@ function makeTextResizable(c) {
           const k = Math.max(0.1, vert ? rect.h / start.h : rect.w / start.w);
           patch = { 'font-size': Math.max(6, Math.round(start.fs * k * 10) / 10) + 'px' };
           if (start.ls) patch['letter-spacing'] = Math.round(start.ls * k * 10) / 10 + 'px';
-          if (start.hasW) patch.width = Math.round(start.w * k) + 'px';
+          const slack = start.h < start.fs * 1.7 ? 1.04 : 1;   // a one-line text keeps a little room so it never wraps
+          patch.width = Math.round(start.w * k * slack) + 'px';   // box scales with the text, so no extra line appears
         } else {
-          patch = { width: Math.round(rect.w) + 'px', 'max-width': '100%' };
+          patch = { width: Math.round(rect.w) + 'px', 'max-width': 'none' };   // only the box gets wider; the text stays as it is
         }
         apply(patch);
         if (opts && opts.store) {
@@ -2746,6 +2747,67 @@ byId('bi-fsslider').addEventListener('input', (ev) => { byId('bi-fontsize').valu
     c.set('toolbar', [{ id: 'q-img', label: '<span class="tb-fmt" style="font-size:11px">Size\u270E</span>', attributes: { title: 'Text size and width' }, command: () => openImagePanel() }, ...tb]);
   };
 })();
+
+// "Scroll / Align" for text: scrolling text (direction + speed) and left / middle / right alignment
+(function addTextScrollTool() {
+  const prev = ensureExtraTools;
+  ensureExtraTools = function (c) {
+    prev(c);
+    if (!isTextLike(c) || isButtonLike(c)) return;
+    const tb = c.get('toolbar') || [];
+    if (tb.some((t) => t.id === 'q-scroll')) return;
+    c.set('toolbar', [{ id: 'q-scroll', label: '<span class="tb-fmt" style="font-size:11px">Scroll/Align</span>', attributes: { title: 'Scrolling text and text alignment' }, command: () => openTextFxPanel(c) }, ...tb]);
+  };
+})();
+function openTextFxPanel(c) {
+  c = c || editor.getSelected();
+  if (!c) return;
+  let p = document.getElementById('text-fx-panel');
+  const cur = () => p.__c;
+  const el = () => { const x = cur(); return x && x.getEl(); };
+  const touch = () => { markDirty(currentPage); setTimeout(() => { try { InteerMarquee.apply(editor.Canvas.getDocument()); } catch (_) { /* not ready */ } }, 60); };
+  const ensureBox = (x) => { // scrolling / aligning needs a box with a fixed width
+    const e = x.getEl(); if (!e) return;
+    const cs = e.ownerDocument.defaultView.getComputedStyle(e);
+    if (!x.getStyle().width && (cs.position === 'absolute' || cs.position === 'fixed')) x.addStyle({ width: Math.round(e.offsetWidth) + 'px' });
+  };
+  const sync = () => {
+    const x = cur(); if (!x) return;
+    const at = x.getAttributes(), dir = at['data-marquee'] || '';
+    p.querySelector('#tfx-on').checked = !!dir;
+    p.querySelector('#tfx-opts').style.display = dir ? 'block' : 'none';
+    p.querySelectorAll('[data-d]').forEach((b) => b.classList.toggle('on', b.dataset.d === (dir || 'left')));
+    p.querySelector('#tfx-sp').value = parseFloat(at['data-marquee-speed']) || 80;
+    const al = x.getStyle()['text-align'] || '';
+    p.querySelectorAll('[data-a]').forEach((b) => b.classList.toggle('on', b.dataset.a === al));
+  };
+  const setDir = (d) => { const x = cur(); x.addAttributes({ 'data-marquee': d, 'data-marquee-speed': String(p.querySelector('#tfx-sp').value) }); ensureBox(x); sync(); touch(); };
+  if (!p) {
+    p = document.createElement('div');
+    p.id = 'text-fx-panel';
+    p.style.cssText = 'position:fixed;top:120px;right:330px;z-index:99999;background:#1a1a1a;border:1px solid #444;border-radius:8px;padding:12px 14px;color:#ddd;font:12px Inter,sans-serif;width:240px;box-shadow:0 8px 30px rgba(0,0,0,.55);';
+    p.innerHTML = '<div style="display:flex;justify-content:space-between;margin-bottom:10px"><b>Text: scroll &amp; align</b><span id="tfx-x" style="cursor:pointer;padding:0 4px">\u2715</span></div>' +
+      '<div style="margin-bottom:4px;opacity:.7">Alignment</div>' +
+      '<div style="display:flex;gap:4px;margin-bottom:12px"><button type="button" data-a="left">Left</button><button type="button" data-a="center">Middle</button><button type="button" data-a="right">Right</button></div>' +
+      '<label style="display:flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" id="tfx-on"> Scroll the text sideways</label>' +
+      '<div id="tfx-opts" style="display:none;margin-top:8px"><div style="margin-bottom:4px;opacity:.7">Direction</div>' +
+      '<div style="display:flex;gap:4px;margin-bottom:8px"><button type="button" data-d="left">\u2190 Left</button><button type="button" data-d="right">Right \u2192</button></div>' +
+      '<div style="margin-bottom:2px;opacity:.7">Speed</div><input type="range" id="tfx-sp" min="20" max="400" step="10" value="80" style="width:100%"></div>';
+    document.body.appendChild(p);
+    p.querySelector('#tfx-x').addEventListener('click', () => { p.style.display = 'none'; });
+    p.querySelectorAll('[data-a]').forEach((b) => b.addEventListener('click', () => { const x = cur(); ensureBox(x); x.addStyle({ 'text-align': b.dataset.a }); sync(); touch(); }));
+    p.querySelector('#tfx-on').addEventListener('change', (ev) => {
+      const x = cur();
+      if (ev.target.checked) setDir((x.getAttributes()['data-marquee']) || 'left');
+      else { x.removeAttributes(['data-marquee', 'data-marquee-speed']); const e = x.getEl(); if (e) { e.style.removeProperty('--mq-a'); e.style.removeProperty('--mq-b'); e.style.removeProperty('--mq-d'); e.__mq = null; } sync(); touch(); }
+    });
+    p.querySelectorAll('[data-d]').forEach((b) => b.addEventListener('click', () => setDir(b.dataset.d)));
+    p.querySelector('#tfx-sp').addEventListener('input', () => { const x = cur(); const d = x.getAttributes()['data-marquee']; if (d) setDir(d); });
+  }
+  p.__c = c;
+  sync();
+  p.style.display = 'block';
+}
 editor.on('component:add', ensureExtraTools);
 editor.on('component:selected', ensureExtraTools);
 
@@ -3552,3 +3614,6 @@ editor.on('update', devSchedule);
     }, 80);
   });
 })();
+
+// scrolling text preview inside the editor canvas (same code as the live site: marquee.js)
+setInterval(() => { try { const d = editor.Canvas.getDocument(); if (d && d.body && window.InteerMarquee) InteerMarquee.apply(d); } catch (_) { /* canvas not ready */ } }, 1000);
