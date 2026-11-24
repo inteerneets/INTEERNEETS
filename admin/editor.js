@@ -1410,6 +1410,8 @@ const isWidgetComp = (c) => !!(c && c.getAttributes && (String(c.getAttributes()
 function makeWidgetResizable(c) {
   if (!isWidgetComp(c)) return;
   c.set('resizable', { tl: 1, tr: 1, bl: 1, br: 1, cl: 1, cr: 1, tc: 1, bc: 1 });
+  // Always drag freely (left/top), even when the global Free Drag toggle is off
+  c.set({ draggable: true, dmode: 'absolute' });
 }
 editor.on('component:add', makeWidgetResizable);
 editor.on('component:selected', makeWidgetResizable);
