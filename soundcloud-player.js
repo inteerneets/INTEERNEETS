@@ -114,6 +114,11 @@
       return;
     }
 
+    // Live site: dress the playlist with the site's glass scrollbar (fades in while scrolling/hovering,
+    // replacing the default browser bar). glass-scroll.js is only present on the live site, not the editor.
+    var gv = doc.defaultView;
+    if (gv && gv.glassScroll) { host.__scGlass = gv.glassScroll({ el: list, host: host, inner: true }); list.__glass = host.__scGlass; }
+
     list.appendChild(el(doc, 'li', 'scx-msg', 'LOADING\u2026'));
     var frame = doc.createElement('iframe');
     frame.className = 'scx-frame'; frame.allow = 'autoplay';
@@ -168,6 +173,7 @@
             li.addEventListener('click', function () { makeOrder(i); go(i); });
             list.appendChild(li);
           });
+          if (host.__scGlass) host.__scGlass.redraw();
         });
       });
       w.bind(g.SC.Widget.Events.PLAY, function () { playing = true; w.getCurrentSoundIndex(function (i) { if (i !== cur) show(i); else mark(); }); });

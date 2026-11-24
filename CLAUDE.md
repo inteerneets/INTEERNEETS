@@ -51,7 +51,11 @@ When you added the custom widget box, it could not be dragged when held. There a
   - Switches to `stackMode` (`stackEnter()` / `stackMeasure()`).
   - Absolute elements are stripped of fixed coordinates and stacked vertically in visual top-to-bottom order so the site scrolls naturally on smartphones.
 - **Glass Scrollbar (`glass-scroll.js`):**
-  - A custom see-through scrollbar overlay attached to `window` and to the product page modal.
+  - A custom see-through "glass" scrollbar overlay that fades in while scrolling/hovering and fades out when idle.
+  - `glassScroll()` — the whole page. `glassScroll({el})` — a full-screen scroll box (the product overlay).
+  - `glassScroll({el, inner:true})` — a box that lives **inside** the page (widgets, playlists, panels); the pill anchors to that element's own right edge instead of the viewport. `host` must be a positioned ancestor.
+  - `glassScrollAll(root)` auto-attaches the inner bar to every `[data-glass-scroll]` element and runs automatically on load (and watches for new nodes). This is how any widget gets the glass bar — just add `data-glass-scroll`. The SoundCloud playlist (`.scx-list`) wires it directly in `soundcloud-player.js`.
+  - `glass-scroll.js` is loaded on the live site (`index.html`, `404.html`) only, **not** the editor. Widget code must guard on `doc.defaultView.glassScroll` existing.
 
 ### System B: The Page Editor (`admin/index.html`, `admin/editor.js`, `admin/editor.css`)
 - Built on top of **GrapesJS v0.21.13**.
@@ -122,3 +126,7 @@ When you added the custom widget box, it could not be dragged when held. There a
    `.custom-widget-block` is created by the `</> Widget` toolbar button or the Studio "Embed / Widget" block. With a widget selected, the button replaces its code instead of adding a new one.
 9. **Image Links:**
    Picture links are stored as `data-link` (plus the parent `<a href>` if the picture is wrapped in one). `index.html` has a global click handler for `[data-link]`.
+10. **Cart Button Shape:**
+   The floating cart button is pinned top-right (the `cart_side` setting is ignored). Its straight edge must sit flush against the screen's right edge, so `injectFrameFonts()` forces `.shopify-buy__cart-toggle` to `border-radius: <r> 0 0 <r>` (inner/left corners rounded, right corners square). Do not re-introduce the `cart_side` branch here.
+11. **Glass Scrollbar Everywhere:**
+   Any scrollable widget or box on the live site should use the glass scrollbar, not the native one — add `data-glass-scroll` (auto-wired) or call `glassScroll({el, inner:true})`. See System A.

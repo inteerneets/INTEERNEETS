@@ -201,8 +201,9 @@
     var css = fontFaceCss(settings.site_fonts) + FRAME_CSS;
     try {
       var sm = merged(settings.shopify_style, settings.site_colors), rr = px(sm.toggle_radius, 0);
-      // the floating cart button sits flush against the screen edge: no rounded corners on that side
-      css += '.shopify-buy__cart-toggle{border-radius:' + (shopOpts(settings).cart_side === 'right' ? rr + ' 0 0 ' + rr : '0 ' + rr + ' ' + rr + ' 0') + '!important;}';
+      // The floating cart button is pinned top-right (cart_side is ignored). Its straight edge must sit
+      // flush against the screen's right edge, so only the inner (left) corners are rounded.
+      css += '.shopify-buy__cart-toggle{border-radius:' + rr + ' 0 0 ' + rr + '!important;}';
     } catch (e) { /* ignore */ }
     Array.prototype.forEach.call(doc.querySelectorAll('iframe'), function (f) {
       try {

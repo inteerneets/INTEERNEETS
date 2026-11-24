@@ -5,6 +5,22 @@ Credentials are intentionally not repeated here; they are in `HANDOFF.md`.
 
 ---
 
+## 0. Latest changes (2026-11-24, session B) — NOT yet committed/deployed
+
+Done this session (desktop working copy only; verified with a standalone render harness + screenshot, not yet on the live site):
+
+1. **Cart button orientation.** Cart stays pinned top-right; fixed its shape so the straight edge is flush against the screen's right edge. `shopify-shop.js` `injectFrameFonts()` (~line 205) no longer branches on the (ignored) `cart_side` setting — it always emits `.shopify-buy__cart-toggle{border-radius:<r> 0 0 <r>}` (inner/left corners rounded, right corners square). Previously `cart_side` defaulted to `'left'`, which rounded the outer/right corners — the bug the user saw.
+2. **Glass scrollbar on widgets.** `glass-scroll.js` gained an **inner mode**: `glassScroll({el, inner:true})` anchors the fading glass pill to the element's own right edge (not the viewport), recomputing geometry each frame. Added `glassScrollAll(root)` which auto-attaches the inner bar to every `[data-glass-scroll]` element and runs on load + watches for new nodes. The SoundCloud playlist (`.scx-list`, `soundcloud-player.js`) now wires the glass bar directly on the live site (guarded on `doc.defaultView.glassScroll`; editor is unaffected since it doesn't load glass-scroll.js). The old full-screen path (product overlay) is unchanged.
+3. `CLAUDE.md` updated (rules 10–11, System A glass-scroll notes).
+
+Version bumps this session: `glass-scroll.js?v=20261124g` (index.html + 404.html), `shopify-shop.js?v=20261124g` (index.html + admin/index.html), `soundcloud-player.js?v=20261124g` (both HTML files). `editor.js?v=20261124e` unchanged.
+
+Still to do: browser-test on the live site (cart corners against the 56px top menu; glass bar inside the SoundCloud widget fades/drags correctly under the page's `transform:scale`); then commit + `npx wrangler deploy`. Note the thumb-drag math is calibrated in element px, so dragging inside a scaled page may be slightly off — wheel scroll + the visual pill are the primary goal.
+
+Remaining items from the GPT to-do that were intentionally deferred: configurable SOP category/search font sizes, and widget snapping/centering refinements (the `dmode:'absolute'` drag fix from session A is still untested).
+
+---
+
 ## 1. Where things stand right now
 
 | Item | State |
