@@ -107,6 +107,9 @@ const editor = grapesjs.init({
   // Manual save/load — no built-in storage
   storageManager: false,
 
+  // Selecting something is not an undo step (it made Ctrl+Z / redo need extra presses)
+  undoManager: { trackSelection: false },
+
   // Canvas: inject Google Fonts so they render inside the iframe
   canvas: {
     styles: [GOOGLE_FONTS_URL],
@@ -994,6 +997,7 @@ async function loadPage(id) {
   editor.UndoManager.clear();
 
   setTimeout(() => {
+    applyDragMode();
     loadingPage = false;
     if (!fromDraft && !newPages.has(id)) dirty.delete(id);
     if (newPages.has(id)) dirty.add(id);
@@ -1361,7 +1365,13 @@ document.getElementById('upload-input').addEventListener('change', (e) => {
 });
 
 // Free-drag mode: drag any element anywhere on the canvas (absolute positioning)
-let freeDrag = false;
+let freeDrag = true;   // on by default: every page (and every new page) drags freely and snaps
+function applyDragMode() {
+  try { editor.setDragMode(freeDrag ? 'absolute' : ''); } catch (_) { /* editor not ready */ }
+  const b = document.getElementById('btn-freedrag'); if (b) b.classList.toggle('active', freeDrag);
+}
+setTimeout(applyDragMode, 0);
+editor.on('canvas:frame:load', () => setTimeout(applyDragMode, 50));
 document.getElementById('btn-freedrag').addEventListener('click', (e) => {
   freeDrag = !freeDrag;
   editor.setDragMode(freeDrag ? 'absolute' : '');
@@ -1415,9 +1425,58 @@ document.getElementById('btn-add-playlist').addEventListener('click', () => {
 
 // ─── Custom HTML/Embed Widget ───
 const isWidgetComp = (c) => !!(c && c.getAttributes && (String(c.getAttributes()['class'] || '').includes('custom-widget-block')));
+// screen position of the pointer (works over both the editor and the canvas), used by the widget resizer
+const ptr = { sx: 0, sy: 0, dsx: 0, dsy: 0 };
+function trackPtr(doc, inFrame) {
+  if (!doc || doc.__ptrTracked) return;
+  doc.__ptrTracked = true;
+  // position in editor-window pixels, whichever document the event came from
+  const pos = (e) => {
+    if (!inFrame) return [e.clientX, e.clientY];
+    const r = editor.Canvas.getFrameEl().getBoundingClientRect(), z = (editor.Canvas.getZoom() / 100) || 1;
+    return [r.left + e.clientX * z, r.top + e.clientY * z];
+  };
+  doc.addEventListener('mousemove', (e) => { const p = pos(e); ptr.sx = p[0]; ptr.sy = p[1]; }, true);
+  ['mousedown', 'pointerdown'].forEach((ev) => doc.addEventListener(ev, (e) => { const p = pos(e); ptr.sx = ptr.dsx = p[0]; ptr.sy = ptr.dsy = p[1]; }, true));
+  doc.addEventListener('pointermove', (e) => { const p = pos(e); ptr.sx = p[0]; ptr.sy = p[1]; }, true);
+}
+trackPtr(document, false);
+setInterval(() => { try { trackPtr(editor.Canvas.getDocument(), true); } catch (_) { /* canvas not ready */ } }, 700);
 function makeWidgetResizable(c) {
   if (!isWidgetComp(c)) return;
-  c.set('resizable', { tl: 1, tr: 1, bl: 1, br: 1, cl: 1, cr: 1, tc: 1, bc: 1 });
+  const um = editor.UndoManager;
+  let start = null;
+  c.set('resizable', {
+    tl: 1, tr: 1, bl: 1, br: 1, cl: 1, cr: 1, tc: 1, bc: 1,
+    // our own resize so width, height AND left/top (top/left handles) are all stored, as ONE undo step
+    updateTarget(el, rect, opts) {
+      const handle = String((opts && (opts.selectedHandler || opts.handler)) || '');
+      try {
+        if (!start) {
+          const st = c.getStyle();
+          start = { w: el.offsetWidth, h: el.offsetHeight, l: parseFloat(st.left) || el.offsetLeft, t: parseFloat(st.top) || el.offsetTop, orig: Object.assign({}, st) };
+          // which edges move = where the pointer grabbed the box (the editor's own handle names are unreliable for corners)
+          const fr = editor.Canvas.getFrameEl().getBoundingClientRect(), br = el.getBoundingClientRect(), zz = (editor.Canvas.getZoom() / 100) || 1;
+          const x0 = fr.left + br.left * zz, x1 = fr.left + br.right * zz, y0 = fr.top + br.top * zz, y1 = fr.top + br.bottom * zz, g = 22;
+          start.e = { L: ptr.dsx <= x0 + g, R: ptr.dsx >= x1 - g, T: ptr.dsy <= y0 + g, B: ptr.dsy >= y1 - g };
+          um.stop();
+        }
+        // work from the real pointer movement (screen px -> page px), so every handle moves its own edge
+        const z = (editor.Canvas.getZoom() / 100) || 1;
+        const dx = (ptr.sx - ptr.dsx) / z, dy = (ptr.sy - ptr.dsy) / z;
+        const { L, R, T, B } = start.e;
+        const w = Math.max(40, Math.round(start.w + (R ? dx : L ? -dx : 0)));
+        const h = Math.max(40, Math.round(start.h + (B ? dy : T ? -dy : 0)));
+        const patch = { 'min-height': '40px' };
+        if (R || L) patch.width = w + 'px';
+        if (B || T) patch.height = h + 'px';
+        if (L) patch.left = Math.round(start.l + start.w - w) + 'px';
+        if (T) patch.top = Math.round(start.t + start.h - h) + 'px';
+        c.addStyle(patch);
+        if (opts && opts.store) { const fin = Object.assign({}, c.getStyle()); c.setStyle(start.orig); um.start(); c.setStyle(fin); start = null; }
+      } catch (err) { start = null; um.start(); }
+    },
+  });
   // Behaves like every other element (text, picture): Free Drag toggle decides how it moves
   c.set({ draggable: true });
 }
@@ -1434,7 +1493,7 @@ function injectWidgetEditorCss() {
       tag.id = 'widget-editor-css';
       doc.head.appendChild(tag);
     }
-    tag.textContent = '.custom-widget-block * { pointer-events: none !important; user-select: none !important; } .custom-widget-block { cursor: move !important; display: block !important; overflow: hidden; outline: 1px dashed rgba(255,255,255,.45); outline-offset: -1px; } .custom-widget-block iframe { max-width: 100%; border: 0; } .custom-widget-block * { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.4) transparent; } .custom-widget-block *::-webkit-scrollbar { width: 8px; height: 8px; } .custom-widget-block *::-webkit-scrollbar-track { background: transparent; } .custom-widget-block *::-webkit-scrollbar-thumb { background: linear-gradient(180deg, rgba(255,255,255,.42), rgba(255,255,255,.14)); border-radius: 999px; border: 1px solid rgba(255,255,255,.38); }';
+    tag.textContent = '.custom-widget-block * { pointer-events: none !important; user-select: none !important; } .custom-widget-block { cursor: move !important; display: block !important; overflow: hidden; outline: 1px dashed rgba(255,255,255,.45); outline-offset: -1px; } .custom-widget-block iframe { max-width: 100%; border: 0; } .custom-widget-block > iframe { width: 100%; height: 100%; } .custom-widget-block[data-scroll-h] { overflow-y: auto !important; overflow-x: hidden !important; } .custom-widget-block[data-scroll-h] iframe { height: var(--eh, 1500px) !important; } .custom-widget-block * { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.4) transparent; } .custom-widget-block *::-webkit-scrollbar { width: 8px; height: 8px; } .custom-widget-block *::-webkit-scrollbar-track { background: transparent; } .custom-widget-block *::-webkit-scrollbar-thumb { background: linear-gradient(180deg, rgba(255,255,255,.42), rgba(255,255,255,.14)); border-radius: 999px; border: 1px solid rgba(255,255,255,.38); }';
   } catch (_) {}
 }
 editor.on('canvas:frame:load', injectWidgetEditorCss);
@@ -1450,6 +1509,10 @@ function setWidgetCode(c, code) {
   if (el) el.innerHTML = code;
   makeWidgetResizable(c);
   injectWidgetEditorCss();
+  // give the box a real height (from the embed itself) so the embed fills it and resizes with it
+  const f = el && el.querySelector('iframe');
+  const hAttr = f ? parseInt(f.getAttribute('height'), 10) : 0;
+  if (!c.getStyle().height || /paste/.test(el ? el.textContent : '')) c.addStyle({ height: Math.max(160, hAttr || (el ? el.scrollHeight : 0) || 300) + 'px' });
   markDirty(currentPage);
 }
 function getWidgetCode(c) {
@@ -1479,12 +1542,8 @@ document.getElementById('btn-add-widget').addEventListener('click', () => {
     style: { position: 'absolute', top: '80px', left: '80px', width: '380px', 'min-height': '160px', 'z-index': '10' },
   })[0];
   if (c) {
-    const el = c.getEl();
-    if (el) el.innerHTML = code;
-    makeWidgetResizable(c);
+    setWidgetCode(c, code);
     editor.select(c);
-    injectWidgetEditorCss();
-    markDirty(currentPage);
     showToast('Widget added: drag it anywhere, resize it by its corners');
   }
 });
@@ -2219,6 +2278,19 @@ function ensureExtraTools(c) {
     const tb = c.get('toolbar') || [];
     if (tb.some((t) => t.id === 'q-widget-code')) return;
     c.set('toolbar', [{
+      id: 'q-widget-scroll',
+      label: '<span class="tb-fmt" style="font-size:11px">Scroll</span>',
+      attributes: { title: 'Let the box scroll (with the glass scrollbar) when the embed is taller than the box' },
+      command: () => {
+        const cur = c.getAttributes()['data-scroll-h'] || '';
+        const v = prompt('How tall is the embedded content, in pixels? Bigger than the box = the box scrolls with the glass scrollbar. Enter 0 to turn scrolling off.', cur || '1500');
+        if (v == null) return;
+        const n = parseInt(v, 10);
+        if (!n || n <= 0) { c.removeAttributes(['data-scroll-h']); c.addStyle({ '--eh': '' }); }
+        else { c.addAttributes({ 'data-scroll-h': String(n) }); c.addStyle({ '--eh': n + 'px' }); }
+        markDirty(currentPage);
+      }
+    }, {
       id: 'q-widget-code',
       label: '<span class="tb-fmt" style="font-size:11px">&lt;/&gt; Code</span>',
       attributes: { title: 'Edit the HTML / Embed code' },
@@ -3609,7 +3681,7 @@ editor.on('update', devSchedule);
         const el = r.c.getEl(); if (!el) return;
         const now = read(el), patch = {};
         PROPS.forEach((p) => { if (now[p] !== r.v[p]) patch[p] = r.v[p]; });
-        if (Object.keys(patch).length) r.c.addStyle(patch);
+        if (Object.keys(patch).length) { const um = editor.UndoManager; um.stop(); try { r.c.addStyle(patch); } finally { um.start(); } }
       } catch (_) { /* element gone */ }
     }, 80);
   });
@@ -3617,3 +3689,10 @@ editor.on('update', devSchedule);
 
 // scrolling text preview inside the editor canvas (same code as the live site: marquee.js)
 setInterval(() => { try { const d = editor.Canvas.getDocument(); if (d && d.body && window.InteerMarquee) InteerMarquee.apply(d); } catch (_) { /* canvas not ready */ } }, 1000);
+
+// After a drag, undo or redo the editor can leave an element half-transparent ("frozen"): clear that.
+(function cleanFrozen() {
+  const clean = () => { try { const d = editor.Canvas.getDocument(); if (d) Array.prototype.forEach.call(d.querySelectorAll('.gjs-freezed'), (e) => e.classList.remove('gjs-freezed')); } catch (_) { /* canvas not ready */ } };
+  ['undo', 'redo', 'component:drag:end', 'sorter:drag:end'].forEach((ev) => editor.on(ev, () => { setTimeout(clean, 0); setTimeout(clean, 150); setTimeout(clean, 500); }));
+  setInterval(() => { if (!document.querySelector('.gjs-dragging, .gjs-sorter-active')) clean(); }, 2000);
+})();

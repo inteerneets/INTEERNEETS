@@ -93,6 +93,9 @@
     /* Embed / Widget blocks: no editor border on the live site, content fills the box */
     .custom-widget-block { border: 0 !important; outline: 0 !important; box-shadow: none !important; background: none !important; display: block !important; overflow: hidden; padding: 0 !important; }
     .custom-widget-block iframe { max-width: 100%; border: 0; }
+    .custom-widget-block > iframe { width: 100%; height: 100%; }
+    .custom-widget-block[data-scroll-h] { overflow-y: auto !important; overflow-x: hidden !important; }
+    .custom-widget-block[data-scroll-h] iframe { height: var(--eh, 1500px) !important; }
     .custom-widget-block * { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.4) transparent; }
     .custom-widget-block *::-webkit-scrollbar { width: 8px; height: 8px; }
     .custom-widget-block *::-webkit-scrollbar-track { background: transparent; }
@@ -674,7 +677,7 @@
       if (window.__shopJs) return window.__shopJs;
       window.__shopJs = new Promise(function (res) {
         var s = document.createElement('script');
-        s.src = '/shopify-shop.js?v=20261125d';
+        s.src = '/shopify-shop.js?v=20261125e';
         s.onload = res; s.onerror = res;
         document.head.appendChild(s);
       });
