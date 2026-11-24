@@ -573,6 +573,13 @@ bm.add('shopify-products', {
       Shopify products will load here
     </div>`,
 });
+bm.add('custom-widget', {
+  label: 'Embed / Widget',
+  category: 'Studio',
+  content: `<div class="custom-widget-block" style="position:absolute;top:80px;left:80px;width:380px;min-height:160px;z-index:10;display:block;color:#777;font-family:'Inter',sans-serif;text-align:center;padding:20px;cursor:move;">
+    Click me, then use the &lt;/&gt; Widget button to paste your embed code
+  </div>`,
+});
 
 // ═══════════════════════════════════════════════════════════════
 // TOAST
@@ -1351,7 +1358,7 @@ document.getElementById('btn-freedrag').addEventListener('click', (e) => {
   freeDrag = !freeDrag;
   editor.setDragMode(freeDrag ? 'absolute' : '');
   e.currentTarget.classList.toggle('active', freeDrag);
-  showToast(freeDrag ? 'Free Drag ON — drag anywhere. Hold Ctrl to snap to guides & grid' : 'Free Drag OFF — elements snap into layout');
+  showToast(freeDrag ? 'Free Drag ON — drag anywhere. It snaps to guides & the grid (hold Alt to move freely)' : 'Free Drag OFF — elements snap into layout');
 });
 
 // Quick add: text box / image dropped onto the page, ready to drag
@@ -1374,28 +1381,91 @@ document.getElementById('btn-add-image').addEventListener('click', () => {
   });
 });
 
-// Spotify playlist card: a see-through player you can drag anywhere and resize by its corners
-const isSpotify = (c) => !!(c && c.getAttributes && c.getAttributes()['data-spotify-player']);
-function makeSpotifyResizable(c) {
-  if (!isSpotify(c)) return;
+// SoundCloud playlist card: a see-through player you can drag anywhere and resize by its corners
+const isSoundCloud = (c) => !!(c && c.getAttributes && c.getAttributes()['data-soundcloud-player']);
+function makeSoundCloudResizable(c) {
+  if (!isSoundCloud(c)) return;
   c.set('resizable', { tl: 1, tr: 1, bl: 1, br: 1, cl: 1, cr: 1, tc: 1, bc: 1 });
 }
-editor.on('component:add', makeSpotifyResizable);
-editor.on('component:selected', makeSpotifyResizable);
-function spotifyMount() {
-  try { const doc = editor.Canvas.getDocument(); if (doc && doc.body && window.SpotifyPlayer) SpotifyPlayer.mountAll(doc, { editor: true }); } catch (e) { /* canvas not ready */ }
+editor.on('component:add', makeSoundCloudResizable);
+editor.on('component:selected', makeSoundCloudResizable);
+function scMount() {
+  try { const doc = editor.Canvas.getDocument(); if (doc && doc.body && window.SoundCloudPlayer) SoundCloudPlayer.mountAll(doc, { editor: true }); } catch (e) { /* canvas not ready */ }
 }
-setInterval(spotifyMount, 1500);
+setInterval(scMount, 1500);
 document.getElementById('btn-add-playlist').addEventListener('click', () => {
-  const raw = prompt('Paste the link of your PUBLIC Spotify playlist (Spotify > ... > Share > Copy link to playlist):', localStorage.getItem('spLast') || '');
+  const raw = prompt('Paste the link of your public SoundCloud playlist (SoundCloud > Share > Copy link), for example https://soundcloud.com/you/sets/your-playlist :', localStorage.getItem('scLast') || '');
   if (!raw) return;
-  const id = SpotifyPlayer.idOf(raw);
-  if (!id) { showToast('That is not a Spotify playlist link'); return; }
-  localStorage.setItem('spLast', raw);
-  const c = editor.getWrapper().append('<div data-spotify-player="' + id + '" style="position:absolute;top:80px;left:80px;width:380px;height:480px;z-index:10;"></div>')[0];
+  const id = SoundCloudPlayer.urlOf(raw);
+  if (!id) { showToast('That is not a SoundCloud link'); return; }
+  localStorage.setItem('scLast', raw);
+  const c = editor.getWrapper().append('<div data-soundcloud-player="' + id + '" style="position:absolute;top:80px;left:80px;width:380px;height:480px;z-index:10;"></div>')[0];
   editor.select(c);
-  setTimeout(spotifyMount, 150);
+  setTimeout(scMount, 150);
   showToast('Playlist added: drag it anywhere, resize it by its corners');
+});
+
+// ─── Custom HTML/Embed Widget ───
+const isWidgetComp = (c) => !!(c && c.getAttributes && (String(c.getAttributes()['class'] || '').includes('custom-widget-block')));
+function makeWidgetResizable(c) {
+  if (!isWidgetComp(c)) return;
+  c.set('resizable', { tl: 1, tr: 1, bl: 1, br: 1, cl: 1, cr: 1, tc: 1, bc: 1 });
+  // Behaves like every other element (text, picture): Free Drag toggle decides how it moves
+  c.set({ draggable: true });
+}
+editor.on('component:add', makeWidgetResizable);
+editor.on('component:selected', makeWidgetResizable);
+
+function injectWidgetEditorCss() {
+  try {
+    const doc = editor.Canvas.getDocument();
+    if (!doc || !doc.head) return;
+    let tag = doc.getElementById('widget-editor-css');
+    if (!tag) {
+      tag = doc.createElement('style');
+      tag.id = 'widget-editor-css';
+      doc.head.appendChild(tag);
+    }
+    tag.textContent = '.custom-widget-block * { pointer-events: none !important; user-select: none !important; } .custom-widget-block { cursor: move !important; display: block !important; overflow: hidden; outline: 1px dashed rgba(255,255,255,.45); outline-offset: -1px; } .custom-widget-block iframe { max-width: 100%; border: 0; }';
+  } catch (_) {}
+}
+editor.on('canvas:frame:load', injectWidgetEditorCss);
+setInterval(injectWidgetEditorCss, 1500);
+
+document.getElementById('btn-add-widget').addEventListener('click', () => {
+  // A widget block is selected (e.g. dragged in from Studio > Embed / Widget): fill / replace its code
+  const sel = editor.getSelected();
+  if (isWidgetComp(sel)) {
+    const cur = sel.getEl() ? sel.getEl().innerHTML.trim() : '';
+    const placeholder = /paste your embed code/i.test(cur) ? '' : cur;
+    const newCode = prompt('Paste your embed/widget HTML or iframe code:', placeholder);
+    if (!newCode || !newCode.trim()) return;
+    sel.components(newCode);
+    sel.addStyle({ border: 'none', padding: '0', display: 'block' });
+    makeWidgetResizable(sel);
+    injectWidgetEditorCss();
+    markDirty(currentPage);
+    showToast('Widget updated');
+    return;
+  }
+  const code = prompt('Paste your embed/widget HTML or iframe code:');
+  if (!code || !code.trim()) return;
+  // Wrap in a container so GrapesJS treats it as one draggable block
+  const c = editor.getWrapper().append({
+    type: 'default',
+    content: code,
+    attributes: { class: 'custom-widget-block' },
+    style: { position: 'absolute', top: '80px', left: '80px', width: '380px', 'min-height': '160px', 'z-index': '10' },
+  })[0];
+  if (c) {
+    const el = c.getEl();
+    if (el) el.innerHTML = code;
+    makeWidgetResizable(c);
+    editor.select(c);
+    injectWidgetEditorCss();
+    markDirty(currentPage);
+    showToast('Widget added: drag it anywhere, resize it by its corners');
+  }
 });
 
 // ═══════════════════════════════════════════════════════════════
@@ -1782,7 +1852,7 @@ function setupTextToolbars() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// SNAPPING — hold Ctrl while dragging in Free Drag mode (like Photoshop)
+// SNAPPING — always on while dragging in Free Drag mode; hold Alt to move freely
 // Snaps edges/centers to the page, to other elements and to a 10px grid,
 // and shows red guide lines.
 // ═══════════════════════════════════════════════════════════════
@@ -1830,10 +1900,9 @@ function setupSnapping() {
     return best;
   };
 
-  const onMove = (e) => {
-    if (!dragging) return;
-    if (!(e.ctrlKey || e.metaKey)) { clearGuides(); return; }
-    const el = dragging.getEl();
+  // Work out (and apply) the snap for one component; `draw` shows the red guide lines
+  const applySnap = (comp, draw) => {
+    const el = comp && comp.getEl();
     if (!el) return;
     const doc = el.ownerDocument;
     const r = el.getBoundingClientRect();
@@ -1860,16 +1929,23 @@ function setupSnapping() {
 
     clearGuides();
     if (sx || sy) {
-      const st = dragging.getStyle();
+      const st = comp.getStyle();
       const left = parseFloat(st.left) || 0;
       const top = parseFloat(st.top) || 0;
       const patch = {};
       if (sx && sx.delta) patch.left = `${Math.round(left + sx.delta)}px`;
       if (sy && sy.delta) patch.top = `${Math.round(top + sy.delta)}px`;
-      if (Object.keys(patch).length) dragging.addStyle(patch);
-      if (sx) drawGuide('x', sx.line);
-      if (sy) drawGuide('y', sy.line);
+      if (Object.keys(patch).length) comp.addStyle(patch);
+      if (draw) { if (sx) drawGuide('x', sx.line); if (sy) drawGuide('y', sy.line); }
     }
+  };
+
+  let lastAlt = false;
+  const onMove = (e) => {
+    if (!dragging) return;
+    lastAlt = !!e.altKey;
+    if (e.altKey) { clearGuides(); return; }   // snapping is always on; hold Alt to move freely
+    applySnap(dragging, true);
   };
 
   editor.on('dmode:start', (opts) => {
@@ -1880,8 +1956,11 @@ function setupSnapping() {
   editor.on('dmode:end', () => {
     const doc = editor.Canvas.getDocument();
     if (doc) doc.removeEventListener('mousemove', onMove);
+    const comp = dragging;
     dragging = null;
     clearGuides();
+    // The editor writes the final (unsnapped) left/top when you let go, so snap once more right after that
+    if (comp && !lastAlt) setTimeout(() => { try { applySnap(comp, false); } catch (_) { /* element gone */ } clearGuides(); }, 40);
   });
 }
 
@@ -2077,23 +2156,49 @@ function ensureExtraTools(c) {
   }
   if (add.length) c.set('toolbar', [...add, ...tb]);
 }
-// "Link" shortcut on the little toolbar above a selected Spotify playlist
+// "Link" shortcut on the little toolbar above a selected SoundCloud playlist
 (function addSpotifyTool() {
   const prev = ensureExtraTools;
   ensureExtraTools = function (c) {
     prev(c);
-    if (!isSpotify(c)) return;
+    if (!isSoundCloud(c)) return;
     const tb = c.get('toolbar') || [];
     if (tb.some((t) => t.id === 'q-sp')) return;
-    c.set('toolbar', [{ id: 'q-sp', label: '<span class="tb-fmt" style="font-size:11px">\u266B Link</span>', attributes: { title: 'Change the Spotify playlist' }, command: () => {
-      const raw = prompt('Spotify playlist link:', c.getAttributes()['data-spotify-player'] || '');
+    c.set('toolbar', [{ id: 'q-sp', label: '<span class="tb-fmt" style="font-size:11px">\u266B Link</span>', attributes: { title: 'Change the SoundCloud playlist' }, command: () => {
+      const raw = prompt('SoundCloud playlist link:', c.getAttributes()['data-soundcloud-player'] || '');
       if (!raw) return;
-      const id = SpotifyPlayer.idOf(raw);
-      if (!id) { showToast('That is not a Spotify playlist link'); return; }
-      c.addAttributes({ 'data-spotify-player': id });
-      const el = c.getEl(); if (el) SpotifyPlayer.remount(el, { editor: true });
+      const id = SoundCloudPlayer.urlOf(raw);
+      if (!id) { showToast('That is not a SoundCloud link'); return; }
+      c.addAttributes({ 'data-soundcloud-player': id });
+      const el = c.getEl(); if (el) SoundCloudPlayer.remount(el, { editor: true });
       markDirty(currentPage);
     } }, ...tb]);
+  };
+})();
+
+// "Code" shortcut on the toolbar above a selected custom widget
+(function addWidgetTool() {
+  const prev = ensureExtraTools;
+  ensureExtraTools = function (c) {
+    prev(c);
+    if (!isWidgetComp(c)) return;
+    const tb = c.get('toolbar') || [];
+    if (tb.some((t) => t.id === 'q-widget-code')) return;
+    c.set('toolbar', [{
+      id: 'q-widget-code',
+      label: '<span class="tb-fmt" style="font-size:11px">&lt;/&gt; Code</span>',
+      attributes: { title: 'Edit the HTML / Embed code' },
+      command: () => {
+        const cur = c.get('content') || (c.getEl() ? c.getEl().innerHTML : '');
+        const code = prompt('Edit embed/widget HTML or iframe code:', cur);
+        if (code == null) return;
+        c.set('content', code);
+        const el = c.getEl();
+        if (el) el.innerHTML = code;
+        c.addStyle({ border: 'none', padding: '0', display: 'block' });
+        markDirty(currentPage);
+      }
+    }, ...tb]);
   };
 })();
 
@@ -2472,6 +2577,67 @@ byId('bi-replace').addEventListener('click', () => {
     },
   });
 });
+
+// ─── Image Link URL + Shadow/Glow ───
+const biShadowEd = makeShadowEditor(byId('bi-shadow-box'), {
+  spread: false,
+  onChange: (v) => {
+    const c = imgSel();
+    if (c && isImageComp(c)) c.addStyle({ filter: wrapDrop(v) });
+  },
+});
+function getImageLink(c) {
+  // Check if the image has a data-link attribute or is wrapped in an <a>
+  const attrs = c.getAttributes();
+  if (attrs['data-link']) return attrs['data-link'];
+  const parent = c.parent();
+  if (parent && (parent.get('tagName') || '').toLowerCase() === 'a') {
+    return parent.getAttributes().href || '';
+  }
+  return '';
+}
+function setImageLink(c, url) {
+  if (!c || !isImageComp(c)) return;
+  // If the picture already sits inside an <a>, keep that <a> in sync too
+  const par = c.parent();
+  const wrapped = par && (par.get('tagName') || '').toLowerCase() === 'a';
+  // Store the link as a data attribute and set cursor
+  if (url) {
+    c.addAttributes({ 'data-link': url });
+    c.addStyle({ cursor: 'pointer' });
+    if (wrapped) par.addAttributes({ href: url });
+  } else {
+    c.removeAttributes(['data-link']);
+    c.addStyle({ cursor: '' });
+    if (wrapped) par.addAttributes({ href: '' });
+  }
+  markDirty(currentPage);
+}
+// Extend syncImagePanel to handle link + shadow
+const _origSyncImagePanel = syncImagePanel;
+syncImagePanel = function () {
+  _origSyncImagePanel();
+  const c = imgSel();
+  if (!c || !isImageComp(c)) return;
+  const link = getImageLink(c);
+  byId('bi-link').value = link;
+  byId('bi-shadow-section').style.display = link ? '' : 'none';
+  // Sync shadow editor from current filter style
+  const el = c.getEl();
+  if (el) {
+    const cs = el.ownerDocument.defaultView.getComputedStyle(el);
+    const f = cs.filter || 'none';
+    biShadowEd.set(f !== 'none' ? f : 'none');
+  }
+};
+byId('bi-link').addEventListener('input', (e) => {
+  const c = imgSel();
+  if (!c || !isImageComp(c)) return;
+  const url = e.target.value.trim();
+  setImageLink(c, url);
+  byId('bi-shadow-section').style.display = url ? '' : 'none';
+});
+
 // "Size" shortcut on the little toolbar above a selected picture
 (function addImageTool() {
   const prev = ensureExtraTools;
@@ -2495,26 +2661,42 @@ editor.on('component:selected', ensureExtraTools);
 const isTextLike = (c) => !!c && (c.is('text') || c.is('link') || ['h1','h2','h3','h4','h5','h6','p','a','button','span'].includes((c.get('tagName') || '').toLowerCase()));
 function makeTextResizable(c) {
   if (!isTextLike(c) || c === editor.getWrapper()) return;
+  const um = editor.UndoManager;
   let start = null; // set again on every load/select: functions are not saved with the page
+  const apply = (patch) => { const st = Object.assign({}, c.getStyle()); delete st.height; delete st['min-height']; c.setStyle(Object.assign(st, patch)); };
   c.set('resizable', {
-    tl: 1, tr: 1, bl: 1, br: 1, cl: 1, cr: 1, tc: 0, bc: 0,
+    tl: 1, tr: 1, bl: 1, br: 1, cl: 1, cr: 1, tc: 1, bc: 1,
     updateTarget(el, rect, opts) {
-      const handle = (opts && (opts.selectedHandler || opts.handler)) || '';
-      const corner = /^(tl|tr|bl|br)$/.test(String(handle));
-      if (!start) {
-        const cs = el.ownerDocument.defaultView.getComputedStyle(el);
-        start = { w: el.getBoundingClientRect().width, fs: parseFloat(cs.fontSize) || 16, ls: parseFloat(cs.letterSpacing) || 0, hasW: !!c.getStyle().width };
+      const handle = String((opts && (opts.selectedHandler || opts.handler)) || '');
+      const corner = /^(tl|tr|bl|br)$/.test(handle);
+      const vert = /^(tc|bc)$/.test(handle);
+      try {
+        if (!start) {
+          const cs = el.ownerDocument.defaultView.getComputedStyle(el);
+          const br = el.getBoundingClientRect();
+          start = { w: br.width || 1, h: br.height || 1, fs: parseFloat(cs.fontSize) || 16, ls: parseFloat(cs.letterSpacing) || 0, hasW: !!c.getStyle().width, orig: Object.assign({}, c.getStyle()) };
+          um.stop(); // the whole drag becomes ONE undo step (many tiny steps made Ctrl+Z glitch the text)
+        }
+        let patch;
+        if (corner || vert) {
+          const kw = Math.max(0.1, rect.w / start.w), kh = Math.max(0.1, rect.h / start.h);
+          const k = vert ? kh : (Math.abs(Math.log(kw)) >= Math.abs(Math.log(kh)) ? kw : kh);
+          patch = { 'font-size': Math.max(6, Math.round(start.fs * k * 10) / 10) + 'px' };
+          if (start.ls) patch['letter-spacing'] = Math.round(start.ls * k * 10) / 10 + 'px';
+          if (start.hasW) patch.width = Math.round(start.w * k) + 'px';
+        } else {
+          patch = { width: Math.round(rect.w) + 'px', 'max-width': '100%' };
+        }
+        apply(patch);
+        if (opts && opts.store) {
+          c.setStyle(start.orig); um.start(); apply(patch); // restore quietly, then record the final result once
+          start = null;
+          // the resizer may write a fixed height after us; a fixed height is what pushed text out of its box
+          setTimeout(() => { const st2 = Object.assign({}, c.getStyle()); if (st2.height) { um.stop(); delete st2.height; c.setStyle(st2); um.start(); } }, 60);
+        }
+      } catch (err) {
+        start = null; um.start();
       }
-      if (corner) {
-        const k = Math.max(0.1, rect.w / start.w);
-        const patch = { 'font-size': Math.max(6, Math.round(start.fs * k * 10) / 10) + 'px' };
-        if (start.ls) patch['letter-spacing'] = Math.round(start.ls * k * 10) / 10 + 'px';
-        if (start.hasW) patch.width = Math.round(rect.w) + 'px';
-        c.addStyle(patch);
-      } else {
-        c.addStyle({ width: Math.round(rect.w) + 'px', 'max-width': '100%' });
-      }
-      if (opts && opts.store) start = null;
     },
   });
 }
@@ -3272,3 +3454,33 @@ editor.on('update', devSchedule);
 
 // mouse wheel over the tabs scrolls them sideways (the Save button stays put)
 (function () { const l = document.querySelector('.top-bar-left'); if (l) l.addEventListener('wheel', (e) => { if (l.scrollWidth > l.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) { l.scrollLeft += e.deltaY; e.preventDefault(); } }, { passive: false }); })();
+
+// ═══════════════════════════════════════════════════════════════
+// FIXED DESKTOP STAGE — the Desktop canvas is always the same size (the page's saved stage, or 1275x808)
+// and is zoomed to fit the editor window, exactly like the live site scales its stage. Resizing the browser
+// window therefore never re-flows the layout you are editing.
+// ═══════════════════════════════════════════════════════════════
+(function fixedDesktopStage() {
+  const DEF_W = 1275, DEF_H = 808;
+  let lastKey = '';
+  function fit() {
+    try {
+      const cv = editor.Canvas.getElement();
+      if (!cv || !cv.clientWidth) return;
+      const dev = (editor.getDevice && editor.getDevice()) || 'Desktop';
+      if (!/desktop/i.test(String(dev))) { if (lastKey !== 'dev') { editor.Canvas.setZoom(100); lastKey = 'dev'; } return; }
+      const r = (typeof pageRef !== 'undefined' && pageRef[currentPage]) || null;
+      const W = (r && r.w) || DEF_W, H = (r && r.h) || DEF_H;
+      const key = [currentPage, W, H, cv.clientWidth, cv.clientHeight].join('|');
+      if (key === lastKey) return;
+      lastKey = key;
+      const z = Math.max(20, Math.min(200, Math.min((cv.clientWidth - 6) / W, (cv.clientHeight - 6) / H) * 100));
+      const frame = editor.Canvas.getFrame();
+      frame.set({ width: W + 'px', height: H + 'px' });
+      editor.Canvas.setZoom(z);
+    } catch (_) { /* editor not ready yet */ }
+  }
+  setInterval(fit, 400);
+  window.addEventListener('resize', fit);
+  editor.on('change:device', () => { lastKey = ''; setTimeout(fit, 80); });
+})();

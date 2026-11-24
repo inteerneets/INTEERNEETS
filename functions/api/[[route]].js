@@ -144,34 +144,6 @@ async function handle(context) {
     return json(200, { images, fonts });
   }
 
-  // Playlist card: reads the public Spotify embed page of a playlist and returns its songs (+ 30 s previews)
-  if (request.method === 'GET' && route === 'playlist') {
-    const pid = String(qs.get('id') || '');
-    if (!/^[A-Za-z0-9]{10,32}$/.test(pid)) return json(400, { success: false, error: 'Bad playlist id' });
-    const pcache = caches.default;
-    const pkey = new Request(`${url.origin}/api/playlist?id=${pid}`);
-    const phit = await pcache.match(pkey);
-    if (phit) return phit;
-    const pres = await fetch(`https://open.spotify.com/embed/playlist/${pid}`, { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; INTEERNEETS)' } });
-    if (!pres.ok) return json(404, { success: false, error: 'Playlist not found (is it public?)' });
-    const html = await pres.text();
-    const m = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
-    let ent;
-    try { ent = JSON.parse(m[1]).props.pageProps.state.data.entity; } catch { return json(502, { success: false, error: 'Could not read the playlist' }); }
-    const cover = ent.coverArt && ent.coverArt.sources && ent.coverArt.sources[0] && ent.coverArt.sources[0].url;
-    const data = {
-      name: String(ent.name || ent.title || 'Playlist'),
-      cover: cover && /^https:\/\//.test(cover) ? cover : '',
-      tracks: (ent.trackList || []).map((t) => ({
-        title: String(t.title || ''), artist: String(t.subtitle || '').replace(/\u00a0/g, ' '), uri: String(t.uri || ''), dur: Number(t.duration) || 0,
-        preview: t.audioPreview && /^https:\/\//.test(t.audioPreview.url || '') ? t.audioPreview.url : '',
-      })),
-    };
-    const pout = json(200, data, { 'Cache-Control': 'public, max-age=300' });
-    waitUntil(pcache.put(pkey, pout.clone()));
-    return pout;
-  }
-
   if (request.method === 'GET' && route === 'content') {
     const name = String(qs.get('name') || '');
     if (!CONTENT_NAME.test(name)) return json(400, { success: false, error: 'Bad content name' });
