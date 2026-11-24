@@ -78,7 +78,7 @@ When you added the custom widget box, it could not be dragged when held. There a
     - Custom typography and layout (`.pg-name`, `.pg-price`, `.pg-desc`).
     - Custom color swatch picker that swaps product images (`varPick()`).
     - Custom dropdown replacement (`enhanceSelects()`).
-    - Custom cart button that sits flush against the left screen edge.
+    - Cart button is fixed at the top-right corner (always visible, z-index 110) and the cart drawer slides in from the right (see `cartSideCss()` and the cart rules in `index.html`). The old `cart_side` setting is ignored.
 - **Data Flow:**
   - `fetchShopData()` queries products and caches them in `window.__ishCache`.
   - `addProduct()` renders the product modal overlay.
@@ -113,3 +113,12 @@ When you added the custom widget box, it could not be dragged when held. There a
    Do not overwrite `content/page-*.json` or `content/settings.json` with mock data during tests.
 5. **Preserve `ensureExtraTools` Chain:**
    When adding a toolbar option to GrapesJS components, always wrap `ensureExtraTools` in an IIFE using the established pattern so you don't overwrite other tools.
+
+6. **Product Page Scrolls, It Never Zoom-to-Fits:**
+   `productFit()` in `index.html` scales to screen width only and the overlay scrolls with the glass scrollbar. The product `ResizeObserver` must only re-scale on viewport-width changes (opening the size dropdown changes height only).
+7. **Scroll Performance:**
+   `blend()` and `update()` use cached section offsets (`cacheSectionOffsets()`, refreshed in `fitAll()`). Do not call `getBoundingClientRect()` per scroll frame.
+8. **Widget Block:**
+   `.custom-widget-block` is created by the `</> Widget` toolbar button or the Studio "Embed / Widget" block. With a widget selected, the button replaces its code instead of adding a new one.
+9. **Image Links:**
+   Picture links are stored as `data-link` (plus the parent `<a href>` if the picture is wrapped in one). `index.html` has a global click handler for `[data-link]`.

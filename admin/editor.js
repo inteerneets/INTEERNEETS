@@ -1431,6 +1431,21 @@ editor.on('canvas:frame:load', injectWidgetEditorCss);
 setInterval(injectWidgetEditorCss, 1500);
 
 document.getElementById('btn-add-widget').addEventListener('click', () => {
+  // A widget block is selected (e.g. dragged in from Studio > Embed / Widget): fill / replace its code
+  const sel = editor.getSelected();
+  if (isWidgetComp(sel)) {
+    const cur = sel.getEl() ? sel.getEl().innerHTML.trim() : '';
+    const placeholder = /paste your embed code/i.test(cur) ? '' : cur;
+    const newCode = prompt('Paste your embed/widget HTML or iframe code:', placeholder);
+    if (!newCode || !newCode.trim()) return;
+    sel.components(newCode);
+    sel.addStyle({ border: 'none', padding: '0', display: 'block' });
+    makeWidgetResizable(sel);
+    injectWidgetEditorCss();
+    markDirty(currentPage);
+    showToast('Widget updated');
+    return;
+  }
   const code = prompt('Paste your embed/widget HTML or iframe code:');
   if (!code || !code.trim()) return;
   // Wrap in a container so GrapesJS treats it as one draggable block
@@ -2571,13 +2586,18 @@ function getImageLink(c) {
 }
 function setImageLink(c, url) {
   if (!c || !isImageComp(c)) return;
+  // If the picture already sits inside an <a>, keep that <a> in sync too
+  const par = c.parent();
+  const wrapped = par && (par.get('tagName') || '').toLowerCase() === 'a';
   // Store the link as a data attribute and set cursor
   if (url) {
     c.addAttributes({ 'data-link': url });
     c.addStyle({ cursor: 'pointer' });
+    if (wrapped) par.addAttributes({ href: url });
   } else {
     c.removeAttributes(['data-link']);
     c.addStyle({ cursor: '' });
+    if (wrapped) par.addAttributes({ href: '' });
   }
   markDirty(currentPage);
 }

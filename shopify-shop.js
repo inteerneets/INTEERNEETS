@@ -141,15 +141,16 @@
           var n = s.getAttribute('name');
           if (n) chosen[n] = s.value;
         });
-        // Find the variant whose selectedOptions all match
-        var match = null;
+        // Find the variant whose selectedOptions all match (exact match first; if some option has
+        // no dropdown, fall back to the best partial match: most chosen options agree)
+        var match = null, best = -1;
         node.variants.nodes.forEach(function (v) {
-          if (match) return;
-          var ok = true;
+          var hits = 0, bad = false;
           (v.selectedOptions || []).forEach(function (o) {
-            if (chosen[o.name] !== undefined && chosen[o.name] !== o.value) ok = false;
+            if (chosen[o.name] === undefined) return;
+            if (chosen[o.name] === o.value) hits++; else bad = true;
           });
-          if (ok) match = v;
+          if (!bad && hits > best) { best = hits; match = v; }
         });
         if (match && match.price) {
           var priceEl = wr.querySelector('.pg-price');
@@ -532,7 +533,7 @@
     var token = String(settings.shopify_storefront_token).trim();
     var nums = keys.filter(function (k) { return /^\d+$/.test(k); });
     var hs = keys.filter(function (k) { return !/^\d+$/.test(k); });
-    var frag = 'fragment F on Product{id title handle description availableForSale productType tags createdAt featuredImage{url} images(first:12){nodes{url}} priceRange{minVariantPrice{amount currencyCode} maxVariantPrice{amount}} compareAtPriceRange{minVariantPrice{amount}} options{name values} variants(first:100){nodes{selectedOptions{name value} image{url}}}}';
+    var frag = 'fragment F on Product{id title handle description availableForSale productType tags createdAt featuredImage{url} images(first:12){nodes{url}} priceRange{minVariantPrice{amount currencyCode} maxVariantPrice{amount}} compareAtPriceRange{minVariantPrice{amount}} options{name values} variants(first:100){nodes{selectedOptions{name value} image{url} price{amount currencyCode}}}}';
     var q = 'query{' + (nums.length ? 'nodes(ids:[' + nums.map(function (n) { return '"gid://shopify/Product/' + n + '"'; }).join(',') + ']){... on Product{...F}}' : '') +
       hs.map(function (h, i) { return ' h' + i + ':productByHandle(handle:"' + h.replace(/"/g, '') + '"){...F}'; }).join('') + '}' + frag;
     var p = win.fetch('https://' + domain + '/api/' + SHOP_API + '/graphql.json', {
