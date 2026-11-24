@@ -119,10 +119,43 @@
   function varPick(sel, d) {
     try {
       var name = sel.getAttribute('name') || '';
-      if (!/colou?r/i.test(name)) return;
       var fe = d.defaultView.frameElement, wr = fe && fe.closest && fe.closest('[data-product-key]');
       var key = wr && wr.getAttribute('data-product-key');
-      if (key && galReg[key]) galReg[key](sel.value);
+      // Color change → update gallery image
+      if (/colou?r/i.test(name) && key && galReg[key]) galReg[key](sel.value);
+      // Any option change → update displayed price to match the selected variant
+      if (key) variantPriceUpdate(d, wr, key);
+    } catch (e) { /* ignore */ }
+  }
+  function variantPriceUpdate(d, wr, key) {
+    try {
+      var win = d.defaultView && d.defaultView.parent ? d.defaultView.parent : d.defaultView;
+      var cache = win.__ishCache && win.__ishCache.p;
+      if (!cache) return;
+      cache.then(function (map) {
+        var node = map[key];
+        if (!node || !node.variants || !node.variants.nodes) return;
+        // Read all currently selected options from the iframe's selects
+        var chosen = {};
+        Array.prototype.forEach.call(d.querySelectorAll('select'), function (s) {
+          var n = s.getAttribute('name');
+          if (n) chosen[n] = s.value;
+        });
+        // Find the variant whose selectedOptions all match
+        var match = null;
+        node.variants.nodes.forEach(function (v) {
+          if (match) return;
+          var ok = true;
+          (v.selectedOptions || []).forEach(function (o) {
+            if (chosen[o.name] !== undefined && chosen[o.name] !== o.value) ok = false;
+          });
+          if (ok) match = v;
+        });
+        if (match && match.price) {
+          var priceEl = wr.querySelector('.pg-price');
+          if (priceEl) priceEl.textContent = money(match.price.amount, match.price.currencyCode);
+        }
+      });
     } catch (e) { /* ignore */ }
   }
   function enhanceSelects(d) {

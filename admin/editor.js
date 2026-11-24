@@ -1398,6 +1398,31 @@ document.getElementById('btn-add-playlist').addEventListener('click', () => {
   showToast('Playlist added: drag it anywhere, resize it by its corners');
 });
 
+// ─── Custom HTML/Embed Widget ───
+document.getElementById('btn-add-widget').addEventListener('click', () => {
+  const code = prompt('Paste your embed/widget HTML or iframe code:');
+  if (!code || !code.trim()) return;
+  // Wrap in a container so GrapesJS treats it as one draggable block
+  const c = editor.getWrapper().append({
+    type: 'default',
+    content: '',
+    components: [],
+    attributes: { class: 'custom-widget-block' },
+    style: { position: 'absolute', top: '80px', left: '80px', width: '380px', 'min-height': '160px', 'z-index': '10' },
+  })[0];
+  if (c) {
+    // Set inner HTML directly so iframes and scripts survive GrapesJS parsing
+    const el = c.getEl();
+    if (el) el.innerHTML = code;
+    c.set('content', code);
+    // Make it resizable and draggable
+    c.set('resizable', { tl: 1, tr: 1, bl: 1, br: 1, cl: 1, cr: 1, tc: 1, bc: 1 });
+    editor.select(c);
+    markDirty(currentPage);
+    showToast('Widget added: drag it anywhere, resize it by its corners');
+  }
+});
+
 // ═══════════════════════════════════════════════════════════════
 // UI EVENTS
 // ═══════════════════════════════════════════════════════════════
@@ -2472,6 +2497,62 @@ byId('bi-replace').addEventListener('click', () => {
     },
   });
 });
+
+// ─── Image Link URL + Shadow/Glow ───
+const biShadowEd = makeShadowEditor(byId('bi-shadow-box'), {
+  spread: false,
+  onChange: (v) => {
+    const c = imgSel();
+    if (c && isImageComp(c)) c.addStyle({ filter: wrapDrop(v) });
+  },
+});
+function getImageLink(c) {
+  // Check if the image has a data-link attribute or is wrapped in an <a>
+  const attrs = c.getAttributes();
+  if (attrs['data-link']) return attrs['data-link'];
+  const parent = c.parent();
+  if (parent && (parent.get('tagName') || '').toLowerCase() === 'a') {
+    return parent.getAttributes().href || '';
+  }
+  return '';
+}
+function setImageLink(c, url) {
+  if (!c || !isImageComp(c)) return;
+  // Store the link as a data attribute and set cursor
+  if (url) {
+    c.addAttributes({ 'data-link': url });
+    c.addStyle({ cursor: 'pointer' });
+  } else {
+    c.removeAttributes(['data-link']);
+    c.addStyle({ cursor: '' });
+  }
+  markDirty(currentPage);
+}
+// Extend syncImagePanel to handle link + shadow
+const _origSyncImagePanel = syncImagePanel;
+syncImagePanel = function () {
+  _origSyncImagePanel();
+  const c = imgSel();
+  if (!c || !isImageComp(c)) return;
+  const link = getImageLink(c);
+  byId('bi-link').value = link;
+  byId('bi-shadow-section').style.display = link ? '' : 'none';
+  // Sync shadow editor from current filter style
+  const el = c.getEl();
+  if (el) {
+    const cs = el.ownerDocument.defaultView.getComputedStyle(el);
+    const f = cs.filter || 'none';
+    biShadowEd.set(f !== 'none' ? f : 'none');
+  }
+};
+byId('bi-link').addEventListener('input', (e) => {
+  const c = imgSel();
+  if (!c || !isImageComp(c)) return;
+  const url = e.target.value.trim();
+  setImageLink(c, url);
+  byId('bi-shadow-section').style.display = url ? '' : 'none';
+});
+
 // "Size" shortcut on the little toolbar above a selected picture
 (function addImageTool() {
   const prev = ensureExtraTools;
