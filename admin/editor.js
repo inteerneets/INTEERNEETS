@@ -576,7 +576,7 @@ bm.add('shopify-products', {
 bm.add('custom-widget', {
   label: 'Embed / Widget',
   category: 'Studio',
-  content: `<div class="custom-widget-block" style="position:absolute;top:80px;left:80px;width:380px;min-height:160px;z-index:10;border:2px dashed #555;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#555;font-family:'Inter',sans-serif;padding:20px;cursor:move;">
+  content: `<div class="custom-widget-block" style="position:absolute;top:80px;left:80px;width:380px;min-height:160px;z-index:10;display:block;color:#777;font-family:'Inter',sans-serif;text-align:center;padding:20px;cursor:move;">
     Click me, then use the &lt;/&gt; Widget button to paste your embed code
   </div>`,
 });
@@ -1426,7 +1426,7 @@ function injectWidgetEditorCss() {
       tag.id = 'widget-editor-css';
       doc.head.appendChild(tag);
     }
-    tag.textContent = '.custom-widget-block * { pointer-events: none !important; user-select: none !important; } .custom-widget-block { cursor: move !important; }';
+    tag.textContent = '.custom-widget-block * { pointer-events: none !important; user-select: none !important; } .custom-widget-block { cursor: move !important; display: block !important; overflow: hidden; outline: 1px dashed rgba(255,255,255,.45); outline-offset: -1px; } .custom-widget-block iframe { max-width: 100%; border: 0; }';
   } catch (_) {}
 }
 editor.on('canvas:frame:load', injectWidgetEditorCss);
@@ -2186,6 +2186,7 @@ function ensureExtraTools(c) {
         c.set('content', code);
         const el = c.getEl();
         if (el) el.innerHTML = code;
+        c.addStyle({ border: 'none', padding: '0', display: 'block' });
         markDirty(currentPage);
       }
     }, ...tb]);
@@ -2651,26 +2652,42 @@ editor.on('component:selected', ensureExtraTools);
 const isTextLike = (c) => !!c && (c.is('text') || c.is('link') || ['h1','h2','h3','h4','h5','h6','p','a','button','span'].includes((c.get('tagName') || '').toLowerCase()));
 function makeTextResizable(c) {
   if (!isTextLike(c) || c === editor.getWrapper()) return;
+  const um = editor.UndoManager;
   let start = null; // set again on every load/select: functions are not saved with the page
+  const apply = (patch) => { const st = Object.assign({}, c.getStyle()); delete st.height; delete st['min-height']; c.setStyle(Object.assign(st, patch)); };
   c.set('resizable', {
-    tl: 1, tr: 1, bl: 1, br: 1, cl: 1, cr: 1, tc: 0, bc: 0,
+    tl: 1, tr: 1, bl: 1, br: 1, cl: 1, cr: 1, tc: 1, bc: 1,
     updateTarget(el, rect, opts) {
-      const handle = (opts && (opts.selectedHandler || opts.handler)) || '';
-      const corner = /^(tl|tr|bl|br)$/.test(String(handle));
-      if (!start) {
-        const cs = el.ownerDocument.defaultView.getComputedStyle(el);
-        start = { w: el.getBoundingClientRect().width, fs: parseFloat(cs.fontSize) || 16, ls: parseFloat(cs.letterSpacing) || 0, hasW: !!c.getStyle().width };
+      const handle = String((opts && (opts.selectedHandler || opts.handler)) || '');
+      const corner = /^(tl|tr|bl|br)$/.test(handle);
+      const vert = /^(tc|bc)$/.test(handle);
+      try {
+        if (!start) {
+          const cs = el.ownerDocument.defaultView.getComputedStyle(el);
+          const br = el.getBoundingClientRect();
+          start = { w: br.width || 1, h: br.height || 1, fs: parseFloat(cs.fontSize) || 16, ls: parseFloat(cs.letterSpacing) || 0, hasW: !!c.getStyle().width, orig: Object.assign({}, c.getStyle()) };
+          um.stop(); // the whole drag becomes ONE undo step (many tiny steps made Ctrl+Z glitch the text)
+        }
+        let patch;
+        if (corner || vert) {
+          const kw = Math.max(0.1, rect.w / start.w), kh = Math.max(0.1, rect.h / start.h);
+          const k = vert ? kh : (Math.abs(Math.log(kw)) >= Math.abs(Math.log(kh)) ? kw : kh);
+          patch = { 'font-size': Math.max(6, Math.round(start.fs * k * 10) / 10) + 'px' };
+          if (start.ls) patch['letter-spacing'] = Math.round(start.ls * k * 10) / 10 + 'px';
+          if (start.hasW) patch.width = Math.round(start.w * k) + 'px';
+        } else {
+          patch = { width: Math.round(rect.w) + 'px', 'max-width': '100%' };
+        }
+        apply(patch);
+        if (opts && opts.store) {
+          c.setStyle(start.orig); um.start(); apply(patch); // restore quietly, then record the final result once
+          start = null;
+          // the resizer may write a fixed height after us; a fixed height is what pushed text out of its box
+          setTimeout(() => { const st2 = Object.assign({}, c.getStyle()); if (st2.height) { um.stop(); delete st2.height; c.setStyle(st2); um.start(); } }, 60);
+        }
+      } catch (err) {
+        start = null; um.start();
       }
-      if (corner) {
-        const k = Math.max(0.1, rect.w / start.w);
-        const patch = { 'font-size': Math.max(6, Math.round(start.fs * k * 10) / 10) + 'px' };
-        if (start.ls) patch['letter-spacing'] = Math.round(start.ls * k * 10) / 10 + 'px';
-        if (start.hasW) patch.width = Math.round(rect.w) + 'px';
-        c.addStyle(patch);
-      } else {
-        c.addStyle({ width: Math.round(rect.w) + 'px', 'max-width': '100%' });
-      }
-      if (opts && opts.store) start = null;
     },
   });
 }
@@ -3428,3 +3445,33 @@ editor.on('update', devSchedule);
 
 // mouse wheel over the tabs scrolls them sideways (the Save button stays put)
 (function () { const l = document.querySelector('.top-bar-left'); if (l) l.addEventListener('wheel', (e) => { if (l.scrollWidth > l.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) { l.scrollLeft += e.deltaY; e.preventDefault(); } }, { passive: false }); })();
+
+// ═══════════════════════════════════════════════════════════════
+// FIXED DESKTOP STAGE — the Desktop canvas is always the same size (the page's saved stage, or 1275x808)
+// and is zoomed to fit the editor window, exactly like the live site scales its stage. Resizing the browser
+// window therefore never re-flows the layout you are editing.
+// ═══════════════════════════════════════════════════════════════
+(function fixedDesktopStage() {
+  const DEF_W = 1275, DEF_H = 808;
+  let lastKey = '';
+  function fit() {
+    try {
+      const cv = editor.Canvas.getElement();
+      if (!cv || !cv.clientWidth) return;
+      const dev = (editor.getDevice && editor.getDevice()) || 'Desktop';
+      if (!/desktop/i.test(String(dev))) { if (lastKey !== 'dev') { editor.Canvas.setZoom(100); lastKey = 'dev'; } return; }
+      const r = (typeof pageRef !== 'undefined' && pageRef[currentPage]) || null;
+      const W = (r && r.w) || DEF_W, H = (r && r.h) || DEF_H;
+      const key = [currentPage, W, H, cv.clientWidth, cv.clientHeight].join('|');
+      if (key === lastKey) return;
+      lastKey = key;
+      const z = Math.max(20, Math.min(200, Math.min((cv.clientWidth - 6) / W, (cv.clientHeight - 6) / H) * 100));
+      const frame = editor.Canvas.getFrame();
+      frame.set({ width: W + 'px', height: H + 'px' });
+      editor.Canvas.setZoom(z);
+    } catch (_) { /* editor not ready yet */ }
+  }
+  setInterval(fit, 400);
+  window.addEventListener('resize', fit);
+  editor.on('change:device', () => { lastKey = ''; setTimeout(fit, 80); });
+})();

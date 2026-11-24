@@ -786,3 +786,7 @@ a.tb-btn:hover { color: #ddd; border-color: #555; }
 .top-bar-pinned { flex: none !important; position: sticky; right: 0; }
 #prod-switch select { max-width: 190px; }
 #ps-reset { display: none !important; }
+
+/* Long-label toolbar buttons (widget Code, playlist Link) take their own width so they never sit on top of the Center button */
+.gjs-toolbar-item__q-widget-code, .gjs-toolbar-item__q-sp { width: auto !important; min-width: 62px; padding: 0 8px !important; white-space: nowrap; }
+.gjs-toolbar-item .tb-fmt { white-space: nowrap; }

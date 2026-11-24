@@ -90,22 +90,9 @@
     img { -webkit-user-drag: none; user-drag: none; }
 
 
-    /* Cart button: always visible, top-right corner */
-    .shopify-buy-frame--toggle.is-sticky {
-      right: 16px !important; left: auto !important;
-      top: 12px !important; bottom: auto !important;
-      transform: none !important;
-      z-index: 110 !important;
-      position: fixed !important;
-    }
-    /* Cart drawer opens from the right */
-    .shopify-buy-frame--cart {
-      right: 0 !important; left: auto !important;
-      transform: translateX(100%) !important;
-    }
-    .shopify-buy-frame--cart.is-active {
-      transform: translateX(0) !important;
-    }
+    /* Embed / Widget blocks: no editor border on the live site, content fills the box */
+    .custom-widget-block { border: 0 !important; outline: 0 !important; box-shadow: none !important; background: none !important; display: block !important; overflow: hidden; padding: 0 !important; }
+    .custom-widget-block iframe { max-width: 100%; border: 0; }
 
     /* Glass scrollbar: see glass-scroll.js (used on every page and on the product page) */
     body.prod-open #nav.nav-hide { transform: none; opacity: 1; pointer-events: auto; }   /* the menu stays on the product page */
@@ -677,7 +664,7 @@
       var go = function () { InteerShop.autoAdd(settings, window).then(function () { InteerShop.render(document, settings, { toFilterShadow: toFilterShadow, onOpenProduct: openProduct }); }); };
       if (window.InteerShop) return go();
       var s = document.createElement('script');
-      s.src = '/shopify-shop.js?v=20261124g';
+      s.src = '/shopify-shop.js?v=20261125a';
       s.onload = go;
       document.head.appendChild(s);
     }
@@ -853,6 +840,24 @@
 <script>
   // playlist cards placed in the editor: start them once the pages are on screen
   (function () { var n = 0, iv = setInterval(function () { if (window.SoundCloudPlayer) SoundCloudPlayer.mountAll(document); if (++n > 40) clearInterval(iv); }, 500); })();
+</script>
+<script>
+  // widgets with their own scrolling area get the site's glass scrollbar too (needs glass-scroll.js)
+  (function () {
+    var done = new WeakSet(), n = 0;
+    function scan() {
+      if (!window.glassScroll) return;
+      Array.prototype.forEach.call(document.querySelectorAll('.custom-widget-block, .custom-widget-block *'), function (e) {
+        if (done.has(e) || e.closest('.gscroll')) return;
+        var cs = getComputedStyle(e);
+        if ((cs.overflowY === 'auto' || cs.overflowY === 'scroll') && e.scrollHeight > e.clientHeight + 2) {
+          done.add(e);
+          try { glassScroll({ el: e, host: e.offsetParent || e.parentElement, inner: true }); } catch (x) { /* ignore */ }
+        }
+      });
+    }
+    var iv = setInterval(function () { scan(); if (++n > 40) clearInterval(iv); }, 800);
+  })();
 </script>
 </body>
 </html>

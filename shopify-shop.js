@@ -201,9 +201,8 @@
     var css = fontFaceCss(settings.site_fonts) + FRAME_CSS;
     try {
       var sm = merged(settings.shopify_style, settings.site_colors), rr = px(sm.toggle_radius, 0);
-      // The floating cart button is pinned top-right (cart_side is ignored). Its straight edge must sit
-      // flush against the screen's right edge, so only the inner (left) corners are rounded.
-      css += '.shopify-buy__cart-toggle{border-radius:' + rr + ' 0 0 ' + rr + '!important;}';
+      // The cart button sits against a screen edge: its flat side touches the edge, the outer corners are rounded
+      css += '.shopify-buy__cart-toggle{border-radius:' + (shopOpts(settings).cart_side === 'right' ? rr + ' 0 0 ' + rr : '0 ' + rr + ' ' + rr + ' 0') + '!important;}';
     } catch (e) { /* ignore */ }
     Array.prototype.forEach.call(doc.querySelectorAll('iframe'), function (f) {
       try {
@@ -810,17 +809,25 @@
     section.__ish = { setCat: function (id) { state.cat = id || ''; renderSide(); renderGrid(); } };
   }
 
-  // Cart side: the floating cart button sits top-right, always visible; the cart drawer slides from the right
+  // Cart side: the floating cart button is pinned flush against the left (default) or right screen edge
+  // (flat side on the edge), always visible once something is in the cart; the drawer slides from that side.
   function cartSideCss(doc, settings, opt) {
+    var side = shopOpts(settings).cart_side === 'right' ? 'right' : 'left';
     var s = merged(settings.shopify_style, settings.site_colors), rad = px(s.toggle_radius, 0);
     var tag = doc.getElementById('ish-cart-css');
     if (!tag) { tag = doc.createElement('style'); tag.id = 'ish-cart-css'; doc.head.appendChild(tag); }
-    if (opt && opt.toggle) opt.toggle.styles.toggle['border-radius'] = rad;
+    var mob = '@media(max-width:520px){.shopify-buy-frame--cart{max-width:100%!important;transition-duration:.22s!important;will-change:transform;}}';
+    if (side === 'right') {
+      if (opt && opt.toggle) opt.toggle.styles.toggle['border-radius'] = rad + ' 0 0 ' + rad;
+      tag.textContent =
+        '.shopify-buy-frame--toggle.is-sticky{left:auto!important;right:0!important;top:auto!important;bottom:22px!important;transform:none!important;}' + mob;
+      return;
+    }
+    if (opt && opt.toggle) opt.toggle.styles.toggle['border-radius'] = '0 ' + rad + ' ' + rad + ' 0';
     tag.textContent =
-      '.shopify-buy-frame--toggle.is-sticky{right:16px!important;left:auto!important;top:12px!important;bottom:auto!important;transform:none!important;z-index:110!important;position:fixed!important;}' +
-      '.shopify-buy-frame--cart{right:0!important;left:auto!important;transform:translateX(100%)!important;}' +
-      '.shopify-buy-frame--cart.is-active{transform:translateX(0)!important;}' +
-      '@media(max-width:520px){.shopify-buy-frame--cart{max-width:100%!important;transition-duration:.22s!important;will-change:transform;}}';
+      '.shopify-buy-frame--toggle.is-sticky{right:auto!important;left:0!important;top:auto!important;bottom:22px!important;transform:none!important;}' +
+      '.shopify-buy-frame--cart{right:auto!important;left:0!important;transform:translateX(-100%)!important;}' +
+      '.shopify-buy-frame--cart.is-active{transform:translateX(0)!important;}' + mob;
   }
 
   // Cart drawer + floating cart button (Shopify), styled from the Shop panel

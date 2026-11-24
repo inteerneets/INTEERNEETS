@@ -82,7 +82,7 @@ When you added the custom widget box, it could not be dragged when held. There a
     - Custom typography and layout (`.pg-name`, `.pg-price`, `.pg-desc`).
     - Custom color swatch picker that swaps product images (`varPick()`).
     - Custom dropdown replacement (`enhanceSelects()`).
-    - Cart button is fixed at the top-right corner (always visible, z-index 110) and the cart drawer slides in from the right (see `cartSideCss()` and the cart rules in `index.html`). The old `cart_side` setting is ignored.
+    - Cart button is pinned flush against the LEFT screen edge (bottom:22px, flat side on the edge, outer corners rounded) and the drawer slides from the left. Side comes from `settings.shopify_style.cart_side` (default `left`) in `cartSideCss()` and `injectFrameFonts()` in `shopify-shop.js`. `index.html` must NOT contain cart CSS.
 - **Data Flow:**
   - `fetchShopData()` queries products and caches them in `window.__ishCache`.
   - `addProduct()` renders the product modal overlay.
@@ -127,6 +127,10 @@ When you added the custom widget box, it could not be dragged when held. There a
 9. **Image Links:**
    Picture links are stored as `data-link` (plus the parent `<a href>` if the picture is wrapped in one). `index.html` has a global click handler for `[data-link]`.
 10. **Cart Button Shape:**
-   The floating cart button is pinned top-right (the `cart_side` setting is ignored). Its straight edge must sit flush against the screen's right edge, so `injectFrameFonts()` forces `.shopify-buy__cart-toggle` to `border-radius: <r> 0 0 <r>` (inner/left corners rounded, right corners square). Do not re-introduce the `cart_side` branch here.
+    Flat side flush against the screen edge, no gap. Left by default; `cart_side:'right'` mirrors it. Both `cartSideCss()` and the `border-radius` line in `injectFrameFonts()` read `shopOpts(settings).cart_side`. Never hard-code a side or an offset (`right:16px`, `top:12px` was a regression).
 11. **Glass Scrollbar Everywhere:**
    Any scrollable widget or box on the live site should use the glass scrollbar, not the native one — add `data-glass-scroll` (auto-wired) or call `glassScroll({el, inner:true})`. See System A.
+
+12. **Fixed Desktop stage in the editor:** the last block of `admin/editor.js` locks the Desktop canvas to the page's saved stage (refW x refH, default 1275x808) and zooms it with `editor.Canvas.setZoom`. Do not make the canvas width follow the browser window.
+13. **Text resize:** `makeTextResizable` uses all 8 handles, scales font-size, strips any fixed `height`, and wraps the drag in `UndoManager.stop()/start()` so Ctrl+Z is one step.
+14. **Widget blocks:** no baked-in border/flex in the saved HTML; the dashed outline is editor-only CSS (`injectWidgetEditorCss`). `index.html` forces `border:0; display:block` on `.custom-widget-block` and gives scrolling widgets the glass scrollbar.
