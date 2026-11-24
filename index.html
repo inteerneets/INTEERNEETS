@@ -93,6 +93,10 @@
     /* Embed / Widget blocks: no editor border on the live site, content fills the box */
     .custom-widget-block { border: 0 !important; outline: 0 !important; box-shadow: none !important; background: none !important; display: block !important; overflow: hidden; padding: 0 !important; }
     .custom-widget-block iframe { max-width: 100%; border: 0; }
+    .custom-widget-block * { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.4) transparent; }
+    .custom-widget-block *::-webkit-scrollbar { width: 8px; height: 8px; }
+    .custom-widget-block *::-webkit-scrollbar-track { background: transparent; }
+    .custom-widget-block *::-webkit-scrollbar-thumb { background: linear-gradient(180deg, rgba(255,255,255,.42), rgba(255,255,255,.14)); border-radius: 999px; border: 1px solid rgba(255,255,255,.38); }
 
     /* Glass scrollbar: see glass-scroll.js (used on every page and on the product page) */
     body.prod-open #nav.nav-hide { transform: none; opacity: 1; pointer-events: auto; }   /* the menu stays on the product page */
@@ -670,7 +674,7 @@
       if (window.__shopJs) return window.__shopJs;
       window.__shopJs = new Promise(function (res) {
         var s = document.createElement('script');
-        s.src = '/shopify-shop.js?v=20261125b';
+        s.src = '/shopify-shop.js?v=20261125c';
         s.onload = res; s.onerror = res;
         document.head.appendChild(s);
       });

@@ -137,3 +137,6 @@ When you added the custom widget box, it could not be dragged when held. There a
 
 15. **Snapping:** in Free Drag mode elements always snap to guides, siblings and the 10px grid (hold Alt to move freely). The snap is re-applied on release (dmode:end) because the editor writes the final unsnapped left/top at mouse-up.
 16. **Widget blocks** are absolute like text/pictures (no forced dmode). Cart: flat side on the screen edge, left by default; InteerShop.prewarm() starts loading shop data early so the cart shows sooner.
+17. **Cart:** top-right by default (cart_side setting in the Shop panel: right/left). Flat side flush on the screen edge, drawer slides from the same edge with no gap (cartSideCss()). Do not add cart CSS to index.html.
+18. **Embed widgets** are the embed-widget component type; the code lives in content (children are cleared by setWidgetCode) so it survives moving/saving. Never put code in children plus content.
+19. **Undo:** one drag (move + snap) and one resize are each ONE undo step (UndoManager stop/start). Dropping an element into another block keeps its font size/colour (keepLookOnMove). The Desktop stage is re-centred inside the canvas by place().

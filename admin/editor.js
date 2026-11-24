@@ -573,12 +573,20 @@ bm.add('shopify-products', {
       Shopify products will load here
     </div>`,
 });
+editor.Components.addType('embed-widget', {
+  isComponent: (el) => (el && el.classList && el.classList.contains('custom-widget-block')) ? { type: 'embed-widget' } : false,
+  extend: 'default',
+  model: { defaults: { droppable: false } },
+});
 bm.add('custom-widget', {
   label: 'Embed / Widget',
   category: 'Studio',
-  content: `<div class="custom-widget-block" style="position:absolute;top:80px;left:80px;width:380px;min-height:160px;z-index:10;display:block;color:#777;font-family:'Inter',sans-serif;text-align:center;padding:20px;cursor:move;">
-    Click me, then use the &lt;/&gt; Widget button to paste your embed code
-  </div>`,
+  content: {
+    type: 'embed-widget',
+    attributes: { class: 'custom-widget-block' },
+    style: { position: 'absolute', top: '80px', left: '80px', width: '380px', 'min-height': '160px', 'z-index': '10', color: '#777', 'font-family': "'Inter',sans-serif", 'text-align': 'center', padding: '20px', cursor: 'move' },
+    content: 'Click me, then use the &lt;/&gt; Widget button to paste your embed code',
+  },
 });
 
 // ═══════════════════════════════════════════════════════════════
@@ -1426,25 +1434,38 @@ function injectWidgetEditorCss() {
       tag.id = 'widget-editor-css';
       doc.head.appendChild(tag);
     }
-    tag.textContent = '.custom-widget-block * { pointer-events: none !important; user-select: none !important; } .custom-widget-block { cursor: move !important; display: block !important; overflow: hidden; outline: 1px dashed rgba(255,255,255,.45); outline-offset: -1px; } .custom-widget-block iframe { max-width: 100%; border: 0; }';
+    tag.textContent = '.custom-widget-block * { pointer-events: none !important; user-select: none !important; } .custom-widget-block { cursor: move !important; display: block !important; overflow: hidden; outline: 1px dashed rgba(255,255,255,.45); outline-offset: -1px; } .custom-widget-block iframe { max-width: 100%; border: 0; } .custom-widget-block * { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.4) transparent; } .custom-widget-block *::-webkit-scrollbar { width: 8px; height: 8px; } .custom-widget-block *::-webkit-scrollbar-track { background: transparent; } .custom-widget-block *::-webkit-scrollbar-thumb { background: linear-gradient(180deg, rgba(255,255,255,.42), rgba(255,255,255,.14)); border-radius: 999px; border: 1px solid rgba(255,255,255,.38); }';
   } catch (_) {}
 }
 editor.on('canvas:frame:load', injectWidgetEditorCss);
 setInterval(injectWidgetEditorCss, 1500);
 
+// Put embed code into a widget block: children are removed and the code lives in `content`,
+// so it survives moving, re-rendering, saving and reloading.
+function setWidgetCode(c, code) {
+  c.components().reset();
+  c.set('content', code);
+  c.addStyle({ border: 'none', padding: '0', display: 'block', 'text-align': 'left' });
+  const el = c.getEl();
+  if (el) el.innerHTML = code;
+  makeWidgetResizable(c);
+  injectWidgetEditorCss();
+  markDirty(currentPage);
+}
+function getWidgetCode(c) {
+  const ct = c.get('content');
+  if (ct && !/paste your embed code/i.test(ct)) return ct;
+  const el = c.getEl();
+  const cur = el ? el.innerHTML.trim() : '';
+  return /paste your embed code/i.test(cur) ? '' : cur;
+}
 document.getElementById('btn-add-widget').addEventListener('click', () => {
   // A widget block is selected (e.g. dragged in from Studio > Embed / Widget): fill / replace its code
   const sel = editor.getSelected();
   if (isWidgetComp(sel)) {
-    const cur = sel.getEl() ? sel.getEl().innerHTML.trim() : '';
-    const placeholder = /paste your embed code/i.test(cur) ? '' : cur;
-    const newCode = prompt('Paste your embed/widget HTML or iframe code:', placeholder);
+    const newCode = prompt('Paste your embed/widget HTML or iframe code:', getWidgetCode(sel));
     if (!newCode || !newCode.trim()) return;
-    sel.components(newCode);
-    sel.addStyle({ border: 'none', padding: '0', display: 'block' });
-    makeWidgetResizable(sel);
-    injectWidgetEditorCss();
-    markDirty(currentPage);
+    setWidgetCode(sel, newCode);
     showToast('Widget updated');
     return;
   }
@@ -1452,7 +1473,7 @@ document.getElementById('btn-add-widget').addEventListener('click', () => {
   if (!code || !code.trim()) return;
   // Wrap in a container so GrapesJS treats it as one draggable block
   const c = editor.getWrapper().append({
-    type: 'default',
+    type: 'embed-widget',
     content: code,
     attributes: { class: 'custom-widget-block' },
     style: { position: 'absolute', top: '80px', left: '80px', width: '380px', 'min-height': '160px', 'z-index': '10' },
@@ -1948,8 +1969,11 @@ function setupSnapping() {
     applySnap(dragging, true);
   };
 
+  let dragBefore = null;
   editor.on('dmode:start', (opts) => {
     dragging = opts && opts.target;
+    lastAlt = false;
+    try { if (dragging) { dragBefore = Object.assign({}, dragging.getStyle()); editor.UndoManager.stop(); } } catch (_) { dragBefore = null; }
     const doc = editor.Canvas.getDocument();
     if (doc) doc.addEventListener('mousemove', onMove);
   });
@@ -1960,7 +1984,17 @@ function setupSnapping() {
     dragging = null;
     clearGuides();
     // The editor writes the final (unsnapped) left/top when you let go, so snap once more right after that
-    if (comp && !lastAlt) setTimeout(() => { try { applySnap(comp, false); } catch (_) { /* element gone */ } clearGuides(); }, 40);
+    setTimeout(() => {
+      try { if (comp && !lastAlt) applySnap(comp, false); } catch (_) { /* element gone */ }
+      clearGuides();
+      // the whole drag (move + snap) is ONE undo step, so a single Ctrl+Z puts it back where it was
+      try {
+        const um = editor.UndoManager;
+        if (comp && dragBefore) { const fin = Object.assign({}, comp.getStyle()); comp.setStyle(dragBefore); um.start(); comp.setStyle(fin); }
+        else um.start();
+      } catch (_) { editor.UndoManager.start(); }
+      dragBefore = null;
+    }, 40);
   });
 }
 
@@ -2189,14 +2223,9 @@ function ensureExtraTools(c) {
       label: '<span class="tb-fmt" style="font-size:11px">&lt;/&gt; Code</span>',
       attributes: { title: 'Edit the HTML / Embed code' },
       command: () => {
-        const cur = c.get('content') || (c.getEl() ? c.getEl().innerHTML : '');
-        const code = prompt('Edit embed/widget HTML or iframe code:', cur);
+        const code = prompt('Edit embed/widget HTML or iframe code:', getWidgetCode(c));
         if (code == null) return;
-        c.set('content', code);
-        const el = c.getEl();
-        if (el) el.innerHTML = code;
-        c.addStyle({ border: 'none', padding: '0', display: 'block' });
-        markDirty(currentPage);
+        setWidgetCode(c, code);
       }
     }, ...tb]);
   };
@@ -2675,12 +2704,12 @@ function makeTextResizable(c) {
           const cs = el.ownerDocument.defaultView.getComputedStyle(el);
           const br = el.getBoundingClientRect();
           start = { w: br.width || 1, h: br.height || 1, fs: parseFloat(cs.fontSize) || 16, ls: parseFloat(cs.letterSpacing) || 0, hasW: !!c.getStyle().width, orig: Object.assign({}, c.getStyle()) };
-          um.stop(); // the whole drag becomes ONE undo step (many tiny steps made Ctrl+Z glitch the text)
+          um.stop(); // the whole drag becomes ONE undo step
         }
         let patch;
         if (corner || vert) {
-          const kw = Math.max(0.1, rect.w / start.w), kh = Math.max(0.1, rect.h / start.h);
-          const k = vert ? kh : (Math.abs(Math.log(kw)) >= Math.abs(Math.log(kh)) ? kw : kh);
+          // corners scale the text by the width change (as before); top/bottom handles scale it by the height change
+          const k = Math.max(0.1, vert ? rect.h / start.h : rect.w / start.w);
           patch = { 'font-size': Math.max(6, Math.round(start.fs * k * 10) / 10) + 'px' };
           if (start.ls) patch['letter-spacing'] = Math.round(start.ls * k * 10) / 10 + 'px';
           if (start.hasW) patch.width = Math.round(start.w * k) + 'px';
@@ -3462,7 +3491,7 @@ editor.on('update', devSchedule);
 // ═══════════════════════════════════════════════════════════════
 (function fixedDesktopStage() {
   const DEF_W = 1275, DEF_H = 808;
-  let lastKey = '';
+  let lastKey = '', placeTries = 0;
   function fit() {
     try {
       const cv = editor.Canvas.getElement();
@@ -3472,15 +3501,54 @@ editor.on('update', devSchedule);
       const r = (typeof pageRef !== 'undefined' && pageRef[currentPage]) || null;
       const W = (r && r.w) || DEF_W, H = (r && r.h) || DEF_H;
       const key = [currentPage, W, H, cv.clientWidth, cv.clientHeight].join('|');
-      if (key === lastKey) return;
-      lastKey = key;
+      if (key === lastKey) { if (placeTries < 8) { placeTries++; place(cv); } return; }
+      lastKey = key; placeTries = 0;
       const z = Math.max(20, Math.min(200, Math.min((cv.clientWidth - 6) / W, (cv.clientHeight - 6) / H) * 100));
       const frame = editor.Canvas.getFrame();
       frame.set({ width: W + 'px', height: H + 'px' });
       editor.Canvas.setZoom(z);
+      setTimeout(() => place(cv), 60);
     } catch (_) { /* editor not ready yet */ }
+  }
+  // the zoom scales around the middle of the frame: move it so the whole stage sits inside the canvas
+  function place(cv) {
+    try {
+      const fe = editor.Canvas.getFrameEl();
+      if (!fe) return;
+      const cr = cv.getBoundingClientRect(), r0 = fe.getBoundingClientRect(), c0 = editor.Canvas.getCoords();
+      const tx0 = cr.left + Math.max(3, (cr.width - r0.width) / 2), ty0 = cr.top + 3;
+      if (Math.abs(r0.left - tx0) <= 2 && Math.abs(r0.top - ty0) <= 2) return;   // already in place
+      editor.Canvas.setCoords(c0.x + 100, c0.y + 100);
+      const r1 = fe.getBoundingClientRect();
+      const kx = (r1.left - r0.left) / 100 || 1, ky = (r1.top - r0.top) / 100 || 1;
+      const tx = cr.left + Math.max(3, (cr.width - r0.width) / 2), ty = cr.top + 3;
+      editor.Canvas.setCoords(c0.x + (tx - r0.left) / kx, c0.y + (ty - r0.top) / ky);
+    } catch (_) { /* ignore */ }
   }
   setInterval(fit, 400);
   window.addEventListener('resize', fit);
   editor.on('change:device', () => { lastKey = ''; setTimeout(fit, 80); });
+})();
+// ═══════════════════════════════════════════════════════════════
+// KEEP THE LOOK WHEN MOVED — dragging text into another block used to change its inherited font size / colour.
+// ═══════════════════════════════════════════════════════════════
+(function keepLookOnMove() {
+  const PROPS = ['font-size', 'font-weight', 'letter-spacing', 'line-height', 'color', 'text-transform', 'text-align', 'font-family'];
+  let rec = null;
+  const read = (el) => { const cs = el.ownerDocument.defaultView.getComputedStyle(el); const v = {}; PROPS.forEach((p) => { v[p] = cs.getPropertyValue(p); }); return v; };
+  editor.on('component:drag:start', (ev) => {
+    try { const c = (ev && ev.target) || editor.getSelected(); const el = c && c.getEl && c.getEl(); rec = el ? { c, v: read(el) } : null; } catch (_) { rec = null; }
+  });
+  editor.on('component:drag:end', () => {
+    const r = rec; rec = null;
+    if (!r) return;
+    setTimeout(() => {
+      try {
+        const el = r.c.getEl(); if (!el) return;
+        const now = read(el), patch = {};
+        PROPS.forEach((p) => { if (now[p] !== r.v[p]) patch[p] = r.v[p]; });
+        if (Object.keys(patch).length) r.c.addStyle(patch);
+      } catch (_) { /* element gone */ }
+    }, 80);
+  });
 })();

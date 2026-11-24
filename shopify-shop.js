@@ -471,7 +471,7 @@
   }
 
   var SHOP_API = '2024-10';
-  var OPT_DEFAULTS = { sidebar: true, search: true, sort: true, wishlist: false, swatches: true, counts: true, hover_image: true, show_price: true, cols: 0, ratio: '1 / 1', fit: 'cover', default_sort: 'featured', new_days: 0, cart_side: 'left', all_label: 'All products', empty_text: 'No products found' };
+  var OPT_DEFAULTS = { sidebar: true, search: true, sort: true, wishlist: false, swatches: true, counts: true, hover_image: true, show_price: true, cols: 0, ratio: '1 / 1', fit: 'cover', default_sort: 'featured', new_days: 0, cart_side: 'right', all_label: 'All products', empty_text: 'No products found' };
   function shopOpts(settings) { return Object.assign({}, OPT_DEFAULTS, (settings && settings.shop_opts) || {}); }
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
@@ -809,24 +809,19 @@
     section.__ish = { setCat: function (id) { state.cat = id || ''; renderSide(); renderGrid(); } };
   }
 
-  // Cart side: the floating cart button is pinned flush against the left (default) or right screen edge
-  // (flat side on the edge), always visible once something is in the cart; the drawer slides from that side.
+  // Cart side: the floating cart button is pinned top-right (default) or top-left, flat side flush against the
+  // screen edge, always visible once something is in the cart; the drawer slides from that same edge, no gap.
   function cartSideCss(doc, settings, opt) {
-    var side = shopOpts(settings).cart_side === 'right' ? 'right' : 'left';
+    var side = shopOpts(settings).cart_side === 'left' ? 'left' : 'right';
     var s = merged(settings.shopify_style, settings.site_colors), rad = px(s.toggle_radius, 0);
     var tag = doc.getElementById('ish-cart-css');
     if (!tag) { tag = doc.createElement('style'); tag.id = 'ish-cart-css'; doc.head.appendChild(tag); }
     var mob = '@media(max-width:520px){.shopify-buy-frame--cart{max-width:100%!important;transition-duration:.22s!important;will-change:transform;}}';
-    if (side === 'right') {
-      if (opt && opt.toggle) opt.toggle.styles.toggle['border-radius'] = rad + ' 0 0 ' + rad;
-      tag.textContent =
-        '.shopify-buy-frame--toggle.is-sticky{left:auto!important;right:0!important;top:auto!important;bottom:22px!important;transform:none!important;}' + mob;
-      return;
-    }
-    if (opt && opt.toggle) opt.toggle.styles.toggle['border-radius'] = '0 ' + rad + ' ' + rad + ' 0';
+    var from = side === 'right' ? 'right' : 'left', other = side === 'right' ? 'left' : 'right', away = side === 'right' ? '100%' : '-100%';
+    if (opt && opt.toggle) opt.toggle.styles.toggle['border-radius'] = side === 'right' ? rad + ' 0 0 ' + rad : '0 ' + rad + ' ' + rad + ' 0';
     tag.textContent =
-      '.shopify-buy-frame--toggle.is-sticky{right:auto!important;left:0!important;top:auto!important;bottom:22px!important;transform:none!important;}' +
-      '.shopify-buy-frame--cart{right:auto!important;left:0!important;transform:translateX(-100%)!important;}' +
+      '.shopify-buy-frame--toggle.is-sticky{' + from + ':0!important;' + other + ':auto!important;top:12px!important;bottom:auto!important;margin:0!important;transform:none!important;z-index:110!important;}' +
+      '.shopify-buy-frame--cart{' + from + ':0!important;' + other + ':auto!important;margin:0!important;border:0!important;transform:translateX(' + away + ')!important;}' +
       '.shopify-buy-frame--cart.is-active{transform:translateX(0)!important;}' + mob;
   }
 
