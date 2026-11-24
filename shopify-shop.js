@@ -119,44 +119,10 @@
   function varPick(sel, d) {
     try {
       var name = sel.getAttribute('name') || '';
+      if (!/colou?r/i.test(name)) return;
       var fe = d.defaultView.frameElement, wr = fe && fe.closest && fe.closest('[data-product-key]');
       var key = wr && wr.getAttribute('data-product-key');
-      // Color change → update gallery image
-      if (/colou?r/i.test(name) && key && galReg[key]) galReg[key](sel.value);
-      // Any option change → update displayed price to match the selected variant
-      if (key) variantPriceUpdate(d, wr, key);
-    } catch (e) { /* ignore */ }
-  }
-  function variantPriceUpdate(d, wr, key) {
-    try {
-      var win = d.defaultView && d.defaultView.parent ? d.defaultView.parent : d.defaultView;
-      var cache = win.__ishCache && win.__ishCache.p;
-      if (!cache) return;
-      cache.then(function (map) {
-        var node = map[key];
-        if (!node || !node.variants || !node.variants.nodes) return;
-        // Read all currently selected options from the iframe's selects
-        var chosen = {};
-        Array.prototype.forEach.call(d.querySelectorAll('select'), function (s) {
-          var n = s.getAttribute('name');
-          if (n) chosen[n] = s.value;
-        });
-        // Find the variant whose selectedOptions all match (exact match first; if some option has
-        // no dropdown, fall back to the best partial match: most chosen options agree)
-        var match = null, best = -1;
-        node.variants.nodes.forEach(function (v) {
-          var hits = 0, bad = false;
-          (v.selectedOptions || []).forEach(function (o) {
-            if (chosen[o.name] === undefined) return;
-            if (chosen[o.name] === o.value) hits++; else bad = true;
-          });
-          if (!bad && hits > best) { best = hits; match = v; }
-        });
-        if (match && match.price) {
-          var priceEl = wr.querySelector('.pg-price');
-          if (priceEl) priceEl.textContent = money(match.price.amount, match.price.currencyCode);
-        }
-      });
+      if (key && galReg[key]) galReg[key](sel.value);
     } catch (e) { /* ignore */ }
   }
   function enhanceSelects(d) {
@@ -201,7 +167,7 @@
     var css = fontFaceCss(settings.site_fonts) + FRAME_CSS;
     try {
       var sm = merged(settings.shopify_style, settings.site_colors), rr = px(sm.toggle_radius, 0);
-      // The cart button sits against a screen edge: its flat side touches the edge, the outer corners are rounded
+      // the floating cart button sits flush against the screen edge: no rounded corners on that side
       css += '.shopify-buy__cart-toggle{border-radius:' + (shopOpts(settings).cart_side === 'right' ? rr + ' 0 0 ' + rr : '0 ' + rr + ' ' + rr + ' 0') + '!important;}';
     } catch (e) { /* ignore */ }
     Array.prototype.forEach.call(doc.querySelectorAll('iframe'), function (f) {
@@ -533,7 +499,7 @@
     var token = String(settings.shopify_storefront_token).trim();
     var nums = keys.filter(function (k) { return /^\d+$/.test(k); });
     var hs = keys.filter(function (k) { return !/^\d+$/.test(k); });
-    var frag = 'fragment F on Product{id title handle description availableForSale productType tags createdAt featuredImage{url} images(first:12){nodes{url}} priceRange{minVariantPrice{amount currencyCode} maxVariantPrice{amount}} compareAtPriceRange{minVariantPrice{amount}} options{name values} variants(first:100){nodes{selectedOptions{name value} image{url} price{amount currencyCode}}}}';
+    var frag = 'fragment F on Product{id title handle description availableForSale productType tags createdAt featuredImage{url} images(first:12){nodes{url}} priceRange{minVariantPrice{amount currencyCode} maxVariantPrice{amount}} compareAtPriceRange{minVariantPrice{amount}} options{name values} variants(first:100){nodes{selectedOptions{name value} image{url}}}}';
     var q = 'query{' + (nums.length ? 'nodes(ids:[' + nums.map(function (n) { return '"gid://shopify/Product/' + n + '"'; }).join(',') + ']){... on Product{...F}}' : '') +
       hs.map(function (h, i) { return ' h' + i + ':productByHandle(handle:"' + h.replace(/"/g, '') + '"){...F}'; }).join('') + '}' + frag;
     var p = win.fetch('https://' + domain + '/api/' + SHOP_API + '/graphql.json', {
@@ -809,25 +775,22 @@
     section.__ish = { setCat: function (id) { state.cat = id || ''; renderSide(); renderGrid(); } };
   }
 
-  // Cart side: the floating cart button is pinned flush against the left (default) or right screen edge
-  // (flat side on the edge), always visible once something is in the cart; the drawer slides from that side.
+  // Cart side: the floating cart button and the cart drawer sit on the left (default) or the right
   function cartSideCss(doc, settings, opt) {
     var side = shopOpts(settings).cart_side === 'right' ? 'right' : 'left';
     var s = merged(settings.shopify_style, settings.site_colors), rad = px(s.toggle_radius, 0);
     var tag = doc.getElementById('ish-cart-css');
     if (!tag) { tag = doc.createElement('style'); tag.id = 'ish-cart-css'; doc.head.appendChild(tag); }
-    var mob = '@media(max-width:520px){.shopify-buy-frame--cart{max-width:100%!important;transition-duration:.22s!important;will-change:transform;}}';
     if (side === 'right') {
-      if (opt && opt.toggle) opt.toggle.styles.toggle['border-radius'] = rad + ' 0 0 ' + rad;
-      tag.textContent =
-        '.shopify-buy-frame--toggle.is-sticky{left:auto!important;right:0!important;top:auto!important;bottom:22px!important;transform:none!important;}' + mob;
+      tag.textContent = '@media(max-width:520px){.shopify-buy-frame--cart{max-width:100%!important;transition-duration:.22s!important;will-change:transform;}}';
       return;
     }
     if (opt && opt.toggle) opt.toggle.styles.toggle['border-radius'] = '0 ' + rad + ' ' + rad + ' 0';
     tag.textContent =
       '.shopify-buy-frame--toggle.is-sticky{right:auto!important;left:0!important;top:auto!important;bottom:22px!important;transform:none!important;}' +
       '.shopify-buy-frame--cart{right:auto!important;left:0!important;transform:translateX(-100%)!important;}' +
-      '.shopify-buy-frame--cart.is-active{transform:translateX(0)!important;}' + mob;
+      '.shopify-buy-frame--cart.is-active{transform:translateX(0)!important;}' +
+      '@media(max-width:520px){.shopify-buy-frame--cart{max-width:100%!important;transition-duration:.22s!important;will-change:transform;}}';
   }
 
   // Cart drawer + floating cart button (Shopify), styled from the Shop panel

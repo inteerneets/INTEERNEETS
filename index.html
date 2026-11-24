@@ -52,8 +52,7 @@
       position: absolute; inset: 0; opacity: 0; z-index: 0;
       background-color: var(--c-bg); background-repeat: no-repeat;
       background-position: center center; background-size: cover;
-      will-change: transform, opacity;
-      contain: layout style;
+      /* opacity is driven by scroll position (see blend() in the script) */
     }
     .bg-layer .bg-overlay { position: absolute; inset: 0; background: #000; opacity: 0; }
     #shade { position: fixed; inset: 0; background: rgba(0,0,0,.4); pointer-events: none; z-index: 3; display: none; }
@@ -90,17 +89,13 @@
     img { -webkit-user-drag: none; user-drag: none; }
 
 
-    /* Embed / Widget blocks: no editor border on the live site, content fills the box */
-    .custom-widget-block { border: 0 !important; outline: 0 !important; box-shadow: none !important; background: none !important; display: block !important; overflow: hidden; padding: 0 !important; }
-    .custom-widget-block iframe { max-width: 100%; border: 0; }
-
     /* Glass scrollbar: see glass-scroll.js (used on every page and on the product page) */
     body.prod-open #nav.nav-hide { transform: none; opacity: 1; pointer-events: auto; }   /* the menu stays on the product page */
     body.prod-open > .gscroll { display: none; }
 
   </style>
   <style id="page-fonts"></style>
-  <script src="/glass-scroll.js?v=20261124g"></script>
+  <script src="/glass-scroll.js?v=20261024f"></script>
 </head>
 <body>
   <div id="loading-screen"><div id="ld-root"><div id="ld-default"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div></div>
@@ -425,29 +420,21 @@
       // up plays the exact same thing in reverse (it is driven by scroll position).
       var COARSE = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
       function ease(t) { return t * t * (3 - 2 * t); }
-      // Cache section offsets so blend() doesn't force layout every frame
-      var sectionOffsets = [], cachedVh = 0;
-      function cacheSectionOffsets() {
-        cachedVh = window.innerHeight;
-        var sy = window.scrollY;
-        sectionOffsets = sections.map(function (s) { return s.getBoundingClientRect().top + sy; });
-      }
-      cacheSectionOffsets();
       function blend() {
-        var vh = cachedVh || window.innerHeight, center = window.scrollY + vh * 0.5;
-        var soft = vh * 0.7;
-        for (var i = 0; i < layers.length; i++) {
-          var l = layers[i];
+        var vh = window.innerHeight, center = window.scrollY + vh * 0.5;
+        var soft = vh * 0.7;                                  // height of the soft gradient edge
+        layers.forEach(function (l, i) {
           l.style.zIndex = i;
           l.style.opacity = 1;
-          if (i === 0) { l.style.webkitMaskImage = l.style.maskImage = 'none'; continue; }
-          var B = sectionOffsets[i] || 0;
-          var p = ease(Math.max(0, Math.min(1, (center - (B - vh * 0.5)) / vh)));
-          var y0 = vh - p * (vh + soft);
+          if (i === 0) { l.style.webkitMaskImage = l.style.maskImage = 'none'; return; }
+          var B = sections[i].getBoundingClientRect().top + window.scrollY;   // where page i starts
+          var p = ease(Math.max(0, Math.min(1, (center - (B - vh * 0.5)) / vh)));  // 0 -> 1 across one screen
+          /* same soft rising-edge fade on phones as on desktop */
+          var y0 = vh - p * (vh + soft);                       // fully hidden above this line
           var m = 'linear-gradient(to bottom, transparent ' + y0.toFixed(1) + 'px, #000 ' + (y0 + soft).toFixed(1) + 'px)';
           l.style.webkitMaskImage = m;
           l.style.maskImage = m;
-        }
+        });
       }
 
       // Active page (menu highlight) = the one under the upper-middle of the screen
@@ -472,12 +459,11 @@
       function update() {
         ticking = false;
         blend();
-        var line = window.innerHeight * 0.4, idx = 0, sy = window.scrollY;
-        for (var i = 0; i < sectionOffsets.length; i++) {
-          var top = sectionOffsets[i] - sy;
-          var bottom = (i + 1 < sectionOffsets.length ? sectionOffsets[i + 1] : sectionOffsets[i] + window.innerHeight) - sy;
-          if (top <= line && bottom > line) { idx = i; break; }
-          if (top <= line) idx = i;
+        var line = window.innerHeight * 0.4, idx = 0;
+        for (var i = 0; i < sections.length; i++) {
+          var r = sections[i].getBoundingClientRect();
+          if (r.top <= line && r.bottom > line) { idx = i; break; }
+          if (r.top <= line) idx = i;
         }
         if (idx === current) return;
         var prev = current;
@@ -507,7 +493,7 @@
         g.inner.style.transform = 'translate(' + x.toFixed(2) + 'px,' + y.toFixed(2) + 'px) scale(' + s.toFixed(5) + ')';
       }
       var fitQueued = false;
-      function fitAll() { fitQueued = false; stages.forEach(fitStage); cacheSectionOffsets(); if (typeof onScroll === 'function') onScroll(); }
+      function fitAll() { fitQueued = false; stages.forEach(fitStage); if (typeof onScroll === 'function') onScroll(); }
       function fitSoon() { if (!fitQueued) { fitQueued = true; requestAnimationFrame(fitAll); } }
       fitAll();
       window.addEventListener('resize', fitSoon);
@@ -550,15 +536,16 @@
       var x = (vw - g.rw * s) / 2, y = single ? (secH - hs) / 2 : 0;
       g.inner.style.transform = 'translate(' + x.toFixed(2) + 'px,' + y.toFixed(2) + 'px) scale(' + s.toFixed(5) + ')';
     }
-    // product page: scale to screen width (like normal pages) and let it scroll — no zoom-to-fit
+    // product page: scale the whole page down until it fits the window, so nothing needs scrolling
     function productFit(g) {
-      var vw = document.documentElement.clientWidth, top = 50;
-      var s = vw / g.rw;
-      // Let sections breathe without forced min-height
+      var vw = document.documentElement.clientWidth, vh = window.innerHeight, top = 50;
+      g.inner.style.transform = 'none';
+      // measure only the real content (not the full-screen minimum height or the big top padding)
       Array.prototype.forEach.call(g.inner.querySelectorAll('section'), function (sc) { sc.style.minHeight = '0'; sc.style.paddingTop = '24px'; sc.style.paddingBottom = '16px'; });
       if (g.sec.parentNode) g.sec.parentNode.style.overflowX = 'hidden';
       var H = Math.max(g.inner.offsetHeight, g.inner.scrollHeight);
-      g.sec.style.height = (H * s + top + 20).toFixed(2) + 'px';
+      var s = Math.min(vw / Math.min(g.rw, 1150), (vh - top - 10) / H, 2);
+      g.sec.style.height = Math.max(vh, H * s + top).toFixed(2) + 'px';
       var x = (vw - g.rw * s) / 2;
       g.inner.style.transform = 'translate(' + x.toFixed(2) + 'px,' + top + 'px) scale(' + s.toFixed(5) + ')';
     }
@@ -608,29 +595,15 @@
         productOverlay.__keys = { prev: prev, next: next };
         // same rules as the pages: scaled stage on wide screens, readable stacked column on phones
         var g = { sec: wrap, inner: root, rw: rw, rh: rh };
-        var prodLastVw = 0;
         productResize = function () {
-          var vw = document.documentElement.clientWidth;
-          var narrow = vw < STACK_MAX;
-          wrap.style.paddingTop = narrow ? '60px' : '';
+          var narrow = document.documentElement.clientWidth < STACK_MAX;
+          wrap.style.paddingTop = narrow ? '60px' : '';   // room for the close / arrow buttons
           if (narrow) stackEnter(g); else { stackExit(g); productFit(g); }
           if (productGlass) productGlass.redraw();
-          prodLastVw = vw;
         };
         productResize();
         window.addEventListener('resize', productResize);
-        // Only re-layout on width changes (not when dropdown opens and height changes)
-        if (window.ResizeObserver) new ResizeObserver(function () {
-          var vw = document.documentElement.clientWidth;
-          if (vw !== prodLastVw) productResize();
-          else {
-            // Height changed (e.g. dropdown opened): just update wrapper height so it scrolls, don't re-scale
-            var s = vw / g.rw;
-            var H = Math.max(g.inner.offsetHeight, g.inner.scrollHeight);
-            wrap.style.height = (H * s + 70).toFixed(2) + 'px';
-            if (productGlass) productGlass.redraw();
-          }
-        }).observe(root);
+        if (window.ResizeObserver) new ResizeObserver(productResize).observe(root);
         productGlass = glassScroll({ el: ov, host: ov });
         root.querySelectorAll('[data-shopify-product-page]').forEach(function (holder) {
           InteerShop.renderProductPage(document, holder, settings, key, { toFilterShadow: toFilterShadow });
@@ -664,7 +637,7 @@
       var go = function () { InteerShop.autoAdd(settings, window).then(function () { InteerShop.render(document, settings, { toFilterShadow: toFilterShadow, onOpenProduct: openProduct }); }); };
       if (window.InteerShop) return go();
       var s = document.createElement('script');
-      s.src = '/shopify-shop.js?v=20261125a';
+      s.src = '/shopify-shop.js?v=20261117c';
       s.onload = go;
       document.head.appendChild(s);
     }
@@ -824,40 +797,11 @@
   
     // ?? Glass scrollbar (desktop / mouse only) ??
     glassScroll();
-
-    // Clickable image links (data-link attribute set in the editor)
-    document.addEventListener('click', function (e) {
-      var img = e.target.closest && e.target.closest('[data-link]');
-      if (!img) return;
-      var url = img.getAttribute('data-link');
-      if (!url) return;
-      e.preventDefault();
-      if (/^https?:\/\//i.test(url)) window.open(url, '_blank', 'noopener');
-      else window.location.href = url;
-    });
   </script>
-<script src="/soundcloud-player.js?v=20261124g"></script>
+<script src="/spotify-player.js?v=20261117d"></script>
 <script>
   // playlist cards placed in the editor: start them once the pages are on screen
-  (function () { var n = 0, iv = setInterval(function () { if (window.SoundCloudPlayer) SoundCloudPlayer.mountAll(document); if (++n > 40) clearInterval(iv); }, 500); })();
-</script>
-<script>
-  // widgets with their own scrolling area get the site's glass scrollbar too (needs glass-scroll.js)
-  (function () {
-    var done = new WeakSet(), n = 0;
-    function scan() {
-      if (!window.glassScroll) return;
-      Array.prototype.forEach.call(document.querySelectorAll('.custom-widget-block, .custom-widget-block *'), function (e) {
-        if (done.has(e) || e.closest('.gscroll')) return;
-        var cs = getComputedStyle(e);
-        if ((cs.overflowY === 'auto' || cs.overflowY === 'scroll') && e.scrollHeight > e.clientHeight + 2) {
-          done.add(e);
-          try { glassScroll({ el: e, host: e.offsetParent || e.parentElement, inner: true }); } catch (x) { /* ignore */ }
-        }
-      });
-    }
-    var iv = setInterval(function () { scan(); if (++n > 40) clearInterval(iv); }, 800);
-  })();
+  (function () { var n = 0, iv = setInterval(function () { if (window.SpotifyPlayer) SpotifyPlayer.mountAll(document); if (++n > 40) clearInterval(iv); }, 500); })();
 </script>
 </body>
 </html>
