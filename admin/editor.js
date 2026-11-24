@@ -1406,25 +1406,46 @@ document.getElementById('btn-add-playlist').addEventListener('click', () => {
 });
 
 // ─── Custom HTML/Embed Widget ───
+const isWidgetComp = (c) => !!(c && c.getAttributes && (String(c.getAttributes()['class'] || '').includes('custom-widget-block')));
+function makeWidgetResizable(c) {
+  if (!isWidgetComp(c)) return;
+  c.set('resizable', { tl: 1, tr: 1, bl: 1, br: 1, cl: 1, cr: 1, tc: 1, bc: 1 });
+}
+editor.on('component:add', makeWidgetResizable);
+editor.on('component:selected', makeWidgetResizable);
+
+function injectWidgetEditorCss() {
+  try {
+    const doc = editor.Canvas.getDocument();
+    if (!doc || !doc.head) return;
+    let tag = doc.getElementById('widget-editor-css');
+    if (!tag) {
+      tag = doc.createElement('style');
+      tag.id = 'widget-editor-css';
+      doc.head.appendChild(tag);
+    }
+    tag.textContent = '.custom-widget-block * { pointer-events: none !important; user-select: none !important; } .custom-widget-block { cursor: move !important; }';
+  } catch (_) {}
+}
+editor.on('canvas:frame:load', injectWidgetEditorCss);
+setInterval(injectWidgetEditorCss, 1500);
+
 document.getElementById('btn-add-widget').addEventListener('click', () => {
   const code = prompt('Paste your embed/widget HTML or iframe code:');
   if (!code || !code.trim()) return;
   // Wrap in a container so GrapesJS treats it as one draggable block
   const c = editor.getWrapper().append({
     type: 'default',
-    content: '',
-    components: [],
+    content: code,
     attributes: { class: 'custom-widget-block' },
     style: { position: 'absolute', top: '80px', left: '80px', width: '380px', 'min-height': '160px', 'z-index': '10' },
   })[0];
   if (c) {
-    // Set inner HTML directly so iframes and scripts survive GrapesJS parsing
     const el = c.getEl();
     if (el) el.innerHTML = code;
-    c.set('content', code);
-    // Make it resizable and draggable
-    c.set('resizable', { tl: 1, tr: 1, bl: 1, br: 1, cl: 1, cr: 1, tc: 1, bc: 1 });
+    makeWidgetResizable(c);
     editor.select(c);
+    injectWidgetEditorCss();
     markDirty(currentPage);
     showToast('Widget added: drag it anywhere, resize it by its corners');
   }
@@ -2126,6 +2147,31 @@ function ensureExtraTools(c) {
       const el = c.getEl(); if (el) SoundCloudPlayer.remount(el, { editor: true });
       markDirty(currentPage);
     } }, ...tb]);
+  };
+})();
+
+// "Code" shortcut on the toolbar above a selected custom widget
+(function addWidgetTool() {
+  const prev = ensureExtraTools;
+  ensureExtraTools = function (c) {
+    prev(c);
+    if (!isWidgetComp(c)) return;
+    const tb = c.get('toolbar') || [];
+    if (tb.some((t) => t.id === 'q-widget-code')) return;
+    c.set('toolbar', [{
+      id: 'q-widget-code',
+      label: '<span class="tb-fmt" style="font-size:11px">&lt;/&gt; Code</span>',
+      attributes: { title: 'Edit the HTML / Embed code' },
+      command: () => {
+        const cur = c.get('content') || (c.getEl() ? c.getEl().innerHTML : '');
+        const code = prompt('Edit embed/widget HTML or iframe code:', cur);
+        if (code == null) return;
+        c.set('content', code);
+        const el = c.getEl();
+        if (el) el.innerHTML = code;
+        markDirty(currentPage);
+      }
+    }, ...tb]);
   };
 })();
 
