@@ -808,20 +808,15 @@
     section.__ish = { setCat: function (id) { state.cat = id || ''; renderSide(); renderGrid(); } };
   }
 
-  // Cart side: the floating cart button and the cart drawer sit on the left (default) or the right
+  // Cart side: the floating cart button sits top-right, always visible; the cart drawer slides from the right
   function cartSideCss(doc, settings, opt) {
-    var side = shopOpts(settings).cart_side === 'right' ? 'right' : 'left';
     var s = merged(settings.shopify_style, settings.site_colors), rad = px(s.toggle_radius, 0);
     var tag = doc.getElementById('ish-cart-css');
     if (!tag) { tag = doc.createElement('style'); tag.id = 'ish-cart-css'; doc.head.appendChild(tag); }
-    if (side === 'right') {
-      tag.textContent = '@media(max-width:520px){.shopify-buy-frame--cart{max-width:100%!important;transition-duration:.22s!important;will-change:transform;}}';
-      return;
-    }
-    if (opt && opt.toggle) opt.toggle.styles.toggle['border-radius'] = '0 ' + rad + ' ' + rad + ' 0';
+    if (opt && opt.toggle) opt.toggle.styles.toggle['border-radius'] = rad;
     tag.textContent =
-      '.shopify-buy-frame--toggle.is-sticky{right:auto!important;left:0!important;top:auto!important;bottom:22px!important;transform:none!important;}' +
-      '.shopify-buy-frame--cart{right:auto!important;left:0!important;transform:translateX(-100%)!important;}' +
+      '.shopify-buy-frame--toggle.is-sticky{right:16px!important;left:auto!important;top:12px!important;bottom:auto!important;transform:none!important;z-index:110!important;position:fixed!important;}' +
+      '.shopify-buy-frame--cart{right:0!important;left:auto!important;transform:translateX(100%)!important;}' +
       '.shopify-buy-frame--cart.is-active{transform:translateX(0)!important;}' +
       '@media(max-width:520px){.shopify-buy-frame--cart{max-width:100%!important;transition-duration:.22s!important;will-change:transform;}}';
   }
