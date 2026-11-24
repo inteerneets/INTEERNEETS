@@ -203,7 +203,8 @@
       var sm = merged(settings.shopify_style, settings.site_colors), rr = px(sm.toggle_radius, 0);
       // The cart button sits against a screen edge: its flat side touches the edge, the outer corners are rounded
       // compact cart button in the menu bar: cart icon + amount side by side
-      css += '.shopify-buy__cart-toggle{display:flex!important;flex-direction:row-reverse!important;align-items:center!important;justify-content:center!important;gap:8px!important;width:100%!important;height:100%!important;box-sizing:border-box!important;padding:0 10px!important;margin:0!important;float:none!important;border-radius:' + rr + '!important;}' +
+      css += '.shopify-buy__cart-toggle{display:flex!important;flex-direction:row-reverse!important;align-items:center!important;justify-content:center!important;gap:8px!important;width:100%!important;height:100%!important;box-sizing:border-box!important;padding:0 10px!important;margin:0!important;float:none!important;background:transparent!important;background-color:transparent!important;box-shadow:none!important;border:0!important;border-radius:0!important;}' +
+        '.shopify-buy__cart-toggle:hover{background:transparent!important;}' +
         '.shopify-buy__cart-toggle__count{margin:0!important;padding:0!important;font-size:16px!important;line-height:1!important;}' +
         '.shopify-buy__icon-cart{width:20px!important;height:20px!important;margin:0!important;}';
     } catch (e) { /* ignore */ }
@@ -821,7 +822,7 @@
     if (!tag) { tag = doc.createElement('style'); tag.id = 'ish-cart-css'; doc.head.appendChild(tag); }
     var mob = '@media(max-width:520px){.shopify-buy-frame--cart{max-width:100%!important;transition-duration:.22s!important;will-change:transform;}}';
     var from = side === 'right' ? 'right' : 'left', other = side === 'right' ? 'left' : 'right', away = side === 'right' ? '100%' : '-100%';
-    if (opt && opt.toggle) opt.toggle.styles.toggle['border-radius'] = rad;
+    if (opt && opt.toggle) { var tg = opt.toggle.styles.toggle; tg['border-radius'] = 0; tg['background-color'] = 'transparent'; tg[':hover'] = { 'background-color': 'transparent' }; }   // just the cart + number, no box
     tag.textContent =
       // the cart button lives in the menu bar, at the far left (with a gap), and is always there: icon + amount
       '.shopify-buy-frame--toggle.is-sticky{display:block!important;visibility:visible!important;opacity:1!important;position:fixed!important;left:16px!important;right:auto!important;top:9px!important;bottom:auto!important;width:78px!important;height:38px!important;margin:0!important;transform:none!important;z-index:110!important;}' +
