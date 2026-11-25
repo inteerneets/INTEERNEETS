@@ -1,5 +1,5 @@
 {
-  "refW": 1574,
+  "refW": 1565,
   "refH": 837,
   "projectData": {
     "assets": [
@@ -149,8 +149,8 @@
           "text-transform": "uppercase",
           "--btn-text": "#ffffff",
           "--btn-shadow": "drop-shadow(0px 0px 21px rgba(255,255,255,0.74))",
-          "left": "866px",
-          "top": "718px",
+          "left": "769px",
+          "top": "382px",
           "position": "absolute",
           "width": "max-content",
           "height": "48px",
@@ -170,8 +170,8 @@
           "color": "black",
           "width": "518px",
           "height": "273px",
-          "left": "866px",
-          "top": "48px",
+          "left": "769px",
+          "top": "109px",
           "position": "absolute",
           "right": "auto",
           "transform": "translateX(-50%)",
@@ -192,50 +192,11 @@
       },
       {
         "selectors": [
-          "#ij9xy"
-        ],
-        "style": {
-          "position": "absolute",
-          "width": "1048px",
-          "max-width": "100%",
-          "margin": "20px auto",
-          "min-height": "40px",
-          "z-index": "10",
-          "color": "#777",
-          "font-family": "'Inter',sans-serif",
-          "text-align": "left",
-          "padding": "0",
-          "cursor": "move",
-          "left": "345px",
-          "top": "410px",
-          "border": "none",
-          "display": "block",
-          "height": "271px"
-        }
-      },
-      {
-        "selectors": [
           "#iskc"
         ],
         "style": {
           "left": "-490px",
           "top": "346px"
-        }
-      },
-      {
-        "selectors": [
-          "#i94yl"
-        ],
-        "style": {
-          "padding": "10px",
-          "left": "593px",
-          "top": "339px",
-          "position": "absolute",
-          "color": "#ffffff",
-          "width": "553px",
-          "max-width": "none",
-          "font-size": "42px",
-          "font-family": "'Inter', sans-serif"
         }
       },
       {
@@ -270,7 +231,8 @@
                       "attributes": {
                         "id": "ixmy3",
                         "src": "/images/uploads/weblogo.png"
-                      }
+                      },
+                      "dmode": "absolute"
                     },
                     {
                       "type": "link",
@@ -297,52 +259,6 @@
                       ]
                     }
                   ]
-                },
-                {
-                  "type": "embed-widget",
-                  "resizable": {
-                    "tl": 1,
-                    "tr": 1,
-                    "bl": 1,
-                    "br": 1,
-                    "cl": 1,
-                    "cr": 1,
-                    "tc": 1,
-                    "bc": 1
-                  },
-                  "content": "<iframe src=\"https://ra.co/promoters/198379/widget/events?theme=dark&transparentBackground=true&customBackgroundColor=&customTextColor=%23ff2a2a\" height=\"650px\" width=\"100%\" style=\"border:none\"></iframe>",
-                  "classes": [
-                    "custom-widget-block"
-                  ],
-                  "attributes": {
-                    "id": "ij9xy"
-                  },
-                  "dmode": "absolute"
-                },
-                {
-                  "type": "text",
-                  "resizable": {
-                    "tl": 1,
-                    "tr": 1,
-                    "bl": 1,
-                    "br": 1,
-                    "cl": 1,
-                    "cr": 1,
-                    "tc": 0,
-                    "bc": 0
-                  },
-                  "attributes": {
-                    "id": "i94yl",
-                    "data-marquee": "left",
-                    "data-marquee-speed": "50"
-                  },
-                  "dmode": "absolute",
-                  "components": [
-                    {
-                      "type": "textnode",
-                      "content": "NEW ITEMS IN THE SHOP!"
-                    }
-                  ]
                 }
               ],
               "head": {
@@ -361,8 +277,8 @@
     ],
     "symbols": []
   },
-  "html": "<body><section id=\"i39i\"><img id=\"ixmy3\" src=\"/images/uploads/weblogo.png\"/><a href=\"#shop\" id=\"i3b4t\">GO TO SHOP</a></section><div id=\"ij9xy\" class=\"custom-widget-block\"><iframe src=\"https://ra.co/promoters/198379/widget/events?theme=dark&transparentBackground=true&customBackgroundColor=&customTextColor=%23ff2a2a\" height=\"650px\" width=\"100%\" style=\"border:none\"></iframe></div><div id=\"i94yl\" data-marquee=\"left\" data-marquee-speed=\"50\">NEW ITEMS IN THE SHOP!</div></body>",
-  "css": "@font-face{font-family:'Inter 18pt Bold';src:url('/fonts/Inter_18pt-Bold.ttf') format('truetype');font-display:swap;}\n@font-face{font-family:'Inter 18pt Regular';src:url('/fonts/Inter_18pt-Regular.ttf') format('truetype');font-display:swap;}\n* { box-sizing: border-box; } body {margin: 0;}body{margin-top:0px;margin-right:0px;margin-bottom:0px;margin-left:0px;padding-top:0px;padding-right:0px;padding-bottom:0px;padding-left:0px;}*{box-sizing:border-box;}#i39i{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;color:rgba(0,0,0,0);text-align:center;padding:40px 20px;border:solid;left:0px;top:0px;position:absolute;width:1737.60009765625px;height:837.3333740234375px;}#i3b4t{display:inline-block;padding:14px 36px;background:var(--btn-fill,transparent);border:1.6px solid #ffffff;color:#ffffff;text-decoration:none;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:600;letter-spacing:3px;text-transform:uppercase;--btn-text:#ffffff;--btn-shadow:drop-shadow(0px 0px 21px rgba(255,255,255,0.74));left:866px;top:718px;position:absolute;width:max-content;height:48px;right:auto;transform:translateX(-50%);margin-left:0;margin-right:0;max-width:100%;text-align:center;}#ixmy3{color:black;width:518px;height:273px;left:866px;top:48px;position:absolute;right:auto;transform:translateX(-50%);margin-left:0;margin-right:0;}.custom-widget-block{width:1407px;height:44px;top:370px;left:345px;}#ij9xy{position:absolute;width:1048px;max-width:100%;margin:20px auto;min-height:40px;z-index:10;color:#777;font-family:'Inter',sans-serif;text-align:left;padding:0;cursor:move;left:345px;top:410px;border:none;display:block;height:271px;}#i94yl{padding:10px;left:593px;top:339px;position:absolute;color:#ffffff;width:553px;max-width:none;font-size:42px;font-family:'Inter', sans-serif;}",
+  "html": "<body><section id=\"i39i\"><img id=\"ixmy3\" src=\"/images/uploads/weblogo.png\"/><a href=\"#shop\" id=\"i3b4t\">GO TO SHOP</a></section></body>",
+  "css": "@font-face{font-family:'Inter 18pt Bold';src:url('/fonts/Inter_18pt-Bold.ttf') format('truetype');font-display:swap;}\n@font-face{font-family:'Inter 18pt Regular';src:url('/fonts/Inter_18pt-Regular.ttf') format('truetype');font-display:swap;}\n* { box-sizing: border-box; } body {margin: 0;}body{margin-top:0px;margin-right:0px;margin-bottom:0px;margin-left:0px;padding-top:0px;padding-right:0px;padding-bottom:0px;padding-left:0px;}*{box-sizing:border-box;}#i39i{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;color:rgba(0,0,0,0);text-align:center;padding:40px 20px;border:solid;left:0px;top:0px;position:absolute;width:1737.60009765625px;height:837.3333740234375px;}#i3b4t{display:inline-block;padding:14px 36px;background:var(--btn-fill,transparent);border:1.6px solid #ffffff;color:#ffffff;text-decoration:none;font-family:'Inter',sans-serif;font-size:0.9rem;font-weight:600;letter-spacing:3px;text-transform:uppercase;--btn-text:#ffffff;--btn-shadow:drop-shadow(0px 0px 21px rgba(255,255,255,0.74));left:769px;top:382px;position:absolute;width:max-content;height:48px;right:auto;transform:translateX(-50%);margin-left:0;margin-right:0;max-width:100%;text-align:center;}#ixmy3{color:black;width:518px;height:273px;left:769px;top:109px;position:absolute;right:auto;transform:translateX(-50%);margin-left:0;margin-right:0;}",
   "bg": {
     "color": "#000000",
     "image": "",
