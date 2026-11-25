@@ -74,3 +74,9 @@ Local testing: `node server.js` (port 8000, serves `/` and `/admin/`; saving in 
 - ptr (pointer tracker) is in page pixels: events inside the canvas are already page px, real events in the editor window are converted, synthetic re-dispatched ones are ignored (isTrusted).
 - **Cart button:** #cart-fast (index.html, right after <nav>) is drawn at once from localStorage.ish_cart (count, icon, colour) at the far RIGHT of the menu bar (22px gap), then kept in sync with Shopify's real toggle (which is hidden); click opens the drawer (__shopUI.openCart(), with stopPropagation because page click handlers close it). 2nd visit: button present after 0.1 s.
 - Widgets: every embed iframe (also nested) is 24px wider than its box so the box clips the embed's own scrollbar.
+## 7. Pages grow (02:35-02:55)
+
+- Dragging an element past the bottom of the page makes the page (and its own section) taller; the canvas auto-scrolls while you hold the pointer near its top/bottom edge (`tick` in `setupSnapping`), and the page also grows when something is added/resized below the bottom (`growOnEdit`). `pageRef[page].h` is the FULL page height and is what gets saved as `refH` (`canvasRefSize`); the editor window always shows one normal screen (`Hb`) and scrolls inside it, so the zoom never jumps.
+- `growPage` ignores editor furniture and the page's own sections (a stretched section must not count as content, otherwise it grows forever: this bug happened once).
+- Floating page sections (position:absolute over the whole page) are click-through in the editor (`.ed-clickthrough`), otherwise an item placed before them in the DOM (e.g. the GO TO SHOP button) could not be selected or dragged.
+- `resolveOverlaps` now looks at every floating item on the page (not only siblings) and moves the other item by the shortest way fully clear of the dropped one.

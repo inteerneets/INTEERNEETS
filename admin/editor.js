@@ -689,7 +689,8 @@ function canvasRefSize() {
     const f = editor.Canvas.getFrameEl();
     const doc = f && f.contentDocument;
     if ((!dev || /desktop/i.test(String(dev))) && doc && doc.documentElement.clientWidth > 300) {
-      return { w: doc.documentElement.clientWidth, h: f.clientHeight };
+      const pr = pageRef[currentPage];
+      return { w: doc.documentElement.clientWidth, h: (pr && pr.h) || f.clientHeight };   // the page can be taller than the editor window
     }
   } catch (_) { /* fall through */ }
   return pageRef[currentPage] || null;
@@ -2057,27 +2058,27 @@ function setupSnapping() {
   // element from the real pointer movement instead.
   const place = (d) => {
     if (!d || !d.base) return;
-    d.comp.addStyle({ left: Math.round(d.base.l + (ptr.sx - d.p0.x)) + 'px', top: Math.round(d.base.t + (ptr.sy - d.p0.y)) + 'px' });
+    const win = d.comp.getEl().ownerDocument.defaultView;
+    d.comp.addStyle({ left: Math.round(d.base.l + (ptr.sx - d.p0.x) + (win.scrollX - d.p0.scx)) + 'px', top: Math.round(d.base.t + (ptr.sy - d.p0.y) + (win.scrollY - d.p0.scy)) + 'px' });
   };
 
   // If the dropped element sits on top of another floating element, that one moves away (smallest way out) and
   // snaps next to it; anything it then bumps into is pushed on in turn.
   const resolveOverlaps = (comp, touch) => {
-    const el = comp.getEl(), parent = comp.parent && comp.parent();
-    if (!el || !parent) return;
+    const el = comp.getEl();
+    if (!el) return;
     const GAP = 10;
-    const host = el.offsetParent;
-    const hr = host ? host.getBoundingClientRect() : null;
-    const area = hr ? hr.width * hr.height : 1e12;
+    const dd = el.ownerDocument;
+    const area = dd.documentElement.clientWidth * Math.max(dd.documentElement.scrollHeight, dd.defaultView.innerHeight);   // the whole page
     const moved = new Set([comp]), queue = [comp];
     let guard = 0;
     while (queue.length && guard++ < 30) {
       const a = queue.shift(), ae = a.getEl(); if (!ae) continue;
       const ar = ae.getBoundingClientRect();
-      parent.components().forEach((sib) => {
+      editor.getWrapper().find('*').forEach((sib) => {      // every floating item on the page, wherever it sits in the tree
         if (moved.has(sib)) return;
         const se = sib.getEl();
-        if (!se || se.tagName === 'STYLE' || se.tagName === 'SCRIPT') return;
+        if (!se || se.nodeType !== 1 || se.tagName === 'STYLE' || se.tagName === 'SCRIPT' || se === ae || se.contains(ae) || ae.contains(se)) return;
         const cs = se.ownerDocument.defaultView.getComputedStyle(se);
         if (cs.position !== 'absolute') return;               // only floating siblings are pushed; flow items re-flow by themselves
         const sr = se.getBoundingClientRect();
@@ -2086,16 +2087,17 @@ function setupSnapping() {
         const oy = Math.min(ar.bottom, sr.bottom) - Math.max(ar.top, sr.top);
         if (ox < 6 || oy < 6) return;
         touch(sib);
-        const patch = {};
-        if (oy <= ox) {
-          const dir = (sr.top + sr.height / 2) >= (ar.top + ar.height / 2) ? 1 : -1;
-          patch.top = Math.max(0, Math.round(se.offsetTop - (parseFloat(cs.marginTop) || 0) + dir * (oy + GAP))) + 'px';
-          patch.left = Math.round(se.offsetLeft - (parseFloat(cs.marginLeft) || 0)) + 'px';
-        } else {
-          const dir = (sr.left + sr.width / 2) >= (ar.left + ar.width / 2) ? 1 : -1;
-          patch.left = Math.max(0, Math.round(se.offsetLeft - (parseFloat(cs.marginLeft) || 0) + dir * (ox + GAP))) + 'px';
-          patch.top = Math.round(se.offsetTop - (parseFloat(cs.marginTop) || 0)) + 'px';
-        }
+        // the shortest way out: move it fully clear of the dropped element, down / up / right / left (+ a small gap)
+        const ways = [
+          { axis: 'y', d: ar.bottom + GAP - sr.top },     // down
+          { axis: 'y', d: -(sr.bottom - (ar.top - GAP)) }, // up
+          { axis: 'x', d: ar.right + GAP - sr.left },      // right
+          { axis: 'x', d: -(sr.right - (ar.left - GAP)) }  // left
+        ].sort((p, q) => Math.abs(p.d) - Math.abs(q.d));
+        const w = ways[0], patch = {};
+        const ml = parseFloat(cs.marginLeft) || 0, mt = parseFloat(cs.marginTop) || 0;
+        patch.left = Math.max(0, Math.round(se.offsetLeft - ml + (w.axis === 'x' ? w.d : 0))) + 'px';
+        patch.top = Math.max(0, Math.round(se.offsetTop - mt + (w.axis === 'y' ? w.d : 0))) + 'px';
         const st = sib.getStyle();
         if (st.right && st.right !== 'auto') patch.right = 'auto';
         if (st.bottom && st.bottom !== 'auto') patch.bottom = 'auto';
@@ -2105,17 +2107,62 @@ function setupSnapping() {
     }
   };
 
+  // The page grows with its content: drag something below the bottom and the page (and its section) continues.
+  const growPage = (touch, onlyComp) => {
+    try {
+      const doc = editor.Canvas.getDocument(); if (!doc || !doc.body) return;
+      const win = doc.defaultView;
+      const DEF_H = 808;
+      const r0 = pageRef[currentPage] || null, curH = (r0 && r0.h) || DEF_H;
+      let bottom = 0;
+      if (onlyComp) {                       // while dragging: just the dragged element (cheap)
+        const el = onlyComp.getEl(); if (!el) return;
+        bottom = el.getBoundingClientRect().bottom + win.scrollY;
+      } else {                              // otherwise: everything on the page, except the sections that merely fill the page
+        const wrapEl = editor.getWrapper().getEl();
+        Array.prototype.forEach.call(doc.body.querySelectorAll('*'), (e) => {
+          if (e === wrapEl || e.parentElement === doc.body || /^gjs-/.test(e.id) || e.closest('#snap-guides') || /^(STYLE|SCRIPT|LINK|HEAD|META)$/.test(e.tagName)) return;   // editor furniture
+          if (e.tagName === 'SECTION' && e.parentElement === wrapEl) return;      // the page's own sections follow the page (their content is measured instead)
+          const r = e.getBoundingClientRect(); if (!r.width && !r.height) return;
+          bottom = Math.max(bottom, r.bottom + win.scrollY);
+        });
+      }
+      if (bottom <= curH - 24) return;
+      const newH = Math.ceil(bottom + 120);
+      pageRef[currentPage] = { w: (r0 && r0.w) || doc.documentElement.clientWidth, h: newH };
+      editor.getWrapper().components().forEach((comp) => {      // stretch the page's own section(s)
+        const el = comp.getEl(); if (!el || String(comp.get('tagName')).toLowerCase() !== 'section') return;
+        const top = el.offsetTop, hh = el.offsetHeight;
+        if (hh >= curH - top - 8) {
+          if (touch) touch(comp);
+          const patch = { height: Math.max(hh, newH - top) + 'px' };
+          const st = comp.getStyle();
+          if (st['min-height'] && /px$/.test(st['min-height'])) patch['min-height'] = patch.height;
+          comp.addStyle(patch);
+        }
+      });
+    } catch (_) { /* canvas not ready */ }
+  };
+  window.__growPage = growPage;
+
   let raf = 0;
-  const onMove = (e) => {
+  const onMove = (e) => { lastAlt = !!e.altKey; };
+  // one frame of the drag: scroll the canvas when the pointer is near its top/bottom edge, place, grow the page, snap
+  const tick = () => {
+    raf = 0;
     if (!drag) return;
-    lastAlt = !!e.altKey;
-    if (raf) return;
-    raf = requestAnimationFrame(() => {   // after the editor's own move handler, so ours wins
-      raf = 0;
-      if (!drag) return;
+    try {
+      const win = editor.Canvas.getDocument().defaultView;
+      const vh = win.innerHeight, edge = 60;
+      if (!lastAlt || true) {
+        if (ptr.sy > vh - edge) win.scrollBy(0, Math.min(12, 1 + (ptr.sy - (vh - edge)) * 0.14));
+        else if (ptr.sy < edge && win.scrollY > 0) win.scrollBy(0, -Math.min(12, 1 + (edge - ptr.sy) * 0.14));
+      }
       place(drag);
+      growPage((c) => { if (!drag.touched.has(c)) drag.touched.set(c, Object.assign({}, c.getStyle())); }, drag.comp);
       if (lastAlt) clearGuides(); else applySnap(drag.comp, true);
-    });
+    } catch (_) { /* ignore */ }
+    raf = requestAnimationFrame(tick);
   };
   const listen = (on) => [document, editor.Canvas.getDocument()].forEach((d) => { if (d) d[on ? 'addEventListener' : 'removeEventListener']('mousemove', onMove, true); });
 
@@ -2137,19 +2184,24 @@ function setupSnapping() {
         comp.addStyle(patch);
       } else base = toPx(comp);
     } catch (_) { base = null; }
-    drag = { comp, base, p0: { x: ptr.sx, y: ptr.sy }, touched };
+    const w0 = comp.getEl().ownerDocument.defaultView;
+    drag = { comp, base, p0: { x: ptr.sx, y: ptr.sy, scx: w0.scrollX, scy: w0.scrollY }, touched };
     listen(true);
+    if (raf) cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(tick);
   });
   editor.on('dmode:end', () => {
     const d = drag;
     drag = null;
     listen(false);
+    if (raf) { cancelAnimationFrame(raf); raf = 0; }
     clearGuides();
     // The editor writes its own final left/top when you let go, so place / snap / push once more right after that.
     setTimeout(() => {
       try {
         if (d && d.base) {
           place(d);
+          growPage((c) => { if (!d.touched.has(c)) d.touched.set(c, Object.assign({}, c.getStyle())); }, d.comp);
           if (!lastAlt) {
             applySnap(d.comp, false);
             resolveOverlaps(d.comp, (c) => { if (!d.touched.has(c)) d.touched.set(c, Object.assign({}, c.getStyle())); });
@@ -3736,12 +3788,13 @@ editor.on('update', devSchedule);
       if (!/desktop/i.test(String(dev))) { if (lastKey !== 'dev') { editor.Canvas.setZoom(100); lastKey = 'dev'; } return; }
       const r = (typeof pageRef !== 'undefined' && pageRef[currentPage]) || null;
       const W = (r && r.w) || DEF_W, H = (r && r.h) || DEF_H;
-      const key = [currentPage, W, H, cv.clientWidth, cv.clientHeight].join('|');
+      const Hb = Math.round(W * DEF_H / DEF_W);   // the editor window always shows one normal screen; the page itself can be any height and scrolls inside it (so the zoom never jumps while the page grows)
+      const key = [currentPage, W, Hb, cv.clientWidth, cv.clientHeight].join('|');
       if (key === lastKey) { if (placeTries < 8) { placeTries++; place(cv); } return; }
       lastKey = key; placeTries = 0;
-      const z = Math.max(20, Math.min(200, Math.min((cv.clientWidth - 6) / W, (cv.clientHeight - 6) / H) * 100));
+      const z = Math.max(20, Math.min(200, Math.min((cv.clientWidth - 6) / W, (cv.clientHeight - 6) / Hb) * 100));
       const frame = editor.Canvas.getFrame();
-      frame.set({ width: W + 'px', height: H + 'px' });
+      frame.set({ width: W + 'px', height: Math.max(Hb, Math.round((cv.clientHeight - 6) / (z / 100))) + 'px' });
       editor.Canvas.setZoom(z);
       setTimeout(() => place(cv), 60);
     } catch (_) { /* editor not ready yet */ }
@@ -3814,7 +3867,29 @@ setInterval(() => { try { const d = editor.Canvas.getDocument(); if (d && d.body
       c.set({ draggable: true, dmode: (pos === 'absolute' || pos === 'fixed') ? 'absolute' : '' });
     } catch (_) { /* element not drawn yet */ }
   }
+  // A floating page-section (position:absolute, covering the whole page) would sit on top of everything placed before it
+  // and swallow the clicks, so those items could not be selected or dragged. Make such sections click-through
+  // (editor only): the things inside them, and the things below them, stay clickable.
+  function clickThrough() {
+    try {
+      const doc = editor.Canvas.getDocument(); if (!doc || !doc.head) return;
+      if (!doc.getElementById('ed-ct-css')) { const st = doc.createElement('style'); st.id = 'ed-ct-css'; st.textContent = '.ed-clickthrough{pointer-events:none!important}.ed-clickthrough *{pointer-events:auto}'; doc.head.appendChild(st); }
+      editor.getWrapper().components().forEach((c) => {
+        const el = c.getEl(); if (!el || el.nodeType !== 1) return;
+        const floating = String(c.get('tagName')).toLowerCase() === 'section' && el.ownerDocument.defaultView.getComputedStyle(el).position === 'absolute';
+        el.classList.toggle('ed-clickthrough', floating);
+      });
+    } catch (_) { /* canvas not ready */ }
+  }
+  setInterval(clickThrough, 800);
+  editor.on('canvas:frame:load', () => setTimeout(clickThrough, 100));
   editor.on('component:selected', setMode);
   editor.on('component:mount', setMode);
   editor.on('component:drag:start', (ev) => setMode((ev && ev.target) || editor.getSelected()));
+})();
+
+// the page also grows when an element is added or resized below its bottom edge
+(function growOnEdit() {
+  let t = null;
+  editor.on('update', () => { clearTimeout(t); t = setTimeout(() => { try { if (window.__growPage) window.__growPage(); } catch (_) { /* ignore */ } }, 600); });
 })();
