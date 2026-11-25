@@ -1,82 +1,105 @@
-# INTEERNEETS – Handoff for 2026-11-24 / 25 (everything done today)
+# INTEERNEETS – Full Handoff of Today's Work (2026-11-24 / 2026-11-25)
 
-Read `CLAUDE.md` first (architecture and rules 1-24). Credentials are in `HANDOFF.md`, not repeated here.
+Read `CLAUDE.md` first for core architecture and coding rules (`1–28`). Credentials are stored in `HANDOFF.md` and environment variables, not repeated here.
 
-- **Live:** https://inteerneets.inteerneets.workers.dev · **Admin:** `/admin/`
-- **Desktop folder (what `wrangler deploy` uploads):** `C:\Users\xxx\Desktop\INTEERNEETS\INTEERNEETS WEB`
-- **Git clone (commit/push from here):** `C:\Users\xxx\Documents\GitHub\INTEERNEETS` (branch `main`)
+- **Live site:** https://inteerneets.inteerneets.workers.dev
+- **Editor:** https://inteerneets.inteerneets.workers.dev/admin/
+- **Git clone (author, test, commit, push here):** `C:\Users\xxx\Documents\GitHub\INTEERNEETS` (`main`)
+- **Desktop deploy mirror (what `wrangler deploy` uploads):** `C:\Users\xxx\Desktop\INTEERNEETS\INTEERNEETS WEB`
 - **Git binary:** `$env:LOCALAPPDATA\GitHubDesktop\app-3.6.11\resources\app\git\cmd\git.exe`
-- **Safety copies:** tag `backup-before-revert` on GitHub (last state before the Nov-18 revert), `C:\Users\xxx\.gemini\antigravity\scratch\desktop-full-backup` (old Desktop folder).
+- **Safety backups created before the revert:**
+  - GitHub tag `backup-before-revert` (state immediately prior to reverting to `ef584c7`)
+  - Local folder backup `C:\Users\xxx\.gemini\antigravity\scratch\desktop-full-backup`
 
-## 1. How the day went (so nobody repeats it)
+---
 
-1. A Claude session on claude.ai made many changes that were never tested in a browser and broke things (cart, text resize, undo, widgets, editor layout).
-2. The whole site was reverted to the Nov-18 commit `ef584c7` (`e81ff49`), then the wanted features were re-added **and tested in headless Chromium** (Playwright + `node server.js` on port 8000), then deployed.
-3. Content (`content/*.json`) was kept at the user's own saves. **Never overwrite it** (see rule below).
+## 1. Chronological Story & Commit Timeline
 
-## 2. Deploy routine (use exactly this)
+Earlier work (`29209ae` and prior sessions) introduced untested regressions in the cart button, text resize, undo history, widgets, and editor canvas layout. Today the codebase was cleanly reset and rebuilt step by step with browser verification in headless Chromium (Playwright against `node server.js` on port `8000`) at each stage, while keeping the user's own `content/*.json` saves intact:
+
+1. **`e81ff49` – Revert whole site to `ef584c7` (Nov 18 baseline)**
+   Clean rollback after backing up the pre-revert state (`backup-before-revert`).
+2. **`283519f` – Core feature restoration & editor foundation**
+   Restored dynamic variant pricing, embed widget block, image links + shadows/glow, SoundCloud playlist player, glass scrollbars, performance section-offset caching, fixed Desktop editor canvas stage, text resize/undo improvements, and early shop prewarm (`InteerShop.prewarm()`).
+3. **`33d5359` – Stage centering, 1-step undo, embed persistence, glass scrollbars**
+   Added `place()` re-centering for the fixed stage, wrapped operations in single undo transactions, moved embed widget markup into component `content` with cleared children, added `keepLookOnMove`, and wired glass scrollbars cleanly.
+4. **`1afa6c2` – Scrolling text (`marquee.js`), text alignment & Scroll/Align panel**
+   Introduced `marquee.js` (`data-marquee`, `data-marquee-speed`), the editor `Scroll/Align` toolbar popover (Left/Middle/Right align, marquee toggle, direction, speed), and zoom-aware text resize fixes.
+5. **`004dfdd` / `620b83b` – Undo selection cleanup, widget 8-handle resize & scroll box, marquee width fix**
+   Set `undoManager: { trackSelection: false }`, cleaned leftover `.gjs-freezed` opacity state, added custom edge-detected 8-handle widget resize (`makeWidgetResizable`) + `Scroll` button (`data-scroll-h` + `--eh`), and fixed marquee to measure original width (`mqOrigWidth`) before applying `nowrap`.
+6. **`4947797` / `bfb977e` / `2fe1d3d` – Marquee seamless `::after` loop, transparent cart toggle, iframe scrollbar clip**
+   Rewrote `marquee.js` loop using GPU-animated `transform: translate3d` on an `::after` copy (`data-mq-rep`) so scrolling text loops seamlessly without jumps; hid embed iframes' native scrollbar by expanding iframe width `+24px` inside an overflow-clipped container; removed the cart button's black rounded background pill.
+7. **`3df4cd2` – Independent text width resize, 43px white default, tighter marquee gap, per-element drag mode, in-flow widgets**
+   Changed text box resize handles to change width independently of height (text size is controlled by font size controls), set default new text to `43px` white, tightened marquee separator gap to a single space (`GAP = ' '`), added drop shadow to cart button, switched to `autoDragMode` (floating vs flow), and made newly added widgets default to in-flow blocks (`position: relative; margin: 20px auto`).
+8. **`71f3fce` – Zoom-accurate drag controller + sibling push-away + instant `#cart-fast` button on top-right**
+   Rewrote floating drag handling (`snapshotAbs`, `ptr` in page px, `place`, `applySnap`, `resolveOverlaps`) to eliminate zoom drift and push overlapping floating elements cleanly aside as one undo step; added `#cart-fast` inline in `index.html` at top-right (`right: 22px; top: 9px`) backed by `localStorage.ish_cart`; expanded nested/widget iframe scrollbar clipping.
+9. **`9e7bd3d` – Unlimited downward page growth, auto-scroll, click-through floating sections, better push-away**
+   Added `growPage`, `tick` edge auto-scroll, and `growOnEdit` so dragging or placing/resizing elements below the page bottom extends the page dynamically without breaking fixed-width zoom; added `.ed-clickthrough` for floating page sections over the canvas; widened `resolveOverlaps` across all floating items on the page.
+10. **Final fix (red cart button SVG fill) – `index.html`**
+    Fixed `#cart-fast svg` rendering black (`rgb(0, 0, 0)`) despite `#cart-fast` having red `color: rgb(255, 0, 0)`: added `#cart-fast svg{...;fill:currentColor}#cart-fast svg *{fill:currentColor}` in `index.html` so both the cart icon (`<g>`, `<path>`, `<circle>`) and the item count match Shopify's red toggle color immediately on load and after sync.
+
+---
+
+## 2. Current State of Every Feature & Subsystem
+
+### A. Fast Cart Button & Shopify Drawer (`index.html`, `shopify-shop.js`)
+- **`#cart-fast` (`index.html`):** Rendered immediately in the fixed top bar at `top: 9px; right: 22px; height: 38px; z-index: 120`, displaying the SVG cart icon + item count (`#cart-fast-n`) with transparent background and subtle `drop-shadow(0 1px 3px rgba(0,0,0,.65))`. Always visible even at `0`.
+- **Instant paint & sync:** Reads/writes `localStorage.ish_cart` (`st.on`, `st.n`, `st.svg`, `st.color`, fallback `#ff0000`) and polls every `600ms` via `sync()` against Shopify's hidden `.shopify-buy-frame--toggle.is-sticky` iframe. Once loaded, `body.has-fast-cart` hides Shopify's toggle iframe. Clicking `#cart-fast` calls `e.stopPropagation()` and `window.__shopUI.openCart()` (or queues `window.__cartOpenPending = true` until ready).
+- **Red icon fix:** `#cart-fast svg` and `#cart-fast svg *` inherit `fill: currentColor` from `#cart-fast` (`rgb(255, 0, 0)`), matching the count text and red site accents.
+- **Shop & Cart drawer (`shopify-shop.js`):** `InteerShop.prewarm()` starts loading shop data early. `cartSideCss()` keeps the drawer sliding from `cart_side` (`right` by default, or `left`), and dynamic pricing / custom size dropdowns / swatch switching work inside the styled iframes.
+
+### B. Editor Canvas, Drag, Snap & Unlimited Page Growth (`admin/editor.js`, `admin/editor.css`)
+- **Fixed Desktop stage:** Canvas is locked to the page's saved stage (`refW × refH`, default `1275 × 808`) and zoomed + re-centered (`place()`) cleanly inside the editor viewport so browser resizing never reflows layout.
+- **Per-element drag mode (`autoDragMode`) & custom zoomed drag controller (`setupSnapping`):**
+  - Floating (`position: absolute` / `fixed`) elements use `snapshotAbs`, `ptr` (pointer coordinates normalized to unscaled page pixels, ignoring synthetic re-dispatched events), `applySnap` (red guides, sibling edges, 10px grid; hold `Alt` to bypass snap/push), and `resolveOverlaps` (cascading push-away across all floating items on the page by the shortest axis).
+  - Flow elements snap along blue insertion guide lines and push flow neighbors naturally.
+  - Hold-dragging an already-selected element works cleanly in addition to the move handle, for both newly added and pre-existing items across every page.
+- **Unlimited page height (`growPage`, `tick`, `growOnEdit`):**
+  - Dragging past the bottom edge stretches the page and its section downward and auto-scrolls the canvas (`tick` near top/bottom viewport edges). Adding or resizing items below the bottom also triggers `growOnEdit`.
+  - `growPage` ignores editor chrome and section wrappers so stretched sections do not self-inflate infinitely.
+  - `pageRef[page].h` stores full page height and persists as `refH`, while the editor viewport height stays locked to one screen height so zoom does not jump.
+  - Floating full-page sections receive `.ed-clickthrough` in the editor so elements positioned underneath in DOM order remain selectable and draggable.
+- **Undo/Redo & cleanup:** `undoManager: { trackSelection: false }`, each drag/push/resize transaction is recorded as a single undo step (`UndoManager.stop()/start()`), `cleanFrozen` clears stuck `.gjs-freezed` transparency, and `keepLookOnMove` preserves font size/color when reparenting elements.
+- **Toolbar spacing (`admin/editor.css`):** Custom buttons (`Scroll/Align`, `</> Code`, `Scroll`, etc.) have dedicated width classes so labels never collide.
+
+### C. Typography & Scrolling Marquee (`marquee.js`, `admin/editor.js`, `index.html`, `admin/index.html`)
+- **Defaults & resizing:** New text elements default to `43px` `#ffffff`. Side resize handles adjust box `width` independently while `height` tracks text naturally; font size controls text scale (`makeTextResizable`, using page-px `offsetWidth`/`offsetHeight`).
+- **Smooth endless marquee (`marquee.js`):** Elements with `data-marquee="left|right"` and `data-marquee-speed` clone their visible text into CSS `--mq-text` / `[data-mq-rep]::after` with a single-space separator (`GAP = ' '`), hiding the underlying flow text (`color: transparent`) to preserve layout box dimensions and animating via `transform: translate3d(...)` for a seamless endless loop without gaps. Disabling scroll (`clear()`) restores `mqOrigWidth`.
+- **Scroll/Align toolbar panel (`admin/editor.js`):** Controls Left/Middle/Right alignment, scrolling toggle, Left/Right direction, and speed slider.
+
+### D. Embed / Widget Blocks & Glass Scrollbars (`admin/editor.js`, `glass-scroll.js`, `soundcloud-player.js`, `index.html`)
+- **Component & persistence (`embed-widget`):** Embed markup is stored cleanly via `setWidgetCode`/`getWidgetCode` in `content` (clearing children) so HTML survives moves and saves. Default placement uses in-flow layout (`position: relative; margin: 20px auto`).
+- **8-handle resize & scroll clipping:** `makeWidgetResizable` determines active edges from where the pointer grabs the box rather than relying on ambiguous handle names. Embedded iframes (including nested frames) are styled `+24px` wider than their wrapper with overflow hidden to clip unstyleable third-party native scrollbars.
+- **Widget `Scroll` mode:** Toolbar `Scroll` button sets `data-scroll-h` + `--eh` so tall widgets scroll internally, wired on the live site to `glass-scroll.js` fading glass scrollbars. SoundCloud playlist cards (`soundcloud-player.js`) also use `glassScroll({ el: list, host: host, inner: true })`.
+
+---
+
+## 3. Deploy & Verification Routine (Strict)
+
+Always develop/test in `C:\Users\xxx\Documents\GitHub\INTEERNEETS` first, **never** overwrite `content/*.json` from test runs, and **always** pull-rebase before pushing/deploying because the live admin editor commits `content/*.json` updates directly to `origin/main`.
 
 ```powershell
 $git = "$env:LOCALAPPDATA\GitHubDesktop\app-3.6.11\resources\app\git\cmd\git.exe"
 cd "C:\Users\xxx\Documents\GitHub\INTEERNEETS"
-& $git checkout -- content                      # tests may have saved into content/: drop that
+& $git checkout -- content                      # drop any local test saves to content/
 & $git add -A . ; & $git reset -q HANDOFF-DETAILED.md
 & $git commit -m "message"
 $token = [Environment]::GetEnvironmentVariable('GH_PUSH_TOKEN','User')
 $auth  = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("x-access-token:$token"))
 $gh = @('-c','credential.helper=','-c',"http.https://github.com/.extraheader=AUTHORIZATION: basic $auth")
-& $git @gh pull --rebase origin main            # ALWAYS: the live editor commits pages to GitHub
+& $git @gh pull --rebase origin main            # REQUIRED: preserve live editor saves
 & $git @gh push origin main
 robocopy "C:\Users\xxx\Documents\GitHub\INTEERNEETS" "C:\Users\xxx\Desktop\INTEERNEETS\INTEERNEETS WEB" /MIR /XD .git .wrangler node_modules /XF HANDOFF-DETAILED.md
 cd "C:\Users\xxx\Desktop\INTEERNEETS\INTEERNEETS WEB"; npx wrangler deploy
 ```
-**Lesson:** once a deploy published an old copy of `page-home.json` over the user's fresh save, because `pull --rebase` was skipped. Always pull first, then robocopy, then deploy.
 
-Local testing: `node server.js` (port 8000, serves `/` and `/admin/`; saving in the local editor writes into `content/`, so run `git checkout -- content` afterwards). Chromium for Playwright is installed (`python` + `playwright`).
+Local test server: `node server.js` on `http://localhost:8000` (verify in Playwright Chromium, run `node --check` on any modified `.js` files, bump `?v=` query params in both `index.html` and `admin/index.html` when touching JS files, stop `node server.js` cleanly afterward, and run `git checkout -- content`).
 
-## 3. What exists now (all deployed, version ids in git log / wrangler)
+---
 
-**Features restored / built**
-- Dynamic price when a size/option changes (`shopify-shop.js`).
-- Embed / Widget block (`embed-widget` component type): code lives in `content` (children cleared by `setWidgetCode`), box gets a real height so the iframe fills and resizes with it; custom resizer where **all 8 handles move their own edge** (edge chosen from where the pointer grabbed the box); toolbar buttons `Scroll`, `</> Code`; widgets are normal in-flow blocks (`position:relative; margin:20px auto`) so they push other items. Embed iframes are 24px wider than the box and the box clips them (hides the embed's own scrollbar, which cannot be styled). `Scroll` = `data-scroll-h` + `--eh`: the box scrolls over a tall iframe and gets the glass scrollbar on the live site.
-- Image link + shadow/glow, SoundCloud playlist player, glass scrollbar (`glass-scroll.js`, also on scrolling areas inside widgets), perf (cached section offsets), product page scrolls instead of zooming.
-- **Cart button:** compact, in the menu bar at the far left (16px gap, top 9px), cart icon + amount only: transparent background, small drop shadow, always visible even at 0. The drawer still opens from the side set by `cart_side` (default right). `InteerShop.prewarm()` starts loading shop data early.
-- **Scrolling text** (`marquee.js`, loaded by `index.html` and `admin/index.html`): `data-marquee="left|right"` + `data-marquee-speed`. A `::after` layer holds the text repeated with a single space and is animated with `transform` (smooth, endless, no gap); the real text stays invisible to keep the box size. Turning it off restores the old box width (`mqOrigWidth`).
-- **Text toolbar `Scroll/Align`:** panel with Left/Middle/Right alignment, scrolling on/off, direction, speed.
-- **Text boxes:** new text is white, 43px. Resize handles change only the **width**; height follows the text; size is changed with the font controls.
+## 4. Known Limits & Untested Edge Cases
 
-**Editor behaviour (works on every page and new pages)**
-- Fixed Desktop stage: canvas is the page's saved stage (default 1275×808), zoomed to fit and re-centred (`place()`), so resizing the browser never reflows the page.
-- Undo/redo: selection is not an undo step; one drag / resize = one step; leftover `gjs-freezed` (half-transparent) is cleaned after undo/redo/drag; elements dropped into another block keep their font size/colour (`keepLookOnMove`).
-- **Drag mode per element** (`autoDragMode`): floating (position:absolute/fixed) elements move freely and snap to guides + grid (red guides, snap re-applied on release; hold Alt to move freely); elements in the page flow snap into the layout at the blue guide line and push the others aside. Hold-dragging a selected element works as well as the move button. The Free Drag button forces free placement for everything (off by default).
-- Toolbar buttons with long labels have their own width (no overlap with the Center button).
-
-## 4. Rules that matter (also in CLAUDE.md)
-
-1. Edit the clone, test in Chromium, `node --check` every JS file, bump `?v=` in **both** `index.html` and `admin/index.html` (and `404.html` for glass-scroll), then deploy as above.
-2. Never overwrite `content/page-*.json` / `settings.json`; the live editor writes them.
-3. Keep the `ensureExtraTools` IIFE chain when adding toolbar buttons; new toolbar IDs need `gjs-toolbar-item__<id>` CSS if the label is long.
-4. Use `offsetWidth/offsetHeight` (page pixels), not `getBoundingClientRect` (scaled by editor zoom / live stage scale) for sizes you write into styles.
-5. Don't put cart CSS in `index.html`; it lives in `cartSideCss()` / `injectFrameFonts()`.
-6. Report only what was actually tested.
-
-## 5. Open items / known limits
-
-- A **cross-origin iframe's own scrollbar** (e.g. the ra.co widget, its cookie box) cannot be restyled; it is hidden by clipping, so the arrows of a nested scroller can still peek out. For a glass bar use the widget `Scroll` option.
-- Cart at 0 items was tested; the count update with real items was not.
-- Glass-pill dragging inside the scaled live stage may feel slightly off (drag math is in element pixels).
-- Pages saved before today keep their old saved stage size until re-saved in the editor.
-- Shop sidebar / search bar size controls (Shop panel) and widget snapping to guides beyond the above were not changed.
-
-## 6. Later changes (02:00-02:35)
-
-- **Drag controller rewritten** (setupSnapping in dmin/editor.js): the editor's own drag maths is wrong when the canvas is zoomed (elements ran away from the pointer, and left:50% + 	ranslateX items jumped). Now: a snapshot of every floating element is taken on mouse-down (snapshotAbs), the element is placed from the real pointer movement in PAGE pixels (ptr, place), snapped (red guides, grid, siblings) and **any floating element it lands on is pushed away** (esolveOverlaps, then snapped next to it, cascading). The whole drag incl. pushed items is ONE undo step. Hold Alt to move freely (no snap, no push). Works for old and new items on every page.
-- ptr (pointer tracker) is in page pixels: events inside the canvas are already page px, real events in the editor window are converted, synthetic re-dispatched ones are ignored (isTrusted).
-- **Cart button:** #cart-fast (index.html, right after <nav>) is drawn at once from localStorage.ish_cart (count, icon, colour) at the far RIGHT of the menu bar (22px gap), then kept in sync with Shopify's real toggle (which is hidden); click opens the drawer (__shopUI.openCart(), with stopPropagation because page click handlers close it). 2nd visit: button present after 0.1 s.
-- Widgets: every embed iframe (also nested) is 24px wider than its box so the box clips the embed's own scrollbar.
-## 7. Pages grow (02:35-02:55)
-
-- Dragging an element past the bottom of the page makes the page (and its own section) taller; the canvas auto-scrolls while you hold the pointer near its top/bottom edge (`tick` in `setupSnapping`), and the page also grows when something is added/resized below the bottom (`growOnEdit`). `pageRef[page].h` is the FULL page height and is what gets saved as `refH` (`canvasRefSize`); the editor window always shows one normal screen (`Hb`) and scrolls inside it, so the zoom never jumps.
-- `growPage` ignores editor furniture and the page's own sections (a stretched section must not count as content, otherwise it grows forever: this bug happened once).
-- Floating page sections (position:absolute over the whole page) are click-through in the editor (`.ed-clickthrough`), otherwise an item placed before them in the DOM (e.g. the GO TO SHOP button) could not be selected or dragged.
-- `resolveOverlaps` now looks at every floating item on the page (not only siblings) and moves the other item by the shortest way fully clear of the dropped one.
+- **Cross-origin nested scrollers:** Third-party cross-origin iframe contents (such as nested cookie banners inside RA widgets) cannot have their internal scrollbars restyled; the `+24px` outer wrapper clip hides the primary embed scrollbar, while nested scrollers inside cross-origin frames remain browser-rendered.
+- **Cart non-zero count sync:** `#cart-fast` rendering (`rgb(255, 0, 0)` icon + count, localStorage warm paint, click opening drawer) is verified at `0` items; live count updates immediately after adding a paid Shopify item were not exercised in an isolated test with real cart mutations.
+- **Glass pill drag scaling:** Dragging the glass scrollbar pill inside the zoomed live stage works in element pixels and can feel slightly offset depending on zoom scale.
+- **Legacy pre-update pages:** Pages last saved prior to these updates retain their historical `refW`/`refH` stage dimensions until re-saved in the editor.
