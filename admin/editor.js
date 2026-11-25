@@ -1426,19 +1426,35 @@ document.getElementById('btn-add-playlist').addEventListener('click', () => {
 // ─── Custom HTML/Embed Widget ───
 const isWidgetComp = (c) => !!(c && c.getAttributes && (String(c.getAttributes()['class'] || '').includes('custom-widget-block')));
 // screen position of the pointer (works over both the editor and the canvas), used by the widget resizer
-const ptr = { sx: 0, sy: 0, dsx: 0, dsy: 0 };
+const ptr = { sx: 0, sy: 0, dsx: 0, dsy: 0, snap: null };
+let snapAt = 0;
+function snapshotAbs() {   // where every floating element is, and its style, BEFORE a drag starts
+  const now = Date.now(); if (now - snapAt < 60) return; snapAt = now;
+  const m = new Map();
+  try {
+    editor.getWrapper().find('*').forEach((c) => {
+      const el = c.getEl && c.getEl(); if (!el || el.nodeType !== 1) return;
+      const cs = el.ownerDocument.defaultView.getComputedStyle(el);
+      if (cs.position !== 'absolute') return;
+      m.set(c, { l: el.offsetLeft - (parseFloat(cs.marginLeft) || 0), t: el.offsetTop - (parseFloat(cs.marginTop) || 0), st: Object.assign({}, c.getStyle()) });
+    });
+  } catch (_) { /* canvas not ready */ }
+  ptr.snap = m;
+}
 function trackPtr(doc, inFrame) {
   if (!doc || doc.__ptrTracked) return;
   doc.__ptrTracked = true;
-  // position in editor-window pixels, whichever document the event came from
+  // pointer position in PAGE pixels (the canvas' own pixels, unaffected by the editor zoom). Events inside the canvas
+  // already come in page pixels; real events in the editor window are converted. Synthetic copies are ignored.
   const pos = (e) => {
-    if (!inFrame) return [e.clientX, e.clientY];
+    if (inFrame) return [e.clientX, e.clientY];
     const r = editor.Canvas.getFrameEl().getBoundingClientRect(), z = (editor.Canvas.getZoom() / 100) || 1;
-    return [r.left + e.clientX * z, r.top + e.clientY * z];
+    return [(e.clientX - r.left) / z, (e.clientY - r.top) / z];
   };
-  doc.addEventListener('mousemove', (e) => { const p = pos(e); ptr.sx = p[0]; ptr.sy = p[1]; }, true);
-  ['mousedown', 'pointerdown'].forEach((ev) => doc.addEventListener(ev, (e) => { const p = pos(e); ptr.sx = ptr.dsx = p[0]; ptr.sy = ptr.dsy = p[1]; }, true));
-  doc.addEventListener('pointermove', (e) => { const p = pos(e); ptr.sx = p[0]; ptr.sy = p[1]; }, true);
+  const ok = (e) => inFrame || e.isTrusted;
+  doc.addEventListener('mousemove', (e) => { if (!ok(e)) return; const p = pos(e); ptr.sx = p[0]; ptr.sy = p[1]; }, true);
+  doc.addEventListener('pointermove', (e) => { if (!ok(e)) return; const p = pos(e); ptr.sx = p[0]; ptr.sy = p[1]; }, true);
+  ['mousedown', 'pointerdown'].forEach((ev) => doc.addEventListener(ev, (e) => { if (!ok(e)) return; const p = pos(e); ptr.sx = ptr.dsx = p[0]; ptr.sy = ptr.dsy = p[1]; snapshotAbs(); }, true));
 }
 trackPtr(document, false);
 setInterval(() => { try { trackPtr(editor.Canvas.getDocument(), true); } catch (_) { /* canvas not ready */ } }, 700);
@@ -1457,13 +1473,12 @@ function makeWidgetResizable(c) {
           start = { w: el.offsetWidth, h: el.offsetHeight, l: parseFloat(st.left) || el.offsetLeft, t: parseFloat(st.top) || el.offsetTop, orig: Object.assign({}, st) };
           // which edges move = where the pointer grabbed the box (the editor's own handle names are unreliable for corners)
           const fr = editor.Canvas.getFrameEl().getBoundingClientRect(), br = el.getBoundingClientRect(), zz = (editor.Canvas.getZoom() / 100) || 1;
-          const x0 = fr.left + br.left * zz, x1 = fr.left + br.right * zz, y0 = fr.top + br.top * zz, y1 = fr.top + br.bottom * zz, g = 22;
+          const x0 = br.left, x1 = br.right, y0 = br.top, y1 = br.bottom, g = 22 / zz;
           start.e = { L: ptr.dsx <= x0 + g, R: ptr.dsx >= x1 - g, T: ptr.dsy <= y0 + g, B: ptr.dsy >= y1 - g };
           um.stop();
         }
         // work from the real pointer movement (screen px -> page px), so every handle moves its own edge
-        const z = (editor.Canvas.getZoom() / 100) || 1;
-        const dx = (ptr.sx - ptr.dsx) / z, dy = (ptr.sy - ptr.dsy) / z;
+        const dx = ptr.sx - ptr.dsx, dy = ptr.sy - ptr.dsy;
         const { L, R, T, B } = start.e;
         const w = Math.max(40, Math.round(start.w + (R ? dx : L ? -dx : 0)));
         const h = Math.max(40, Math.round(start.h + (B ? dy : T ? -dy : 0)));
@@ -1494,7 +1509,7 @@ function injectWidgetEditorCss() {
       tag.id = 'widget-editor-css';
       doc.head.appendChild(tag);
     }
-    tag.textContent = '.custom-widget-block * { pointer-events: none !important; user-select: none !important; } .custom-widget-block { cursor: move !important; display: block !important; overflow: hidden; outline: 1px dashed rgba(255,255,255,.45); outline-offset: -1px; } .custom-widget-block iframe { max-width: 100%; border: 0; } .custom-widget-block > iframe { width: calc(100% + 24px) !important; max-width: none !important; height: 100%; } .custom-widget-block[data-scroll-h] { overflow-y: auto !important; overflow-x: hidden !important; } .custom-widget-block[data-scroll-h] iframe { height: var(--eh, 1500px) !important; } .custom-widget-block * { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.4) transparent; } .custom-widget-block *::-webkit-scrollbar { width: 8px; height: 8px; } .custom-widget-block *::-webkit-scrollbar-track { background: transparent; } .custom-widget-block *::-webkit-scrollbar-thumb { background: linear-gradient(180deg, rgba(255,255,255,.42), rgba(255,255,255,.14)); border-radius: 999px; border: 1px solid rgba(255,255,255,.38); }';
+    tag.textContent = '.custom-widget-block * { pointer-events: none !important; user-select: none !important; } .custom-widget-block { cursor: move !important; display: block !important; overflow: hidden; outline: 1px dashed rgba(255,255,255,.45); outline-offset: -1px; } .custom-widget-block iframe { max-width: 100%; border: 0; } .custom-widget-block iframe { width: calc(100% + 24px) !important; max-width: none !important; } .custom-widget-block > iframe { height: 100%; } .custom-widget-block > div:only-child { height: 100%; } .custom-widget-block[data-scroll-h] { overflow-y: auto !important; overflow-x: hidden !important; } .custom-widget-block[data-scroll-h] iframe { height: var(--eh, 1500px) !important; } .custom-widget-block * { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.4) transparent; } .custom-widget-block *::-webkit-scrollbar { width: 8px; height: 8px; } .custom-widget-block *::-webkit-scrollbar-track { background: transparent; } .custom-widget-block *::-webkit-scrollbar-thumb { background: linear-gradient(180deg, rgba(255,255,255,.42), rgba(255,255,255,.14)); border-radius: 999px; border: 1px solid rgba(255,255,255,.38); }';
   } catch (_) {}
 }
 editor.on('canvas:frame:load', injectWidgetEditorCss);
@@ -2022,38 +2037,134 @@ function setupSnapping() {
   };
 
   let lastAlt = false;
-  const onMove = (e) => {
-    if (!dragging) return;
-    lastAlt = !!e.altKey;
-    if (e.altKey) { clearGuides(); return; }   // snapping is always on; hold Alt to move freely
-    applySnap(dragging, true);
+  let drag = null;   // { comp, base:{l,t}, p0:{x,y}, touched:Map(component -> style before) }
+  const zoomF = () => (editor.Canvas.getZoom() / 100) || 1;
+
+  // Floating elements get plain pixel left/top (some pages use %, which broke the maths and made things jump)
+  const toPx = (comp) => {
+    const el = comp.getEl(); if (!el) return null;
+    const cs = el.ownerDocument.defaultView.getComputedStyle(el);
+    if (cs.position !== 'absolute') return null;
+    const l = el.offsetLeft - (parseFloat(cs.marginLeft) || 0), t = el.offsetTop - (parseFloat(cs.marginTop) || 0);
+    const patch = { left: Math.round(l) + 'px', top: Math.round(t) + 'px' };
+    const st = comp.getStyle();
+    if (st.right && st.right !== 'auto') patch.right = 'auto';
+    if (st.bottom && st.bottom !== 'auto') patch.bottom = 'auto';
+    comp.addStyle(patch);
+    return { l, t };
+  };
+  // The editor's own drag maths is off when the canvas is zoomed (things ran away from the pointer): place the
+  // element from the real pointer movement instead.
+  const place = (d) => {
+    if (!d || !d.base) return;
+    d.comp.addStyle({ left: Math.round(d.base.l + (ptr.sx - d.p0.x)) + 'px', top: Math.round(d.base.t + (ptr.sy - d.p0.y)) + 'px' });
   };
 
-  let dragBefore = null;
+  // If the dropped element sits on top of another floating element, that one moves away (smallest way out) and
+  // snaps next to it; anything it then bumps into is pushed on in turn.
+  const resolveOverlaps = (comp, touch) => {
+    const el = comp.getEl(), parent = comp.parent && comp.parent();
+    if (!el || !parent) return;
+    const GAP = 10;
+    const host = el.offsetParent;
+    const hr = host ? host.getBoundingClientRect() : null;
+    const area = hr ? hr.width * hr.height : 1e12;
+    const moved = new Set([comp]), queue = [comp];
+    let guard = 0;
+    while (queue.length && guard++ < 30) {
+      const a = queue.shift(), ae = a.getEl(); if (!ae) continue;
+      const ar = ae.getBoundingClientRect();
+      parent.components().forEach((sib) => {
+        if (moved.has(sib)) return;
+        const se = sib.getEl();
+        if (!se || se.tagName === 'STYLE' || se.tagName === 'SCRIPT') return;
+        const cs = se.ownerDocument.defaultView.getComputedStyle(se);
+        if (cs.position !== 'absolute') return;               // only floating siblings are pushed; flow items re-flow by themselves
+        const sr = se.getBoundingClientRect();
+        if (sr.width < 8 || sr.height < 8 || sr.width * sr.height > 0.7 * area) return;   // ignore backgrounds
+        const ox = Math.min(ar.right, sr.right) - Math.max(ar.left, sr.left);
+        const oy = Math.min(ar.bottom, sr.bottom) - Math.max(ar.top, sr.top);
+        if (ox < 6 || oy < 6) return;
+        touch(sib);
+        const patch = {};
+        if (oy <= ox) {
+          const dir = (sr.top + sr.height / 2) >= (ar.top + ar.height / 2) ? 1 : -1;
+          patch.top = Math.max(0, Math.round(se.offsetTop - (parseFloat(cs.marginTop) || 0) + dir * (oy + GAP))) + 'px';
+          patch.left = Math.round(se.offsetLeft - (parseFloat(cs.marginLeft) || 0)) + 'px';
+        } else {
+          const dir = (sr.left + sr.width / 2) >= (ar.left + ar.width / 2) ? 1 : -1;
+          patch.left = Math.max(0, Math.round(se.offsetLeft - (parseFloat(cs.marginLeft) || 0) + dir * (ox + GAP))) + 'px';
+          patch.top = Math.round(se.offsetTop - (parseFloat(cs.marginTop) || 0)) + 'px';
+        }
+        const st = sib.getStyle();
+        if (st.right && st.right !== 'auto') patch.right = 'auto';
+        if (st.bottom && st.bottom !== 'auto') patch.bottom = 'auto';
+        sib.addStyle(patch);
+        moved.add(sib); queue.push(sib);
+      });
+    }
+  };
+
+  let raf = 0;
+  const onMove = (e) => {
+    if (!drag) return;
+    lastAlt = !!e.altKey;
+    if (raf) return;
+    raf = requestAnimationFrame(() => {   // after the editor's own move handler, so ours wins
+      raf = 0;
+      if (!drag) return;
+      place(drag);
+      if (lastAlt) clearGuides(); else applySnap(drag.comp, true);
+    });
+  };
+  const listen = (on) => [document, editor.Canvas.getDocument()].forEach((d) => { if (d) d[on ? 'addEventListener' : 'removeEventListener']('mousemove', onMove, true); });
+
   editor.on('dmode:start', (opts) => {
-    dragging = opts && opts.target;
+    const comp = opts && opts.target;
+    if (!comp) return;
     lastAlt = false;
-    try { if (dragging) { dragBefore = Object.assign({}, dragging.getStyle()); editor.UndoManager.stop(); } } catch (_) { dragBefore = null; }
-    const doc = editor.Canvas.getDocument();
-    if (doc) doc.addEventListener('mousemove', onMove);
+    try { editor.UndoManager.stop(); } catch (_) { /* ignore */ }
+    const touched = new Map();
+    const sn = ptr.snap && ptr.snap.get(comp);
+    touched.set(comp, sn ? sn.st : Object.assign({}, comp.getStyle()));
+    let base = null;
+    try {
+      if (sn) {   // start from where the element really was (before the editor moved it), as plain pixels
+        base = { l: sn.l, t: sn.t };
+        const patch = { left: Math.round(sn.l) + 'px', top: Math.round(sn.t) + 'px' }, st = comp.getStyle();
+        if (st.right && st.right !== 'auto') patch.right = 'auto';
+        if (st.bottom && st.bottom !== 'auto') patch.bottom = 'auto';
+        comp.addStyle(patch);
+      } else base = toPx(comp);
+    } catch (_) { base = null; }
+    drag = { comp, base, p0: { x: ptr.sx, y: ptr.sy }, touched };
+    listen(true);
   });
   editor.on('dmode:end', () => {
-    const doc = editor.Canvas.getDocument();
-    if (doc) doc.removeEventListener('mousemove', onMove);
-    const comp = dragging;
-    dragging = null;
+    const d = drag;
+    drag = null;
+    listen(false);
     clearGuides();
-    // The editor writes the final (unsnapped) left/top when you let go, so snap once more right after that
+    // The editor writes its own final left/top when you let go, so place / snap / push once more right after that.
     setTimeout(() => {
-      try { if (comp && !lastAlt) applySnap(comp, false); } catch (_) { /* element gone */ }
-      clearGuides();
-      // the whole drag (move + snap) is ONE undo step, so a single Ctrl+Z puts it back where it was
       try {
-        const um = editor.UndoManager;
-        if (comp && dragBefore) { const fin = Object.assign({}, comp.getStyle()); comp.setStyle(dragBefore); um.start(); comp.setStyle(fin); }
-        else um.start();
+        if (d && d.base) {
+          place(d);
+          if (!lastAlt) {
+            applySnap(d.comp, false);
+            resolveOverlaps(d.comp, (c) => { if (!d.touched.has(c)) d.touched.set(c, Object.assign({}, c.getStyle())); });
+          }
+        }
+      } catch (_) { /* element gone */ }
+      clearGuides();
+      // the whole drag (move + snap + pushed items) is ONE undo step: a single Ctrl+Z puts everything back
+      try {
+        const um = editor.UndoManager, fins = [];
+        if (d) d.touched.forEach((before, c) => fins.push([c, before, Object.assign({}, c.getStyle())]));
+        fins.forEach((f) => f[0].setStyle(f[1]));
+        um.start();
+        fins.forEach((f) => f[0].setStyle(f[2]));
       } catch (_) { editor.UndoManager.start(); }
-      dragBefore = null;
     }, 40);
   });
 }

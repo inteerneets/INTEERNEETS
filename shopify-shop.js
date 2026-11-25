@@ -825,7 +825,7 @@
     if (opt && opt.toggle) { var tg = opt.toggle.styles.toggle; tg['border-radius'] = 0; tg['background-color'] = 'transparent'; tg[':hover'] = { 'background-color': 'transparent' }; }   // just the cart + number, no box
     tag.textContent =
       // the cart button lives in the menu bar, at the far left (with a gap), and is always there: icon + amount
-      '.shopify-buy-frame--toggle.is-sticky{display:block!important;visibility:visible!important;opacity:1!important;position:fixed!important;left:16px!important;right:auto!important;top:9px!important;bottom:auto!important;width:78px!important;height:38px!important;margin:0!important;transform:none!important;z-index:110!important;}' +
+      '.shopify-buy-frame--toggle.is-sticky{display:block!important;visibility:visible!important;opacity:1!important;position:fixed!important;right:22px!important;left:auto!important;top:9px!important;bottom:auto!important;width:78px!important;height:38px!important;margin:0!important;transform:none!important;z-index:110!important;}' +
       '.shopify-buy-frame--toggle iframe{width:100%!important;height:100%!important;}' +
       '.shopify-buy-frame--cart{' + from + ':0!important;' + other + ':auto!important;margin:0!important;border:0!important;transform:translateX(' + away + ')!important;}' +
       '.shopify-buy-frame--cart.is-active{transform:translateX(0)!important;}' + mob;

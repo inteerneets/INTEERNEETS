@@ -67,3 +67,10 @@ Local testing: `node server.js` (port 8000, serves `/` and `/admin/`; saving in 
 - Glass-pill dragging inside the scaled live stage may feel slightly off (drag math is in element pixels).
 - Pages saved before today keep their old saved stage size until re-saved in the editor.
 - Shop sidebar / search bar size controls (Shop panel) and widget snapping to guides beyond the above were not changed.
+
+## 6. Later changes (02:00-02:35)
+
+- **Drag controller rewritten** (setupSnapping in dmin/editor.js): the editor's own drag maths is wrong when the canvas is zoomed (elements ran away from the pointer, and left:50% + 	ranslateX items jumped). Now: a snapshot of every floating element is taken on mouse-down (snapshotAbs), the element is placed from the real pointer movement in PAGE pixels (ptr, place), snapped (red guides, grid, siblings) and **any floating element it lands on is pushed away** (esolveOverlaps, then snapped next to it, cascading). The whole drag incl. pushed items is ONE undo step. Hold Alt to move freely (no snap, no push). Works for old and new items on every page.
+- ptr (pointer tracker) is in page pixels: events inside the canvas are already page px, real events in the editor window are converted, synthetic re-dispatched ones are ignored (isTrusted).
+- **Cart button:** #cart-fast (index.html, right after <nav>) is drawn at once from localStorage.ish_cart (count, icon, colour) at the far RIGHT of the menu bar (22px gap), then kept in sync with Shopify's real toggle (which is hidden); click opens the drawer (__shopUI.openCart(), with stopPropagation because page click handlers close it). 2nd visit: button present after 0.1 s.
+- Widgets: every embed iframe (also nested) is 24px wider than its box so the box clips the embed's own scrollbar.

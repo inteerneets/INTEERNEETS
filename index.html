@@ -93,7 +93,9 @@
     /* Embed / Widget blocks: no editor border on the live site, content fills the box */
     .custom-widget-block { border: 0 !important; outline: 0 !important; box-shadow: none !important; background: none !important; display: block !important; overflow: hidden; padding: 0 !important; }
     .custom-widget-block iframe { max-width: 100%; border: 0; }
-    .custom-widget-block > iframe { width: calc(100% + 24px) !important; max-width: none !important; height: 100%; }   /* the embed's own scrollbar sits in the clipped 24px */
+    .custom-widget-block iframe { width: calc(100% + 24px) !important; max-width: none !important; }   /* the embed's own scrollbar sits in the clipped 24px */
+    .custom-widget-block > iframe { height: 100%; }
+    .custom-widget-block > div:only-child { height: 100%; }
     .custom-widget-block[data-scroll-h] { overflow-y: auto !important; overflow-x: hidden !important; }
     .custom-widget-block[data-scroll-h] iframe { height: var(--eh, 1500px) !important; }
     .custom-widget-block * { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.4) transparent; }
@@ -114,6 +116,48 @@
   <div id="bg-stack"></div>
   <div id="shade"></div>
   <nav id="nav"></nav>
+  <script>
+  // Cart button: drawn at once (from what the last visit remembered), then kept in sync with Shopify's own button.
+  (function () {
+    var KEY = 'ish_cart', st = {};
+    try { st = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { st = {}; }
+    function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
+    var css = document.createElement('style');
+    css.textContent = '#cart-fast{position:fixed;top:9px;right:22px;height:38px;z-index:120;display:flex;align-items:center;gap:8px;padding:0 6px;cursor:pointer;user-select:none;-webkit-user-select:none;font:700 16px Inter,Arial,sans-serif;line-height:1;filter:drop-shadow(0 1px 3px rgba(0,0,0,.65));-webkit-tap-highlight-color:transparent}#cart-fast svg{width:21px;height:21px;display:block}body.has-fast-cart .shopify-buy-frame--toggle.is-sticky{visibility:hidden!important;pointer-events:none!important}';
+    document.head.appendChild(css);
+    function make() {
+      var b = document.getElementById('cart-fast');
+      if (b) return b;
+      b = document.createElement('div'); b.id = 'cart-fast'; b.setAttribute('role', 'button'); b.setAttribute('aria-label', 'Cart');
+      b.innerHTML = '<svg viewBox="0 0 25 25"></svg><span id="cart-fast-n">0</span>';
+      b.addEventListener('click', function (e) { e.stopPropagation(); setTimeout(function () { var u = window.__shopUI; if (u && u.openCart) u.openCart(); else window.__cartOpenPending = true; }, 0); });   // not the page click handlers: they would close it again
+      document.body.appendChild(b);
+      return b;
+    }
+    function render() {
+      var b = make();
+      b.style.color = st.color || '#ff0000';
+      if (st.svg) b.querySelector('svg').innerHTML = st.svg;
+      b.querySelector('#cart-fast-n').textContent = st.n || 0;
+      document.body.classList.add('has-fast-cart');
+    }
+    function sync() {
+      var f = document.querySelector('.shopify-buy-frame--toggle iframe'), d = null;
+      try { d = f && f.contentDocument; } catch (e) { d = null; }
+      var cnt = d && d.querySelector('.shopify-buy__cart-toggle__count');
+      if (cnt) {
+        var svg = d.querySelector('.shopify-buy__icon-cart');
+        st.on = 1; st.n = parseInt(cnt.textContent, 10) || 0;
+        if (svg) { st.svg = svg.innerHTML; var p = svg.querySelector('path'); if (p) st.color = d.defaultView.getComputedStyle(p).fill; }
+        save(); render();
+      }
+      if (window.__cartOpenPending && window.__shopUI && window.__shopUI.openCart) { window.__cartOpenPending = false; window.__shopUI.openCart(); }
+    }
+    window.__cartFastOff = function () { var b = document.getElementById('cart-fast'); if (b) b.remove(); document.body.classList.remove('has-fast-cart'); try { localStorage.removeItem(KEY); } catch (e) {} st = {}; };
+    if (st.on === 1 && st.svg) render();
+    setInterval(sync, 600);
+  })();
+  </script>
   <main id="pages"></main>
 
   <script>
@@ -677,7 +721,7 @@
       if (window.__shopJs) return window.__shopJs;
       window.__shopJs = new Promise(function (res) {
         var s = document.createElement('script');
-        s.src = '/shopify-shop.js?v=20261125j';
+        s.src = '/shopify-shop.js?v=20261125k';
         s.onload = res; s.onerror = res;
         document.head.appendChild(s);
       });
@@ -734,6 +778,7 @@
       var pages = r[0];
       settings = r[1] || {};
       applySettings(settings);
+      try { if (!(settings.shopify_domain && settings.shopify_storefront_token) && window.__cartFastOff) window.__cartFastOff(); } catch (e) { /* ignore */ }
       try { warmShop(settings); } catch (e) { /* ignore */ }
       return Promise.all(pages.map(function (p) {
         return getContent('page-' + p.id + '.json').catch(function () { return null; });
