@@ -41,7 +41,8 @@
   "shopify_style": {
     "side_font": "Inter",
     "side_active": "#ffffff",
-    "side_text": "#000000"
+    "side_text": "#000000",
+    "toggle_color": "#ff0000"
   },
   "shop_categories": [
     {
