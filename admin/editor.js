@@ -499,7 +499,7 @@ bm.add('spacer', {
 bm.add('floating-text', {
   label: 'Floating Text',
   category: 'Studio',
-  content: `<div style="position:absolute;top:50px;left:50px;font-family:'Playfair Display',serif;font-size:2rem;color:var(--c-text,#ffffff);cursor:move;z-index:10;">Floating Text</div>`,
+  content: `<div style="position:absolute;top:50px;left:50px;font-family:'Playfair Display',serif;font-size:43px;color:#ffffff;cursor:move;z-index:10;">Floating Text</div>`,
 });
 
 bm.add('floating-image', {
@@ -587,7 +587,7 @@ bm.add('custom-widget', {
   content: {
     type: 'embed-widget',
     attributes: { class: 'custom-widget-block' },
-    style: { position: 'absolute', top: '80px', left: '80px', width: '380px', 'min-height': '160px', 'z-index': '10', color: '#777', 'font-family': "'Inter',sans-serif", 'text-align': 'center', padding: '20px', cursor: 'move' },
+    style: { position: 'relative', width: '380px', 'max-width': '100%', margin: '20px auto', 'min-height': '160px', 'z-index': '10', color: '#777', 'font-family': "'Inter',sans-serif", 'text-align': 'center', padding: '20px', cursor: 'move' },
     content: 'Click me, then use the &lt;/&gt; Widget button to paste your embed code',
   },
 });
@@ -1382,7 +1382,7 @@ document.getElementById('btn-freedrag').addEventListener('click', (e) => {
 // Quick add: text box / image dropped onto the page, ready to drag
 document.getElementById('btn-add-text').addEventListener('click', () => {
   const w = editor.getWrapper();
-  const c = w.append(`<div style="position:absolute;top:80px;left:80px;font-family:'Playfair Display',serif;font-size:2rem;color:#ffffff;z-index:10;">New text</div>`)[0];
+  const c = w.append(`<div style="position:absolute;top:80px;left:80px;font-family:'Playfair Display',serif;font-size:43px;color:#ffffff;z-index:10;">New text</div>`)[0];
   editor.select(c);
 });
 document.getElementById('btn-add-image').addEventListener('click', () => {
@@ -1470,8 +1470,9 @@ function makeWidgetResizable(c) {
         const patch = { 'min-height': '40px' };
         if (R || L) patch.width = w + 'px';
         if (B || T) patch.height = h + 'px';
-        if (L) patch.left = Math.round(start.l + start.w - w) + 'px';
-        if (T) patch.top = Math.round(start.t + start.h - h) + 'px';
+        const floating = /^(absolute|fixed)$/.test(el.ownerDocument.defaultView.getComputedStyle(el).position);
+        if (L && floating) patch.left = Math.round(start.l + start.w - w) + 'px';
+        if (T && floating) patch.top = Math.round(start.t + start.h - h) + 'px';
         c.addStyle(patch);
         if (opts && opts.store) { const fin = Object.assign({}, c.getStyle()); c.setStyle(start.orig); um.start(); c.setStyle(fin); start = null; }
       } catch (err) { start = null; um.start(); }
@@ -1539,7 +1540,7 @@ document.getElementById('btn-add-widget').addEventListener('click', () => {
     type: 'embed-widget',
     content: code,
     attributes: { class: 'custom-widget-block' },
-    style: { position: 'absolute', top: '80px', left: '80px', width: '380px', 'min-height': '160px', 'z-index': '10' },
+    style: { position: 'relative', width: '380px', 'max-width': '100%', margin: '20px auto', 'min-height': '160px', 'z-index': '10' },
   })[0];
   if (c) {
     setWidgetCode(c, code);
@@ -2766,39 +2767,19 @@ function makeTextResizable(c) {
   let start = null; // set again on every load/select: functions are not saved with the page
   const apply = (patch) => { const st = Object.assign({}, c.getStyle()); delete st.height; delete st['min-height']; c.setStyle(Object.assign(st, patch)); };
   c.set('resizable', {
-    tl: 1, tr: 1, bl: 1, br: 1, cl: 1, cr: 1, tc: 1, bc: 1,
+    // The handles only change the WIDTH of the text box. Height follows the text by itself and the text size is
+    // changed with the font size controls (A- / A+ / Size), so width and height are independent.
+    tl: 1, tr: 1, bl: 1, br: 1, cl: 1, cr: 1, tc: 0, bc: 0,
     updateTarget(el, rect, opts) {
-      const handle = String((opts && (opts.selectedHandler || opts.handler)) || '');
-      const corner = /^(tl|tr|bl|br)$/.test(handle);
-      const vert = /^(tc|bc)$/.test(handle);
       try {
-        if (!start) {
-          const cs = el.ownerDocument.defaultView.getComputedStyle(el);
-          // offsetWidth/Height are in page pixels (getBoundingClientRect is scaled by the editor zoom)
-          start = { w: el.offsetWidth || 1, h: el.offsetHeight || 1, fs: parseFloat(cs.fontSize) || 16, ls: parseFloat(cs.letterSpacing) || 0, hasW: !!c.getStyle().width, orig: Object.assign({}, c.getStyle()) };
-          um.stop(); // the whole drag becomes ONE undo step
-        }
-        let patch;
-        if (corner || vert) {
-          // corners scale the text by the width change (as before); top/bottom handles scale it by the height change
-          const k = Math.max(0.1, vert ? rect.h / start.h : rect.w / start.w);
-          patch = { 'font-size': Math.max(6, Math.round(start.fs * k * 10) / 10) + 'px' };
-          if (start.ls) patch['letter-spacing'] = Math.round(start.ls * k * 10) / 10 + 'px';
-          const slack = start.h < start.fs * 1.7 ? 1.04 : 1;   // a one-line text keeps a little room so it never wraps
-          patch.width = Math.round(start.w * k * slack) + 'px';   // box scales with the text, so no extra line appears
-        } else {
-          patch = { width: Math.round(rect.w) + 'px', 'max-width': 'none' };   // only the box gets wider; the text stays as it is
-        }
+        if (!start) { start = { orig: Object.assign({}, c.getStyle()) }; um.stop(); }   // the whole drag is ONE undo step
+        const patch = { width: Math.max(20, Math.round(rect.w)) + 'px', 'max-width': 'none' };
         apply(patch);
         if (opts && opts.store) {
-          c.setStyle(start.orig); um.start(); apply(patch); // restore quietly, then record the final result once
-          start = null;
-          // the resizer may write a fixed height after us; a fixed height is what pushed text out of its box
+          c.setStyle(start.orig); um.start(); apply(patch); start = null;
           setTimeout(() => { const st2 = Object.assign({}, c.getStyle()); if (st2.height) { um.stop(); delete st2.height; c.setStyle(st2); um.start(); } }, 60);
         }
-      } catch (err) {
-        start = null; um.start();
-      }
+      } catch (err) { start = null; um.start(); }
     },
   });
 }
@@ -3705,4 +3686,24 @@ setInterval(() => { try { const d = editor.Canvas.getDocument(); if (d && d.body
   const clean = () => { try { const d = editor.Canvas.getDocument(); if (d) Array.prototype.forEach.call(d.querySelectorAll('.gjs-freezed'), (e) => e.classList.remove('gjs-freezed')); } catch (_) { /* canvas not ready */ } };
   ['undo', 'redo', 'component:drag:end', 'sorter:drag:end'].forEach((ev) => editor.on(ev, () => { setTimeout(clean, 0); setTimeout(clean, 150); setTimeout(clean, 500); }));
   setInterval(() => { if (!document.querySelector('.gjs-dragging, .gjs-sorter-active')) clean(); }, 2000);
+})();
+
+// ═══════════════════════════════════════════════════════════════
+// DRAG MODE PER ELEMENT — works the same on every page (also new ones):
+//  • a floating element (position:absolute/fixed, e.g. most things on the home page) moves freely and snaps to guides + grid
+//  • an element in the page flow (shop page, widgets...) snaps into the layout at the blue guide line and pushes the others aside
+// The Free Drag button still forces free placement for everything.
+// ═══════════════════════════════════════════════════════════════
+(function autoDragMode() {
+  function setMode(c) {
+    try {
+      if (!c || c === editor.getWrapper() || !c.getEl) return;
+      const el = c.getEl(); if (!el) return;
+      const pos = el.ownerDocument.defaultView.getComputedStyle(el).position;
+      c.set({ draggable: true, dmode: (pos === 'absolute' || pos === 'fixed') ? 'absolute' : '' });
+    } catch (_) { /* element not drawn yet */ }
+  }
+  editor.on('component:selected', setMode);
+  editor.on('component:mount', setMode);
+  editor.on('component:drag:start', (ev) => setMode((ev && ev.target) || editor.getSelected()));
 })();
