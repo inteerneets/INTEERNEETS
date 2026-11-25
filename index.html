@@ -123,8 +123,12 @@
     try { st = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { st = {}; }
     function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
     var css = document.createElement('style');
-    css.textContent = '#cart-fast{position:fixed;top:9px;right:22px;height:38px;z-index:120;display:flex;align-items:center;gap:8px;padding:0 6px;cursor:pointer;user-select:none;-webkit-user-select:none;font:700 16px Inter,Arial,sans-serif;line-height:1;filter:drop-shadow(0 1px 3px rgba(0,0,0,.65));-webkit-tap-highlight-color:transparent}#cart-fast svg{width:21px;height:21px;display:block;overflow:visible;fill:currentColor}#cart-fast svg *{fill:currentColor;paint-order:stroke fill;stroke:#000;stroke-width:1.4px;stroke-linejoin:round}#cart-fast-n{paint-order:stroke fill;-webkit-text-stroke:1.8px #000}body.has-fast-cart .shopify-buy-frame--toggle.is-sticky{visibility:hidden!important;pointer-events:none!important}';
+    css.textContent = '#cart-fast{position:fixed;top:9px;right:22px;height:38px;z-index:120;display:flex;align-items:center;gap:8px;padding:0 6px;cursor:pointer;user-select:none;-webkit-user-select:none;font:700 16px Inter,Arial,sans-serif;line-height:1;filter:drop-shadow(0 1px 3px rgba(0,0,0,.65));transition:color .4s ease;-webkit-tap-highlight-color:transparent}#cart-fast.on-red{color:#000!important}#cart-fast svg{width:21px;height:21px;display:block;fill:currentColor}#cart-fast svg *{fill:currentColor}body.has-fast-cart .shopify-buy-frame--toggle.is-sticky{visibility:hidden!important;pointer-events:none!important}';
     document.head.appendChild(css);
+    var scrollRed = false, prodOpen = false, prodRed = false;
+    function syncRed() { var b = document.getElementById('cart-fast'); if (b) b.classList.toggle('on-red', !!(prodOpen ? prodRed : scrollRed)); }
+    window.__setCartScrollRed = function (v) { v = !!v; if (v !== scrollRed) { scrollRed = v; syncRed(); } };
+    window.__setCartProdRed = function (open, v) { prodOpen = !!open; prodRed = !!v; syncRed(); };
     function make() {
       var b = document.getElementById('cart-fast');
       if (b) return b;
@@ -132,6 +136,7 @@
       b.innerHTML = '<svg viewBox="0 0 25 25"></svg><span id="cart-fast-n">0</span>';
       b.addEventListener('click', function (e) { e.stopPropagation(); setTimeout(function () { var u = window.__shopUI; if (u && u.openCart) u.openCart(); else window.__cartOpenPending = true; }, 0); });   // not the page click handlers: they would close it again
       document.body.appendChild(b);
+      syncRed();
       return b;
     }
     function render() {
@@ -140,6 +145,7 @@
       if (st.svg) b.querySelector('svg').innerHTML = st.svg;
       b.querySelector('#cart-fast-n').textContent = st.n || 0;
       document.body.classList.add('has-fast-cart');
+      syncRed();
     }
     function sync() {
       var f = document.querySelector('.shopify-buy-frame--toggle iframe'), d = null;
@@ -419,12 +425,19 @@
       g.mode = 'stage';
     }
 
+    function readLayerRgb(layer, bg) {
+      var m = String(getComputedStyle(layer).backgroundColor || '').match(/[\d.]+/g);
+      var k = 1 - Math.max(0, Math.min(0.9, Number(bg && bg.overlay) || 0));
+      return m ? [+m[0] * k, +m[1] * k, +m[2] * k] : [0, 0, 0];
+    }
+    function isRedRgb(c) { return c[0] >= 120 && (c[0] - Math.max(c[1], c[2])) >= 70; }
+
     function buildSite(pages, designs) {
       var nav = document.getElementById('nav');
       var stack = document.getElementById('bg-stack');
       var main = document.getElementById('pages');
       var fonts = [];
-      var layers = [], sections = [], links = [], stages = [];
+      var layers = [], layerRgbs = [], sections = [], links = [], stages = [];
 
       pages.forEach(function (p, i) {
         var d = designs[i];
@@ -454,6 +467,7 @@
         applyBgLayer(layer, d && d.bg);
         stack.appendChild(layer);
         layers.push(layer);
+        layerRgbs.push(readLayerRgb(layer, d && d.bg));
 
         var a = document.createElement('a');
         a.textContent = p.title;
@@ -486,7 +500,7 @@
       cacheSectionOffsets();
       function blend() {
         var vh = cachedVh || window.innerHeight, center = window.scrollY + vh * 0.5;
-        var soft = vh * 0.7;
+        var soft = vh * 0.7, cy = 28, comp = layerRgbs[0] || [0, 0, 0];
         for (var i = 0; i < layers.length; i++) {
           var l = layers[i];
           l.style.zIndex = i;
@@ -498,7 +512,13 @@
           var m = 'linear-gradient(to bottom, transparent ' + y0.toFixed(1) + 'px, #000 ' + (y0 + soft).toFixed(1) + 'px)';
           l.style.webkitMaskImage = m;
           l.style.maskImage = m;
+          var a = y0 >= cy ? 0 : (y0 + soft <= cy ? 1 : (cy - y0) / soft);
+          if (a > 0) {
+            var c = layerRgbs[i] || [0, 0, 0];
+            comp = [comp[0] * (1 - a) + c[0] * a, comp[1] * (1 - a) + c[1] * a, comp[2] * (1 - a) + c[2] * a];
+          }
         }
+        if (window.__setCartScrollRed) window.__setCartScrollRed(isRedRgb(comp));
       }
 
       // Active page (menu highlight) = the one under the upper-middle of the screen
@@ -655,6 +675,7 @@
         document.body.appendChild(ov);
         document.body.classList.add('prod-open');
         document.documentElement.style.overflow = 'hidden';
+        if (window.__setCartProdRed) window.__setCartProdRed(true, isRedRgb(readLayerRgb(bgl, (design && design.bg) || { color: '#f80000' })));
         productOverlay = ov;
         productOverlay.__keys = { prev: prev, next: next };
         // same rules as the pages: scaled stage on wide screens, readable stacked column on phones
@@ -701,6 +722,7 @@
       productOverlay.remove(); productOverlay = null;
       document.body.classList.remove('prod-open');
       document.documentElement.style.overflow = '';
+      if (window.__setCartProdRed) window.__setCartProdRed(false, false);
     }
     document.addEventListener('keydown', function (e) {
       if (!productOverlay) return;

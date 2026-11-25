@@ -35,8 +35,8 @@ Earlier work (`29209ae` and prior sessions) introduced untested regressions in t
    Rewrote floating drag handling (`snapshotAbs`, `ptr` in page px, `place`, `applySnap`, `resolveOverlaps`) to eliminate zoom drift and push overlapping floating elements cleanly aside as one undo step; added `#cart-fast` inline in `index.html` at top-right (`right: 22px; top: 9px`) backed by `localStorage.ish_cart`; expanded nested/widget iframe scrollbar clipping.
 9. **`9e7bd3d` – Unlimited downward page growth, auto-scroll, click-through floating sections, better push-away**
    Added `growPage`, `tick` edge auto-scroll, and `growOnEdit` so dragging or placing/resizing elements below the page bottom extends the page dynamically without breaking fixed-width zoom; added `.ed-clickthrough` for floating page sections over the canvas; widened `resolveOverlaps` across all floating items on the page.
-10. **Final fix (red cart button SVG fill & outline) – `index.html`**
-    Fixed `#cart-fast svg` rendering black (`rgb(0, 0, 0)`) despite `#cart-fast` having red `color: rgb(255, 0, 0)`: added `fill:currentColor` on `#cart-fast svg` and `#cart-fast svg *`, plus a subtle black outline (`paint-order:stroke fill`, `stroke:#000; stroke-width:1.4px; stroke-linejoin:round` on the SVG shapes and `-webkit-text-stroke:1.8px #000` on `#cart-fast-n`) so both icon and number read crisply over dark and light sections.
+10. **Final fix (red cart button SVG fill & smooth red-bg fade) – `index.html`**
+    Fixed `#cart-fast svg` rendering black (`rgb(0, 0, 0)`) despite `#cart-fast` having red `color: rgb(255, 0, 0)`: added `fill:currentColor` on `#cart-fast svg` and `#cart-fast svg *` with subtle drop shadow (no outline) and `transition:color .4s ease`. Added background color sampling inside `blend()` (`readLayerRgb`, `isRedRgb`) and `openProduct()`/`closeProduct()` (`__setCartScrollRed`, `__setCartProdRed`): when the visible background at `#cart-fast` is red (e.g. Shop `#ff0000` or product overlay `#f80000`), both the cart icon and count smoothly fade to black (`#000`), and smoothly fade back to red on all other page backgrounds.
 
 ---
 
