@@ -123,7 +123,7 @@
     try { st = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { st = {}; }
     function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
     var css = document.createElement('style');
-    css.textContent = '#cart-fast{position:fixed;top:9px;right:22px;height:38px;z-index:120;display:flex;align-items:center;gap:8px;padding:0 6px;cursor:pointer;user-select:none;-webkit-user-select:none;font:700 16px Inter,Arial,sans-serif;line-height:1;filter:drop-shadow(0 1px 3px rgba(0,0,0,.65));transition:color .4s ease;-webkit-tap-highlight-color:transparent}#cart-fast.on-red{color:#000!important}#cart-fast svg{width:21px;height:21px;display:block;fill:currentColor}#cart-fast svg *{fill:currentColor}body.has-fast-cart .shopify-buy-frame--toggle.is-sticky{visibility:hidden!important;pointer-events:none!important}';
+    css.textContent = '#cart-fast{position:fixed;top:9px;right:22px;height:38px;z-index:120;display:flex;align-items:center;gap:8px;padding:0 6px;cursor:pointer;user-select:none;-webkit-user-select:none;font:700 16px Inter,Arial,sans-serif;line-height:1;transition:color .4s ease;-webkit-tap-highlight-color:transparent}#cart-fast.on-red{color:#000!important}#cart-fast svg{width:21px;height:21px;display:block;fill:currentColor}#cart-fast svg *{fill:currentColor}body.has-fast-cart .shopify-buy-frame--toggle.is-sticky{visibility:hidden!important;pointer-events:none!important}';
     document.head.appendChild(css);
     var scrollRed = false, prodOpen = false, prodRed = false;
     function syncRed() { var b = document.getElementById('cart-fast'); if (b) b.classList.toggle('on-red', !!(prodOpen ? prodRed : scrollRed)); }
